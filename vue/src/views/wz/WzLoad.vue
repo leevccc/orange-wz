@@ -50,8 +50,8 @@
   const openReady = ref<IWzNode>();
   const wzKeyRef = useTemplateRef('WzKeyRef');
 
-  const initial = async () => {
-    await loadTableData(-1);
+  const initial = () => {
+    navClick(-1);
     visible.value = true;
   };
 
