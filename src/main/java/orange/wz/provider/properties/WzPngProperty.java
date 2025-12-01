@@ -569,6 +569,8 @@ public class WzPngProperty extends WzImageProperty {
                 writer.putByte((byte) (compressedBytes[i] ^ wzKey[i - 2]));
             compressedBytes = writer.output();
         }
+
+        parse(wzKey);
     }
 
     private byte[] zlibCompress(byte[] decompressedBuffer) {
@@ -609,13 +611,8 @@ public class WzPngProperty extends WzImageProperty {
                 byte r = (byte) ((pixel >> 16) & 0xFF);
                 byte a = (byte) ((pixel >> 24) & 0xFF);
 
-                byte b4 = (byte) (b >> 4);
-                byte g4 = (byte) (g >> 4);
-                byte r4 = (byte) (r >> 4);
-                byte a4 = (byte) (a >> 4);
-
-                buf[index++] = (byte) ((g4 << 4) | b4); // Low byte: B4|G4<<4
-                buf[index++] = (byte) ((a4 << 4) | r4); // High byte: R4|A4<<4
+                buf[index++] = (byte) ((g & 0xF0) | (b & 0x0F));
+                buf[index++] = (byte) ((a & 0xF0) | (r & 0x0F));
             }
         }
         return buf;
@@ -909,7 +906,7 @@ public class WzPngProperty extends WzImageProperty {
         clone.height = height;
         clone.format = format;
         clone.format2 = format2;
-        clone.listWzUsed = listWzUsed;
+        clone.listWzUsed = false;
         clone.png = readBase64(getBase64());
 
         return clone;
