@@ -1217,6 +1217,7 @@ public final class WzEditorService {
         } else if (to instanceof WzStringProperty toString && from instanceof WzStringProperty fromString) {
             String fromValue = fromString.getValue();
             if (fromValue != null && !isChinese(toString.getValue()) && isChinese(fromValue)) {
+                getParentImg(toString).setChanged(true);
                 toString.setValue(fromValue);
             }
         }
