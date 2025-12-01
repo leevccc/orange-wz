@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -349,9 +350,7 @@ public final class WzEditorService {
         if (!node.isFile()) throw new BizException(ExceptionEnum.IS_NOT_FILE_OR_FOLDER);
 
         WzNode pNode = node.getParent();
-        Set<Integer> ids = new HashSet<>();
-        pNode.removeChild(ids, node.getId());
-        ids.forEach(nodeCache::remove);
+        delChildNode(pNode, node.getId());
     }
 
     /* 节点值操作 ------------------------------------------------------------------------------------------------------*/
@@ -454,296 +453,189 @@ public final class WzEditorService {
         WzNode targetNode = nodeCache.get(id);
         if (targetNode == null) throw new BizException(ExceptionEnum.NOT_FOUND);
         WzObject targetObj = targetNode.getWzObject();
-        byte[] wzKey = getWzKey(targetObj);
-        if (targetObj instanceof WzListProperty property) {
-            List<WzImageProperty> props = new ArrayList<>();
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImageProperty imageProperty) {
-                    // 删除同名
-                    for (WzImageProperty p : property.getProperties()) {
-                        if (p.getName().equalsIgnoreCase(imageProperty.getName())) {
-                            property.getProperties().remove(p);
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(imageProperty.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    imageProperty.setParent(targetObj);
-                    props.add(imageProperty);
-                    if (imageProperty instanceof WzPngProperty pngProperty) {
-                        pngProperty.compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(pngProperty.getFormat() + pngProperty.getFormat2())));
-                    } else if (imageProperty instanceof WzSoundProperty sound) {
-                        sound.rebuildHeader(wzKey);
-                    }
-
-                    WzNodeType type = WzNodeType.getByWzObjectType(imageProperty);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), imageProperty.getName(), type, null, imageProperty);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("WzImage 只能粘贴 WzImageProperty");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_IMAGE);
-                }
-            });
-            targetNode.addChildren(children);
-            property.addProperties(props);
-            Objects.requireNonNull(getParentImg(property)).setChanged(true);
-        } else if (targetObj instanceof WzFile wzFile) {
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImage wzImage) {
-                    // 删除同名
-                    for (WzImage i : wzFile.getWzDirectory().getImages().values()) {
-                        if (i.getName().equalsIgnoreCase(wzImage.getName())) {
-                            wzFile.getWzDirectory().getImages().remove(i.getName());
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(wzImage.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    wzImage.setParent(wzFile.getWzDirectory());
-                    wzImage.setReader(wzFile.getWzDirectory().getReader()); // 为了避免从 Image 中取 key 取不到
-                    wzFile.getWzDirectory().getImages().put(wzImage.getName(), wzImage);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), wzImage.getName(), WzNodeType.IMAGE, null, wzImage);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else if (child instanceof WzDirectory wzDir) {
-                    // 删除同名
-                    for (WzDirectory i : wzFile.getWzDirectory().getDirectories().values()) {
-                        if (i.getName().equalsIgnoreCase(wzDir.getName())) {
-                            wzFile.getWzDirectory().getDirectories().remove(i.getName());
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(wzDir.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    wzDir.setParent(wzFile.getWzDirectory());
-                    wzDir.setReader(wzFile.getWzDirectory().getReader()); // 为了避免从 Image 中取 key 取不到
-                    wzFile.getWzDirectory().getDirectories().put(wzDir.getName(), wzDir);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), wzDir.getName(), WzNodeType.WZ_DIRECTORY, null, wzDir);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("Wz 只能粘贴 WzDirectory 或 WzImage");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_DIR_OR_IMAGE);
-                }
-            });
-
-            targetNode.addChildren(children);
-        } else if (targetObj instanceof WzDirectory wzDir) {
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImage wzImage) {
-                    // 删除同名
-                    for (WzImage i : wzDir.getImages().values()) {
-                        if (i.getName().equalsIgnoreCase(wzImage.getName())) {
-                            wzDir.getImages().remove(i.getName());
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(wzImage.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    wzImage.setParent(wzDir);
-                    wzImage.setReader(wzDir.getReader()); // 为了避免从 Image 中取 key 取不到
-                    wzDir.getImages().put(wzImage.getName(), wzImage);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), wzImage.getName(), WzNodeType.IMAGE, null, wzImage);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else if (child instanceof WzDirectory childDir) {
-                    // 删除同名
-                    for (WzDirectory i : wzDir.getDirectories().values()) {
-                        if (i.getName().equalsIgnoreCase(childDir.getName())) {
-                            wzDir.getDirectories().remove(i.getName());
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(childDir.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    childDir.setParent(wzDir);
-                    childDir.setReader(wzDir.getReader()); // 为了避免从 Image 中取 key 取不到
-                    wzDir.getDirectories().put(childDir.getName(), childDir);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), childDir.getName(), WzNodeType.WZ_DIRECTORY, null, childDir);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("Wz 只能粘贴 WzDirectory 或 WzImage");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_DIR_OR_IMAGE);
-                }
-            });
-
-            targetNode.addChildren(children);
-        } else if (targetObj instanceof WzImage wzImage) {
-            List<WzImageProperty> props = new ArrayList<>();
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImageProperty imageProperty) {
-                    // 删除同名
-                    for (WzImageProperty p : wzImage.getProperties()) {
-                        if (p.getName().equalsIgnoreCase(imageProperty.getName())) {
-                            wzImage.getProperties().remove(p);
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(imageProperty.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    imageProperty.setParent(targetObj);
-                    props.add(imageProperty);
-                    if (imageProperty instanceof WzPngProperty pngProperty) {
-                        pngProperty.compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(pngProperty.getFormat() + pngProperty.getFormat2())));
-                    } else if (imageProperty instanceof WzSoundProperty sound) {
-                        sound.rebuildHeader(wzKey);
-                    }
-
-                    WzNodeType type = WzNodeType.getByWzObjectType(imageProperty);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), imageProperty.getName(), type, null, imageProperty);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("WzImage 只能粘贴 WzImageProperty");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_IMAGE);
-                }
-            });
-            targetNode.addChildren(children);
-            wzImage.getProperties().addAll(props);
-            wzImage.setChanged(true);
-        } else if (targetObj instanceof WzConvexProperty property) {
-            List<WzImageProperty> props = new ArrayList<>();
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImageProperty imageProperty) {
-                    // 删除同名
-                    for (WzImageProperty p : property.getProperties()) {
-                        if (p.getName().equalsIgnoreCase(imageProperty.getName())) {
-                            property.getProperties().remove(p);
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(imageProperty.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    imageProperty.setParent(targetObj);
-                    props.add(imageProperty);
-                    if (imageProperty instanceof WzPngProperty pngProperty) {
-                        pngProperty.compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(pngProperty.getFormat() + pngProperty.getFormat2())));
-                    } else if (imageProperty instanceof WzSoundProperty sound) {
-                        sound.rebuildHeader(wzKey);
-                    }
-
-                    WzNodeType type = WzNodeType.getByWzObjectType(imageProperty);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), imageProperty.getName(), type, null, imageProperty);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("WzImage 只能粘贴 WzImageProperty");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_IMAGE);
-                }
-            });
-            targetNode.addChildren(children);
-            property.getProperties().addAll(props);
-            Objects.requireNonNull(getParentImg(property)).setChanged(true);
-        } else if (targetObj instanceof WzCanvasProperty property) {
-            List<WzImageProperty> props = new ArrayList<>();
-            List<WzNode> children = new ArrayList<>();
-            clipboard.forEach(child -> {
-                if (child instanceof WzImageProperty imageProperty) {
-                    // 删除同名
-                    for (WzImageProperty p : property.getProperties()) {
-                        if (p.getName().equalsIgnoreCase(imageProperty.getName())) {
-                            property.getProperties().remove(p);
-                            for (WzNode c : targetNode.getChildren()) {
-                                if (c.getName().equalsIgnoreCase(imageProperty.getName())) {
-                                    Set<Integer> ids = new HashSet<>();
-                                    targetNode.removeChild(ids, c.getId());
-                                    ids.forEach(nodeCache::remove);
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-
-                    // 执行插入操作
-                    imageProperty.setParent(targetObj);
-                    props.add(imageProperty);
-                    if (imageProperty instanceof WzPngProperty pngProperty) {
-                        pngProperty.compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(pngProperty.getFormat() + pngProperty.getFormat2())));
-                    } else if (imageProperty instanceof WzSoundProperty sound) {
-                        sound.rebuildHeader(wzKey);
-                    }
-
-                    WzNodeType type = WzNodeType.getByWzObjectType(imageProperty);
-                    WzNode childNode = new WzNode(targetNode, nextId.getAndIncrement(), imageProperty.getName(), type, null, imageProperty);
-                    children.add(childNode);
-                    nodeCache.put(childNode.getId(), childNode);
-                } else {
-                    log.warn("WzImage 只能粘贴 WzImageProperty");
-                    throw new BizException(ExceptionEnum.ONLY_WZ_IMAGE);
-                }
-            });
-            targetNode.addChildren(children);
-            property.addProperties(props);
-            Objects.requireNonNull(getParentImg(property)).setChanged(true);
-        } else {
-            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "只能在 Img List 下粘贴");
+        switch (targetObj) {
+            case WzFile wzFile -> pasteToWzFile(targetNode, wzFile);
+            case WzDirectory wzDir -> pasteToWzDir(targetNode, wzDir);
+            case WzImage wzImage -> pasteToWzImage(targetNode, targetObj, wzImage);
+            case WzListProperty property -> pasteToWzList(targetNode, targetObj, property);
+            case WzConvexProperty property -> pasteToWzConvex(targetNode, targetObj, property);
+            case WzCanvasProperty property -> pasteToWzCanvas(targetNode, targetObj, property);
+            case null, default -> throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "该节点无法插入子节点");
         }
 
         clipboard.clear();
+    }
+
+    private void pasteToWzFile(WzNode targetNode, WzFile wzFile) {
+        checkClipboardType(WzNodeType.WZ);
+        delRepeatDirFromCb(targetNode, wzFile.getWzDirectory());
+        addDirFromCb(targetNode, wzFile.getWzDirectory());
+    }
+
+    private void pasteToWzDir(WzNode targetNode, WzDirectory wzDir) {
+        checkClipboardType(WzNodeType.WZ_DIRECTORY);
+        delRepeatDirFromCb(targetNode, wzDir);
+        addDirFromCb(targetNode, wzDir);
+    }
+
+    private void pasteToWzImage(WzNode targetNode, WzObject targetObj, WzImage wzImage) {
+        checkClipboardType(WzNodeType.IMAGE);
+        delRepeatPropFromCb(targetNode, wzImage.getProperties());
+        addPropFromCb(targetNode, targetObj, wzImage.getProperties());
+    }
+
+    private void pasteToWzList(WzNode targetNode, WzObject targetObj, WzListProperty property) {
+        checkClipboardType(WzNodeType.IMAGE_LIST);
+        delRepeatPropFromCb(targetNode, property.getProperties());
+        addPropFromCb(targetNode, targetObj, property.getProperties());
+    }
+
+    private void pasteToWzConvex(WzNode targetNode, WzObject targetObj, WzConvexProperty property) {
+        checkClipboardType(WzNodeType.IMAGE_CONVEX);
+        delRepeatPropFromCb(targetNode, property.getProperties());
+        addPropFromCb(targetNode, targetObj, property.getProperties());
+    }
+
+    private void pasteToWzCanvas(WzNode targetNode, WzObject targetObj, WzCanvasProperty property) {
+        checkClipboardType(WzNodeType.IMAGE_CANVAS);
+        delRepeatPropFromCb(targetNode, property.getProperties());
+        addPropFromCb(targetNode, targetObj, property.getProperties());
+    }
+
+    private void checkClipboardType(WzNodeType type) {
+        Predicate<Object> validator;
+        String errorMessage = switch (type) {
+            case WZ, WZ_DIRECTORY -> {
+                validator = child -> child instanceof WzImage || child instanceof WzDirectory;
+                yield getTypeSpecificErrorMessage(type);
+            }
+            case IMAGE, IMAGE_LIST, IMAGE_CONVEX, IMAGE_CANVAS -> {
+                validator = child -> child instanceof WzImageProperty;
+                yield getTypeSpecificErrorMessage(type);
+            }
+            default -> throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "禁止的类型");
+        };
+
+        clipboard.stream()
+                .filter(child -> !validator.test(child))
+                .findFirst()
+                .ifPresent(invalidChild -> {
+                    throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, errorMessage);
+                });
+    }
+
+    private String getTypeSpecificErrorMessage(WzNodeType type) {
+        return switch (type) {
+            case WZ -> "wz 文件只能粘贴 directory 或者 image";
+            case WZ_DIRECTORY -> "directory 只能粘贴 directory 或者 image";
+            case IMAGE -> "image 只能粘贴 property";
+            case IMAGE_LIST -> "list 只能粘贴 property";
+            case IMAGE_CONVEX -> "convex 只能粘贴 property";
+            case IMAGE_CANVAS -> "canvas 只能粘贴 property";
+            default -> "禁止的类型";
+        };
+    }
+
+    private void delRepeatDirFromCb(WzNode targetNode, WzDirectory directory) {
+        clipboard.forEach(child -> {
+            if (child instanceof WzDirectory) {
+                for (WzDirectory p : directory.getDirectories().values()) {
+                    if (p.getName().equalsIgnoreCase(child.getName())) {
+                        directory.getDirectories().remove(p.getName());
+                        delChildNodeByName(targetNode, child.getName());
+                        break;
+                    }
+                }
+            } else if (child instanceof WzImage) {
+                for (WzImage p : directory.getImages().values()) {
+                    if (p.getName().equalsIgnoreCase(child.getName())) {
+                        directory.getImages().remove(p.getName());
+                        delChildNodeByName(targetNode, child.getName());
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    private void delRepeatPropFromCb(WzNode targetNode, List<WzImageProperty> targetList) {
+        clipboard.forEach(child -> {
+            for (WzImageProperty p : targetList) {
+                if (p.getName().equalsIgnoreCase(child.getName())) {
+                    targetList.remove(p);
+                    delChildNodeByName(targetNode, child.getName());
+                    break;
+                }
+            }
+        });
+    }
+
+    private void delChildNodeByName(WzNode targetNode, String name) {
+        for (WzNode c : targetNode.getChildren()) {
+            if (c.getName().equalsIgnoreCase(name)) {
+                delChildNode(targetNode, c.getId());
+                break;
+            }
+        }
+    }
+
+    private void delChildNode(WzNode pNode, int cId) {
+        Set<Integer> ids = new HashSet<>();
+        pNode.removeChild(ids, cId);
+        ids.forEach(nodeCache::remove);
+    }
+
+    private void addPropFromCb(WzNode pNode, WzObject pObj, List<WzImageProperty> properties) {
+        List<WzNode> children = new ArrayList<>();
+        byte[] wzKey = getWzKey(pObj);
+        clipboard.forEach(child -> {
+            WzImageProperty property = (WzImageProperty) child;
+            property.setParent(pObj);
+            initSpProp(property, wzKey);
+            properties.add(property);
+
+            WzNodeType type = WzNodeType.getByWzObjectType(property);
+            WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), property.getName(), type, null, property);
+            children.add(childNode);
+            nodeCache.put(childNode.getId(), childNode);
+        });
+        pNode.addChildren(children);
+        Objects.requireNonNull(getParentImg(pObj)).setChanged(true);
+    }
+
+    private void addDirFromCb(WzNode pNode, WzDirectory pDir) {
+        List<WzNode> children = new ArrayList<>();
+        byte[] wzKey = pDir.getReader().getWzKey();
+        clipboard.forEach(child -> {
+            child.setParent(pDir);
+
+            if (child instanceof WzDirectory directory) {
+                directory.setReader(pDir.getReader()); // 为了避免从 Image 中取 key 取不到
+                pDir.getDirectories().put(directory.getName(), directory);
+                WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), directory.getName(), WzNodeType.WZ_DIRECTORY, null, directory);
+                children.add(childNode);
+                nodeCache.put(childNode.getId(), childNode);
+            } else if (child instanceof WzImage image) {
+                image.setReader(pDir.getReader()); // 为了避免从 Image 中取 key 取不到
+                image.getProperties().forEach(property -> initSpProp(property, wzKey));
+                pDir.getImages().put(image.getName(), image);
+                WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), image.getName(), WzNodeType.IMAGE, null, image);
+                children.add(childNode);
+                nodeCache.put(childNode.getId(), childNode);
+            }
+        });
+
+        pNode.addChildren(children);
+    }
+
+    private void initSpProp(WzImageProperty property, byte[] wzKey) {
+        if (property instanceof WzListProperty list) {
+            list.getProperties().forEach(child -> initSpProp(child, wzKey));
+        } else if (property instanceof WzCanvasProperty canvas) {
+            canvas.getPng().compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(canvas.getPng().getFormat() + canvas.getPng().getFormat2())));
+        } else if (property instanceof WzSoundProperty sound) {
+            sound.rebuildHeader(wzKey);
+        }
     }
 
     public WzNode addNode(int parentId, WzNodeValueDto data) {
@@ -917,9 +809,7 @@ public final class WzEditorService {
             default -> throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "不受支持的类型");
         }
 
-        Set<Integer> ids = new HashSet<>();
-        pNode.removeChild(ids, id);
-        ids.forEach(nodeCache::remove);
+        delChildNode(pNode, id);
     }
 
     /* 文件操作 --------------------------------------------------------------------------------------------------------*/
