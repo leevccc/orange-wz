@@ -170,6 +170,7 @@ public class WzImage extends WzObject {
     }
 
     public WzImage deepClone(WzObject parent) {
+        parse();
         WzImage clone = new WzImage(getName(), parent);
         for (WzImageProperty property : properties) {
             clone.properties.add(property.deepClone(clone));
