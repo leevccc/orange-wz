@@ -179,7 +179,7 @@ public final class BinaryWriter {
             int length = bytes.length;
             if (length > Byte.MAX_VALUE) {
                 putByte(Byte.MIN_VALUE);
-                putInt(-length);
+                putInt(length);
             } else {
                 putByte((byte) -length);
             }
