@@ -611,8 +611,8 @@ public class WzPngProperty extends WzImageProperty {
                 byte r = (byte) ((pixel >> 16) & 0xFF);
                 byte a = (byte) ((pixel >> 24) & 0xFF);
 
-                buf[index++] = (byte) ((g & 0xF0) | (b & 0x0F));
-                buf[index++] = (byte) ((a & 0xF0) | (r & 0x0F));
+                buf[index++] = (byte)(((b >> 4) & 0x0F) | (g & 0xF0));
+                buf[index++] = (byte)(((r >> 4) & 0x0F) | (a & 0xF0));
             }
         }
         return buf;
