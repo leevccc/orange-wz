@@ -1,3 +1,5 @@
+import type { IWzNode } from '@/store/wzEditor.ts';
+
 export function removeNodeById(data: [], id: number) {
   // 遍历根数组
   for (let i = 0; i < data.length; i++) {
@@ -70,4 +72,52 @@ export function getBrotherByTwoId(data: [], id1: number, id2: number) {
 
   if (count == 1) return undefined; // 不在同一个
   return null;
+}
+
+interface FilterResult {
+  filteredTree: IWzNode[];
+  matchedIds: number[];
+}
+
+export function filterTreeAndCollectIds(nodes: IWzNode[], keyword: string): FilterResult {
+  const idSet = new Set<number>();
+
+  // 转成小写用于不区分大小写匹配
+  const lower = keyword.toLowerCase();
+
+  function dfs(node: IWzNode, path: number[]): IWzNode | null {
+    // 当前 node 的父级路径（不含当前 id）
+    const currentPath = [...path];
+
+    let matchedChildren: IWzNode[] = [];
+    if (node.children) {
+      matchedChildren = node.children
+        .map((child) => dfs(child, [...currentPath, node.id]))
+        .filter((n): n is IWzNode => n !== null);
+    }
+
+    // 🔍 名称匹配（不区分大小写）
+    const nameMatched = node.name.toLowerCase().includes(lower);
+
+    if (nameMatched) {
+      // 加入父级 ID，不包含当前节点 id
+      currentPath.forEach((id) => idSet.add(id));
+    }
+
+    if (nameMatched || matchedChildren.length > 0) {
+      return {
+        ...node,
+        children: matchedChildren,
+      };
+    }
+
+    return null;
+  }
+
+  const filteredTree = nodes.map((node) => dfs(node, [])).filter((n): n is IWzNode => n !== null);
+
+  return {
+    filteredTree,
+    matchedIds: Array.from(idSet),
+  };
 }

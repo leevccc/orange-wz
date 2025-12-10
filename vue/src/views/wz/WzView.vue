@@ -11,12 +11,19 @@
 
         <el-auto-resizer style="height: calc(100vh - 370px); margin-top: 12px">
           <template #default="{ height }">
+            <el-input
+              v-model="filterQuery"
+              placeholder="过滤"
+              size="small"
+              @input="filterClick"
+              clearable
+            />
             <el-tree-v2
               ref="TreeRef"
               node-key="id"
               class="hide-expand-icon"
               :data="treeData"
-              :height="height"
+              :height="height - 24"
               :default-expanded-keys="expandedKeys"
               :expand-on-click-node="false"
               onselectstart="return false;"
@@ -171,6 +178,7 @@
     type IWzNodeValue,
   } from '@/store/wzEditor.ts';
   import {
+    filterTreeAndCollectIds,
     getBrotherByTwoId,
     getNodeById,
     removeNodeById,
@@ -217,6 +225,28 @@
     }
     await removeView(viewId.value);
     pFunc('removeView', viewId.value);
+  };
+
+  /* 节点 搜索 -------------------------------------------------------------------------------------*/
+  const filterQuery = ref('');
+  const allTreeData = ref<IWzNode[] | null>(null);
+  const filterClick = () => {
+    if (filterQuery.value) {
+      if (allTreeData.value == null) {
+        allTreeData.value = treeData.value;
+      }
+      const { filteredTree, matchedIds } = filterTreeAndCollectIds(
+        allTreeData.value,
+        filterQuery.value,
+      );
+      treeData.value = filteredTree;
+      expandedKeys.value = matchedIds;
+    } else {
+      if (allTreeData.value != null) {
+        treeData.value = allTreeData.value;
+        expandedKeys.value = [];
+      }
+    }
   };
 
   /* 节点 单击/双击事件 ------------------------------------------------------------------------------*/
