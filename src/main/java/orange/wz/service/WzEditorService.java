@@ -393,6 +393,14 @@ public final class WzEditorService {
         WzNode node = nodeCache.get(id);
         if (node == null) return null;
 
+        // 单独处理
+        if (node.getWzObject() instanceof WzUOLProperty obj) {
+            String uol = obj.getUol();
+            WzCanvasProperty cav = getUolCanvas(obj.getParent(), uol.split("/"), 0);
+            if (cav == null) throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "目标不是图片 : " + uol);
+            return new WzNodeValueDto(null, WzNodeType.IMAGE_UOL, uol, cav.getPng().getWidth(), cav.getPng().getHeight(), cav.getPng().getBase64(), cav.getPng().getPngFormat(), null);
+        }
+        // 通用处理
         return switch (node.getWzObject()) {
             case WzCanvasProperty obj ->
                     new WzNodeValueDto(null, WzNodeType.IMAGE_CANVAS, null, obj.getPng().getWidth(), obj.getPng().getHeight(), obj.getPng().getBase64(), obj.getPng().getPngFormat(), null);
@@ -412,12 +420,29 @@ public final class WzEditorService {
                     new WzNodeValueDto(null, WzNodeType.IMAGE_SOUND, null, null, null, null, obj.getBase64());
             case WzStringProperty obj ->
                     new WzNodeValueDto(null, WzNodeType.IMAGE_STRING, obj.getValue(), null, null, null, null);
-            case WzUOLProperty obj ->
-                    new WzNodeValueDto(null, WzNodeType.IMAGE_UOL, obj.getUol(), null, null, null, null);
             case WzVectorProperty obj ->
                     new WzNodeValueDto(null, WzNodeType.IMAGE_VECTOR, null, obj.getX().getValue(), obj.getY().getValue(), null, null);
             case null, default -> throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "未受支持的类型");
         };
+    }
+
+    private WzCanvasProperty getUolCanvas(WzObject wzObject, String[] path, int step) {
+        if (path.length == 0) return null;
+
+        if (wzObject instanceof WzListProperty list) {
+            if (path.length == step + 1) {
+                return (WzCanvasProperty) (list.get(path[step]));
+            } else {
+                String childName = path[step];
+                if (childName.equalsIgnoreCase("..")) {
+                    return getUolCanvas(list.getParent(), path, step + 1);
+                } else {
+                    return getUolCanvas(list.get(childName), path, step + 1);
+                }
+            }
+        } else {
+            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "节点不是 List : " + String.join("/", Arrays.copyOfRange(path, 0, step + 1)));
+        }
     }
 
     public void updateValue(int id, WzNodeValueDto data) {

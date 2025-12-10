@@ -80,7 +80,7 @@
             </el-form-item>
           </template>
 
-          <template v-if="editFormData.type == 'IMAGE_CANVAS'">
+          <template v-if="editFormData.type == 'IMAGE_CANVAS' || editFormData.type == 'IMAGE_UOL'">
             <el-form-item label="图片">
               <el-image
                 fit="scale-down"
@@ -89,8 +89,16 @@
                 hide-on-click-modal
               />
             </el-form-item>
+            <el-form-item label="宽高">
+              <el-tag type="success" disable-transitions>
+                {{ editFormData.x }} x {{ editFormData.y }}
+              </el-tag>
+            </el-form-item>
             <el-form-item label="压缩">
-              <el-select v-model="editFormData.pngFormat">
+              <el-select
+                v-model="editFormData.pngFormat"
+                :disabled="editFormData.type == 'IMAGE_UOL'"
+              >
                 <el-option
                   v-for="item in formatOptions"
                   :key="item.id"
@@ -106,11 +114,6 @@
                   </span>
                 </el-option>
               </el-select>
-            </el-form-item>
-            <el-form-item label="宽高">
-              <el-tag type="success" disable-transitions>
-                {{ editFormData.x }} x {{ editFormData.y }}
-              </el-tag>
             </el-form-item>
           </template>
 
@@ -426,6 +429,12 @@
           editFormData.value.x = data.x;
           editFormData.value.y = data.y;
         } else if (row.type == 'IMAGE_CANVAS') {
+          editFormData.value.png = data.png;
+          editFormData.value.pngFormat = data.pngFormat;
+          editFormData.value.x = data.x;
+          editFormData.value.y = data.y;
+        } else if (row.type == 'IMAGE_UOL') {
+          editFormData.value.value = data.value;
           editFormData.value.png = data.png;
           editFormData.value.pngFormat = data.pngFormat;
           editFormData.value.x = data.x;
