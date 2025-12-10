@@ -395,7 +395,7 @@ public final class WzEditorService {
 
         return switch (node.getWzObject()) {
             case WzCanvasProperty obj ->
-                    new WzNodeValueDto(null, WzNodeType.IMAGE_CANVAS, null, null, null, obj.getPng().getBase64(), obj.getPng().getPngFormat(), null);
+                    new WzNodeValueDto(null, WzNodeType.IMAGE_CANVAS, null, obj.getPng().getWidth(), obj.getPng().getHeight(), obj.getPng().getBase64(), obj.getPng().getPngFormat(), null);
             case WzDoubleProperty obj ->
                     new WzNodeValueDto(null, WzNodeType.IMAGE_DOUBLE, String.valueOf(obj.getValue()), null, null, null, null);
             case WzFloatProperty obj ->

@@ -71,36 +71,49 @@
           <el-form-item label="值" v-show="isNormalValue(editFormData.type)">
             <el-input v-model="editFormData.value" />
           </el-form-item>
-          <el-form-item label="X" v-show="editFormData.type == 'IMAGE_VECTOR'">
-            <el-input v-model="editFormData.x" />
-          </el-form-item>
-          <el-form-item label="Y" v-show="editFormData.type == 'IMAGE_VECTOR'">
-            <el-input v-model="editFormData.y" />
-          </el-form-item>
-          <el-form-item label="图片" v-if="editFormData.type == 'IMAGE_CANVAS'">
-            <el-image
-              fit="scale-down"
-              :preview-src-list="['data:image/png;base64,' + editFormData.png]"
-              :src="'data:image/png;base64,' + editFormData.png"
-              hide-on-click-modal
-            />
-          </el-form-item>
-          <el-form-item label="压缩" v-show="editFormData.type == 'IMAGE_CANVAS'">
-            <el-select v-model="editFormData.pngFormat">
-              <el-option
-                v-for="item in formatOptions"
-                :key="item.id"
-                :label="item.value"
-                :value="item.value"
-                :disabled="item.disabled"
-              >
-                <span style="float: left">{{ item.value }}</span>
-                <span style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
-                  {{ item.label }}
-                </span>
-              </el-option>
-            </el-select>
-          </el-form-item>
+          <template v-if="editFormData.type == 'IMAGE_VECTOR'">
+            <el-form-item label="X">
+              <el-input v-model="editFormData.x" />
+            </el-form-item>
+            <el-form-item label="Y">
+              <el-input v-model="editFormData.y" />
+            </el-form-item>
+          </template>
+
+          <template v-if="editFormData.type == 'IMAGE_CANVAS'">
+            <el-form-item label="图片">
+              <el-image
+                fit="scale-down"
+                :preview-src-list="['data:image/png;base64,' + editFormData.png]"
+                :src="'data:image/png;base64,' + editFormData.png"
+                hide-on-click-modal
+              />
+            </el-form-item>
+            <el-form-item label="压缩">
+              <el-select v-model="editFormData.pngFormat">
+                <el-option
+                  v-for="item in formatOptions"
+                  :key="item.id"
+                  :label="item.value"
+                  :value="item.value"
+                  :disabled="item.disabled"
+                >
+                  <span style="float: left">{{ item.value }}</span>
+                  <span
+                    style="float: right; color: var(--el-text-color-secondary); font-size: 13px"
+                  >
+                    {{ item.label }}
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="宽高">
+              <el-tag type="success" disable-transitions>
+                {{ editFormData.x }} x {{ editFormData.y }}
+              </el-tag>
+            </el-form-item>
+          </template>
+
           <el-form-item label="音频" v-show="editFormData.type == 'IMAGE_SOUND'">
             <audio controls :key="editFormData.mp3" loop>
               <source :src="'data:audio/wav;base64,' + editFormData.mp3" />
@@ -415,6 +428,8 @@
         } else if (row.type == 'IMAGE_CANVAS') {
           editFormData.value.png = data.png;
           editFormData.value.pngFormat = data.pngFormat;
+          editFormData.value.x = data.x;
+          editFormData.value.y = data.y;
         } else if (row.type == 'IMAGE_SOUND') {
           editFormData.value.mp3 = data.mp3;
         } else {
