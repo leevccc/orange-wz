@@ -1072,6 +1072,9 @@
     }
     treeData.value = [...treeData.value];
     treeRef.setExpandedKeys(expandedKeys.value);
+    await nextTick(() => {
+      treeRef.scrollToNode(checkedKey.value[0], 'start');
+    });
   };
 
   const collapseTreeByPath = async (path, separator = '/') => {
