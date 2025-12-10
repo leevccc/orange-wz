@@ -151,4 +151,9 @@ public class WzEditorController {
         wzEditorService.packet(fileVersion, id);
         return ResultBody.success();
     }
+
+    @GetMapping("/tools/canvas")
+    public ResultBody<List<WzNodeValueDto>> packet(@RequestParam("id") int id) {
+        return ResultBody.success(wzEditorService.getAllCanvas(id));
+    }
 }

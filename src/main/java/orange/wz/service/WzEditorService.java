@@ -1280,6 +1280,42 @@ public final class WzEditorService {
         return result;
     }
 
+    public List<WzNodeValueDto> getAllCanvas(int id) {
+        WzNode node = nodeCache.get(id);
+        if (node == null) throw new BizException(ExceptionEnum.NOT_FOUND);
+
+        List<WzNodeValueDto> result = new ArrayList<>();
+        if (node.getWzObject() instanceof WzImage image) {
+            image.parse();
+            for (WzImageProperty prop : image.getProperties()) {
+                if (prop instanceof WzListProperty listProperty) {
+                    searchAllCanvas(result, listProperty, listProperty.getName() + "/");
+                }
+            }
+            return result;
+        } else if (node.getWzObject() instanceof WzListProperty listProperty) {
+            searchAllCanvas(result, listProperty, "");
+            return result;
+        } else {
+            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "查询对象不是 List");
+        }
+    }
+
+    private void searchAllCanvas(List<WzNodeValueDto> result, WzListProperty list, String path) {
+        for (WzObject sub : list.getProperties()) {
+            if (sub instanceof WzListProperty subList) {
+                searchAllCanvas(result, subList, path + subList.getName() + "/");
+            } else if (sub instanceof WzCanvasProperty subCav) {
+                int w = subCav.getPng().getWidth();
+                int h = subCav.getPng().getHeight();
+                String b = subCav.getPng().getBase64();
+                WzPngFormat f = subCav.getPng().getPngFormat();
+                String p = path + subCav.getName();
+                result.add(new WzNodeValueDto(null, WzNodeType.IMAGE_CANVAS, p, w, h, b, f, null));
+            }
+        }
+    }
+
     /* 通用方法 --------------------------------------------------------------------------------------------------------*/
     private WzImage getParentImg(WzObject wzObject) {
         if (wzObject instanceof WzImage obj) {

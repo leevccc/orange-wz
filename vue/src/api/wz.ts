@@ -99,3 +99,7 @@ export function localization(from: number, to: number) {
 export function packet(fileVersion: number, id: number) {
   return api.get(`${apiPath}/tools/packet?fileVersion=${fileVersion}&id=${id}`);
 }
+
+export function getAllCanvas(id: number) {
+  return api.get(`${apiPath}/tools/canvas?id=${id}`);
+}

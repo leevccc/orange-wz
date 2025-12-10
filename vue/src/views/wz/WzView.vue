@@ -159,6 +159,43 @@
             >
               下载音频
             </el-button>
+            <el-button
+              type="primary"
+              v-show="editFormData.type == 'IMAGE' || editFormData.type == 'IMAGE_LIST'"
+              @click="getAllCanvasClick"
+            >
+              图片嗅探
+            </el-button>
+          </el-form-item>
+          <el-form-item v-if="allCanvas != undefined">
+            <el-auto-resizer style="height: calc(100vh - 520px); margin-top: 12px">
+              <template #default="{ height }">
+                <el-scrollbar :height="height">
+                  <div class="canvas-list">
+                    <template v-for="(item, index) in allCanvas" :key="index">
+                      <el-card style="width: 200px">
+                        <el-image
+                          fit="scale-down"
+                          :preview-src-list="['data:image/png;base64,' + item.png]"
+                          :src="'data:image/png;base64,' + item.png"
+                          hide-on-click-modal
+                        />
+                        <template #footer>
+                          <el-button
+                            type="primary"
+                            size="small"
+                            plain
+                            @click="copyCanvasPathClick(item.value)"
+                          >
+                            {{ item.value }}
+                          </el-button>
+                        </template>
+                      </el-card>
+                    </template>
+                  </div>
+                </el-scrollbar>
+              </template>
+            </el-auto-resizer>
           </el-form-item>
         </el-form>
       </el-card>
@@ -176,6 +213,7 @@
     exportWzFileToImg,
     exportWzFileToXml,
     fixOutlink,
+    getAllCanvas,
     getNode,
     getValue,
     moveView,
@@ -409,12 +447,14 @@
   /* 编辑框 ---------------------------------------------------------------------------------------*/
   const editFormData = ref<IWzNodeValue>(getDefaultWzNodeValue());
   const formatOptions = ref(getFormatOptions());
+  const allCanvas = ref<IWzNodeValue[]>(undefined);
 
   const loadEditForm = async (row: IWzNode) => {
     if (editFormData.value.id != row.id) {
       if (row.file) return;
 
       editFormData.value = getDefaultWzNodeValue();
+      allCanvas.value = undefined;
 
       if (row.type == 'WZ_DIRECTORY' || row.type == 'IMAGE' || row.type == 'IMAGE_LIST') {
         editFormData.value.name = row.name;
@@ -582,6 +622,22 @@
       message: '修改成功',
       duration: 1000,
     });
+  };
+
+  const getAllCanvasClick = async () => {
+    const { data } = await getAllCanvas(editFormData.value.id);
+    allCanvas.value = data;
+    ElMessage.success({ message: `加载完毕, 共发现 ${data.length} 张图片` });
+  };
+
+  const copyCanvasPathClick = async (path: string) => {
+    const text = `${findNodePath(treeData.value, editFormData.value.id)}/${path}`;
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      ElMessage.success({ message: `已复制 ${text}` });
+    } else {
+      ElMessage.error({ message: '复制失败' });
+    }
   };
 
   /* 右键菜单 --------------------------------------------------------------------------------------*/
@@ -1154,5 +1210,20 @@
 <style>
   .hide-expand-icon .el-tree-node__expand-icon {
     display: none;
+  }
+
+  .canvas-list {
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 12px 16px; /* 行间距12px，列间距16px */
+    align-items: center; /* 同一行的所有 canvas-item 上下对齐 */
+
+    .el-card {
+      text-align: center;
+    }
+
+    .el-card__footer {
+      padding: 0;
+    }
   }
 </style>
