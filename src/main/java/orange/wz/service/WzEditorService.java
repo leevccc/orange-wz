@@ -971,8 +971,10 @@ public final class WzEditorService {
         }
     }
 
-    public void fixOutLinkApi(int id) {
-        fixOutlink(id);
+    public void fixOutLinkApi(int[] id) {
+        for (int i : id) {
+            fixOutlink(i);
+        }
         lastCavPath = null;
         cavWzFiles.clear();
         log.debug("结束");

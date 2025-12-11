@@ -741,6 +741,7 @@
         ],
         divided: true,
       },
+      { name: 'outlink', command: 'outlink', divided: true },
     ].filter(Boolean); // 会把 null 和 undefined 自动过滤掉
   };
 
@@ -783,6 +784,7 @@
       { name: '复制', command: 'copy' },
       { name: '粘贴', command: 'paste' },
       { name: '删除', command: 'delete' },
+      { name: 'outlink', command: 'outlink', divided: true },
     ];
   };
 
@@ -847,7 +849,7 @@
         exportWzFileToXmlClick(false);
         break;
       case 'outlink':
-        fixOutlink(contextMenuRow.value.id);
+        fixOutlink([...checkedKey.value]);
         break;
       case 'setCMS':
         pFunc('setCmsId', contextMenuRow.value.id);

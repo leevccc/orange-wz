@@ -84,8 +84,9 @@ export function exportWzFileToXml(id: number, indent: boolean) {
   return api.get(`${apiPath}/tools/export/xml/${id}?indent=${indent}`);
 }
 
-export function fixOutlink(id: number) {
-  return api.get(`${apiPath}/tools/outlink/${id}`);
+export function fixOutlink(id: number[]) {
+  const idString = id.join(',');
+  return api.get(`${apiPath}/tools/outlink?id=${idString}`);
 }
 
 export function updateWzKey(id: number, version: string, key: string) {

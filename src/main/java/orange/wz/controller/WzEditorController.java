@@ -128,8 +128,8 @@ public class WzEditorController {
         return ResultBody.success();
     }
 
-    @GetMapping("/tools/outlink/{id}")
-    public ResultBody<Void> fixOutlink(@PathVariable int id) {
+    @GetMapping("/tools/outlink")
+    public ResultBody<Void> fixOutlink(@RequestParam("id") int[] id) {
         wzEditorService.fixOutLinkApi(id);
         return ResultBody.success();
     }
