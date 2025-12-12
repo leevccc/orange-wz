@@ -8,6 +8,7 @@ import orange.wz.provider.audio.*;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.provider.tools.WzMutableKey;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -35,7 +36,7 @@ public class WzSoundProperty extends WzExtended {
     private int soundDataLen;
     private WaveFormat waveFormat;
 
-    public void setSound(String base64String, byte[] wzKey) {
+    public void setSound(String base64String, WzMutableKey wzMutableKey) {
         if (base64String == null || base64String.isEmpty()) {
             throw new IllegalArgumentException("Base64字符串不能为空");
         }
@@ -44,7 +45,7 @@ public class WzSoundProperty extends WzExtended {
         Mp3FileReader reader = new Mp3FileReader(soundBytes);
         waveFormat = reader.getWaveFormat();
         lenMs = reader.getLenMs();
-        rebuildHeader(wzKey);
+        rebuildHeader(wzMutableKey);
         fileBytes = soundBytes;
     }
 
@@ -64,13 +65,13 @@ public class WzSoundProperty extends WzExtended {
                 .put(waveFormatBytes)
                 .array();
 
-        parseWzSoundPropertyHeader(reader.getWzKey(), waveFormatBytes);
+        parseWzSoundPropertyHeader(reader.getWzMutableKey(), waveFormatBytes);
 
         offset = reader.getPosition();
         fileBytes = reader.getBytes(soundDataLen);
     }
 
-    private void parseWzSoundPropertyHeader(byte[] wzKey, byte[] waveFormatBytes) {
+    private void parseWzSoundPropertyHeader(WzMutableKey wzMutableKey, byte[] waveFormatBytes) {
         if (waveFormatBytes.length < WaveFormat.structSize) {
             return;
         }
@@ -80,7 +81,7 @@ public class WzSoundProperty extends WzExtended {
         if (WaveFormat.structSize + wavFmt.getExtraSize() != waveFormatBytes.length) {
             // 尝试用key解密
             for (int i = 0; i < waveFormatBytes.length; i++) {
-                waveFormatBytes[i] ^= wzKey[i];
+                waveFormatBytes[i] ^= wzMutableKey.get(i);
             }
             wavFmt = bytesToWaveStruct(waveFormatBytes);
 
@@ -101,13 +102,13 @@ public class WzSoundProperty extends WzExtended {
         }
     }
 
-    public void rebuildHeader(byte[] wzKey) {
+    public void rebuildHeader(WzMutableKey wzMutableKey) {
         BinaryWriter writer = new BinaryWriter();
         writer.putBytes(soundHeader);
         byte[] wavHeader = mp3StructToBytes((Mp3WaveFormat) waveFormat);
         if (headerEncrypted) {
             for (int i = 0; i < wavHeader.length; i++) {
-                wavHeader[i] ^= wzKey[i];
+                wavHeader[i] ^= wzMutableKey.get(i);
             }
         }
         writer.putByte((byte) wavHeader.length);

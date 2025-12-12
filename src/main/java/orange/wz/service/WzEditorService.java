@@ -7,6 +7,7 @@ import orange.wz.exception.ExceptionEnum;
 import orange.wz.model.*;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
+import orange.wz.provider.tools.WzMutableKey;
 import orange.wz.utils.FileUtils;
 import org.springframework.stereotype.Service;
 
@@ -495,13 +496,13 @@ public final class WzEditorService {
 
         switch (node.getWzObject()) {
             case WzCanvasProperty obj ->
-                    obj.getPng().setPng(data.getPng(), parentImg.getReader().getWzKey(), data.getPngFormat());
+                    obj.getPng().setPng(data.getPng(), parentImg.getReader().getWzMutableKey(), data.getPngFormat());
             case WzDoubleProperty obj -> obj.setValue(Double.parseDouble(data.getValue()));
             case WzFloatProperty obj -> obj.setValue(Float.parseFloat(data.getValue()));
             case WzIntProperty obj -> obj.setValue(Integer.parseInt(data.getValue()));
             case WzLongProperty obj -> obj.setValue(Long.parseLong(data.getValue()));
             case WzShortProperty obj -> obj.setValue(Short.parseShort(data.getValue()));
-            case WzSoundProperty obj -> obj.setSound(data.getMp3(), parentImg.getReader().getWzKey());
+            case WzSoundProperty obj -> obj.setSound(data.getMp3(), parentImg.getReader().getWzMutableKey());
             case WzStringProperty obj -> obj.setValue(data.getValue());
             case WzUOLProperty obj -> obj.setUol(data.getValue());
             case WzVectorProperty obj -> {
@@ -672,7 +673,7 @@ public final class WzEditorService {
 
     private void addPropFromCb(WzNode pNode, WzObject pObj, List<WzImageProperty> properties) {
         List<WzNode> children = new ArrayList<>();
-        byte[] wzKey = getWzKey(pObj);
+        WzMutableKey wzKey = getWzKey(pObj);
         clipboard.forEach(child -> {
             WzImageProperty property = (WzImageProperty) child;
             property.setParent(pObj);
@@ -690,7 +691,7 @@ public final class WzEditorService {
 
     private void addDirFromCb(WzNode pNode, WzDirectory pDir) {
         List<WzNode> children = new ArrayList<>();
-        byte[] wzKey = pDir.getReader().getWzKey();
+        WzMutableKey wzKey = pDir.getReader().getWzMutableKey();
         clipboard.forEach(child -> {
             child.setParent(pDir);
 
@@ -713,7 +714,7 @@ public final class WzEditorService {
         pNode.addChildren(children);
     }
 
-    private void initSpProp(WzImageProperty property, byte[] wzKey) {
+    private void initSpProp(WzImageProperty property, WzMutableKey wzKey) {
         if (property instanceof WzListProperty list) {
             list.getProperties().forEach(child -> initSpProp(child, wzKey));
         } else if (property instanceof WzCanvasProperty canvas) {
@@ -998,7 +999,7 @@ public final class WzEditorService {
 
     public void fixOutLink(int[] ids) {
         Instant now = Instant.now();
-        byte[] wzKey = null;
+        WzMutableKey wzKey = null;
         List<Pair<WzCanvasProperty, List<String>>> cavCollect = new ArrayList<>();
         for (int id : ids) {
             WzNode node = nodeCache.get(id);
@@ -1086,48 +1087,48 @@ public final class WzEditorService {
         }
     }
 
-    private void fixOutlink(WzCanvasProperty canvas, List<String> outlinkPaths, byte[] wzKey) {
+    private void fixOutlink(WzCanvasProperty canvas, List<String> outlinkPaths, WzMutableKey wzKey) {
         // 搜索 Canvas
         WzObject nodeReady;
         for (WzObject obj : cavWzFiles) {
-            boolean inImg = false;
-            obj = ((WzFile) obj).getWzDirectory();
+            WzFile wzFile = (WzFile) obj;
+            obj = wzFile.getWzDirectory();
             for (String p : outlinkPaths) {
                 nodeReady = null;
-                if (!inImg) {
-                    if (p.endsWith(".img")) {
-                        nodeReady = ((WzDirectory) obj).getImages().get(p);
-                        inImg = true;
-                    } else {
-                        nodeReady = ((WzDirectory) obj).getDirectories().get(p);
-                    }
-                } else {
-                    if (obj instanceof WzImage img) {
-                        img.parse();
-                        for (WzImageProperty prop : img.getProperties()) {
-                            if (prop.getName().equalsIgnoreCase(p)) {
-                                nodeReady = prop;
-                                break;
-                            }
+                if (p.endsWith(".img")) {
+                    assert obj instanceof WzDirectory;
+                    nodeReady = ((WzDirectory) obj).getImages().get(p);
+                } else if (obj instanceof WzImage img) {
+                    img.parse();
+                    for (WzImageProperty prop : img.getProperties()) {
+                        if (prop.getName().equalsIgnoreCase(p)) {
+                            nodeReady = prop;
+                            break;
                         }
-                    } else if (obj instanceof WzListProperty listProp) {
-                        for (WzImageProperty prop : listProp.getProperties()) {
-                            if (prop.getName().equalsIgnoreCase(p)) {
-                                nodeReady = prop;
-                                break;
-                            }
+                    }
+                } else if (obj instanceof WzListProperty listProp) {
+                    for (WzImageProperty prop : listProp.getProperties()) {
+                        if (prop.getName().equalsIgnoreCase(p)) {
+                            nodeReady = prop;
+                            break;
                         }
                     }
                 }
                 obj = nodeReady;
                 if (obj == null) {
-                    log.warn("奇怪的路径 : {}", outlinkPaths);
+                    if (p.endsWith(".img")) break;
+
+                    log.warn("canvas 路径查找失败 : 错误点 {} 完整路径 {} 文件 {}", p, outlinkPaths, wzFile.getName());
                     break;
                 }
             }
 
             if (obj != null) {
                 if (obj instanceof WzCanvasProperty n) {
+                    if (n.getPng().getPng() == null) {
+                        log.error("目标canvas的图片为空, 完整路径 {} 文件 {}", outlinkPaths, wzFile.getName());
+                        break;
+                    }
                     getParentImg(canvas).setChanged(true);
                     canvas.getPng().setPng(n.getPng().getPng(), wzKey);
                     break;
@@ -1380,15 +1381,15 @@ public final class WzEditorService {
         }
     }
 
-    private byte[] getWzKey(WzObject wzObject) {
+    private WzMutableKey getWzKey(WzObject wzObject) {
         if (wzObject instanceof WzFile wzFile) {
             wzFile.parse();
-            return wzFile.getWzDirectory().getReader().getWzKey();
+            return wzFile.getWzDirectory().getReader().getWzMutableKey();
         }
 
         WzImage wzImage = getParentImg(wzObject);
         if (wzImage == null) return null;
-        return wzImage.getReader().getWzKey();
+        return wzImage.getReader().getWzMutableKey();
     }
 
     private boolean canAddNodeType(WzObject object, WzNodeType targetType) {
@@ -1402,7 +1403,7 @@ public final class WzEditorService {
         if (data.getType() == WzNodeType.IMAGE_CANVAS) {
             WzCanvasProperty canvasProp = WzCanvasProperty.builder().name(data.getName()).parent(parent).build();
             WzPngProperty png = WzPngProperty.builder().name(data.getName()).parent(canvasProp).build();
-            png.setPng(data.getPng(), img.getReader().getWzKey(), data.getPngFormat());
+            png.setPng(data.getPng(), img.getReader().getWzMutableKey(), data.getPngFormat());
             canvasProp.setPng(png);
             return canvasProp;
         } else if (data.getType() == WzNodeType.IMAGE_CONVEX) {
@@ -1423,7 +1424,7 @@ public final class WzEditorService {
             return WzShortProperty.builder().name(data.getName()).parent(parent).value(Short.parseShort(data.getValue())).build();
         } else if (data.getType() == WzNodeType.IMAGE_SOUND) {
             WzSoundProperty sound = WzSoundProperty.builder().name(data.getName()).parent(parent).build();
-            sound.setSound(data.getMp3(), img.getReader().getWzKey());
+            sound.setSound(data.getMp3(), img.getReader().getWzMutableKey());
             return sound;
         } else if (data.getType() == WzNodeType.IMAGE_STRING) {
             return WzStringProperty.builder().name(data.getName()).parent(parent).value(data.getValue()).build();

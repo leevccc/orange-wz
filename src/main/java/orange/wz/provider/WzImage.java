@@ -5,6 +5,7 @@ import orange.wz.provider.properties.WzListProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.provider.tools.WzMutableKey;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -97,7 +98,7 @@ public class WzImage extends WzObject {
         if (path == null) return;
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(path.toString(), "rw")) {
             BinaryWriter writer = new BinaryWriter();
-            writer.setWzKey(reader.getWzKey());
+            writer.setWzMutableKey(reader.getWzMutableKey());
             save(writer);
 
             randomAccessFile.write(writer.output());
@@ -164,7 +165,7 @@ public class WzImage extends WzObject {
         changed = true; // 确保保存的时候重新写入，而不是取原来的
         reader.setIv(iv);
         reader.setUserKey(key);
-        reader.setWzKey(reader.generateWzKey());
+        reader.setWzMutableKey(new WzMutableKey(iv, key));
     }
 
     public WzImageProperty get(String name) {

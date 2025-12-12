@@ -134,7 +134,7 @@ public class WzDirectory extends WzObject {
         for (WzImage img : images.values()) {
             if (img.isChanged()) {
                 imgWriter = new BinaryWriter();
-                imgWriter.setWzKey(reader.getWzKey());
+                imgWriter.setWzMutableKey(reader.getWzMutableKey());
                 img.save(imgWriter);
                 img.setChecksum(0);
                 byte[] data = imgWriter.output();

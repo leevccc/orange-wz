@@ -2,17 +2,14 @@ package orange.wz.provider;
 
 import lombok.Getter;
 import lombok.Setter;
+import orange.wz.provider.tools.WzMutableKey;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 @Getter
 @Setter
@@ -22,7 +19,7 @@ public final class BinaryReader {
     private int hash;
     private byte[] iv;
     private byte[] userKey;
-    private byte[] wzKey;
+    private WzMutableKey wzMutableKey;
 
     public BinaryReader(String wzPath, byte[] iv, byte[] userKey) {
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(wzPath, "r")) {
@@ -33,7 +30,7 @@ public final class BinaryReader {
 
             this.iv = iv;
             this.userKey = userKey;
-            wzKey = generateWzKey();
+            wzMutableKey = new WzMutableKey(iv, userKey);
         } catch (IOException e) {
             buffer = null;
             throw new RuntimeException(e);
@@ -58,61 +55,7 @@ public final class BinaryReader {
     public BinaryReader(byte[] iv, byte[] userKey) {
         this.iv = iv;
         this.userKey = userKey;
-        wzKey = generateWzKey(); // 这个方法有点花时间，如果要大量调用的话需要注意
-    }
-
-    /* Key -----------------------------------------------------------------------------------------------------------*/
-    public byte[] generateWzKey() {
-        byte[] aesKey = getTrimmedUserKey();
-        // 检查WzIv是否为0
-        if (ByteBuffer.wrap(iv, 0, 4).getInt() == 0) {
-            return new byte[65535]; // uShort.MaxValue = 65535
-        }
-
-        try {
-            // 初始化AES加密器
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(aesKey, "AES");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
-
-            // 创建内存流
-            ByteArrayOutputStream memStream = new ByteArrayOutputStream();
-
-            // 生成WZ密钥
-            byte[] input = multiplyBytes(iv, 4, 4);
-            byte[] wzKey = new byte[65535];
-
-            for (int i = 0; i < wzKey.length / 16; i++) {
-                byte[] encrypted = cipher.doFinal(input);
-                memStream.write(encrypted, 0, 16);
-                System.arraycopy(encrypted, 0, wzKey, i * 16, 16);
-                input = Arrays.copyOf(encrypted, 16); // 更新input为加密后的数据
-            }
-
-            // 处理最后一个块
-            byte[] lastBlock = cipher.doFinal(input);
-            System.arraycopy(lastBlock, 0, wzKey, wzKey.length - 15, 15);
-
-            return wzKey;
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating WZ key", e);
-        }
-    }
-
-    private byte[] getTrimmedUserKey() {
-        byte[] key = new byte[32];
-        for (int i = 0; i < 128; i += 16) {
-            key[i / 4] = userKey[i];
-        }
-        return key;
-    }
-
-    private byte[] multiplyBytes(byte[] input, int count, int mult) {
-        byte[] ret = new byte[count * mult];
-        for (int x = 0; x < ret.length; x++) {
-            ret[x] = input[x % count];
-        }
-        return ret;
+        wzMutableKey = new WzMutableKey(iv, userKey);
     }
 
     /* Put -----------------------------------------------------------------------------------------------------------*/
@@ -219,7 +162,7 @@ public final class BinaryReader {
                 final byte[] data = getBytes(length);
                 byte mask = (byte) 0xAA;
                 for (int i = 0; i < data.length; i++) {
-                    data[i] = (byte) (data[i] ^ wzKey[i] ^ mask);
+                    data[i] = (byte) (data[i] ^ wzMutableKey.get(i) ^ mask);
                     mask++;
                 }
                 return new String(data, StandardCharsets.US_ASCII);
@@ -233,8 +176,8 @@ public final class BinaryReader {
                 final byte[] data = getBytes(length);
                 short mask = (short) 0xAAAA;
                 for (int i = 0; i < data.length; i += 2) {
-                    data[i] = (byte) (data[i] ^ wzKey[i] ^ (mask & 0xFF));
-                    data[i + 1] = (byte) (data[i + 1] ^ wzKey[i + 1] ^ (mask >> 8));
+                    data[i] = (byte) (data[i] ^ wzMutableKey.get(i) ^ (mask & 0xFF));
+                    data[i + 1] = (byte) (data[i + 1] ^ wzMutableKey.get(i + 1) ^ (mask >> 8));
                     mask++;
                 }
                 return new String(data, StandardCharsets.UTF_16LE);

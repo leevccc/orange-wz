@@ -2,6 +2,7 @@ package orange.wz.provider;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.provider.tools.WzMutableKey;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -140,7 +141,7 @@ public class WzFile extends WzObject {
             tempStringCache.clear();
             int totalLen = wzDirectory.getImgOffsets(wzDirectory.getOffsets(header.getStart() + 2));
             BinaryWriter writer = new BinaryWriter(true);
-            writer.setWzKey(wzDirectory.getReader().getWzKey());
+            writer.setWzMutableKey(wzDirectory.getReader().getWzMutableKey());
             writer.setHash(versionHash);
             header.setSize(totalLen - header.getStart());
             for (int i = 0; i < 4; i++) {
@@ -198,7 +199,7 @@ public class WzFile extends WzObject {
         userKey = key;
         reader.setIv(wzIv);
         reader.setUserKey(userKey);
-        reader.setWzKey(reader.generateWzKey());
+        reader.setWzMutableKey(new WzMutableKey(wzIv, userKey));
         fileVersion = gameVersion;
     }
 }

@@ -2,6 +2,7 @@ package orange.wz.provider;
 
 import lombok.Getter;
 import lombok.Setter;
+import orange.wz.provider.tools.WzMutableKey;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -19,7 +20,7 @@ public final class BinaryWriter {
     @Getter
     private final Map<String, Integer> stringCache = new HashMap<>();
     @Setter
-    private byte[] wzKey;
+    private WzMutableKey wzMutableKey;
     private long nextAllocateSize = 4 * 1024 * 1024; // 4MB
 
     public BinaryWriter() {
@@ -55,7 +56,7 @@ public final class BinaryWriter {
         buffer.position(position);
     }
 
-    public void jumpPosition(int position) {
+    public void skip(int position) {
         buffer.position(buffer.position() + position);
     }
 
@@ -168,8 +169,8 @@ public final class BinaryWriter {
             }
 
             for (int i = 0; i < bytes.length; i += 2) {
-                bytes[i] = (byte) (bytes[i] ^ wzKey[i] ^ (mask & 0xFF));
-                bytes[i + 1] = (byte) (bytes[i + 1] ^ wzKey[i + 1] ^ (mask >> 8));
+                bytes[i] = (byte) (bytes[i] ^ wzMutableKey.get(i) ^ (mask & 0xFF));
+                bytes[i + 1] = (byte) (bytes[i + 1] ^ wzMutableKey.get(i + 1) ^ (mask >> 8));
                 mask++;
             }
             putBytes(bytes);
@@ -185,7 +186,7 @@ public final class BinaryWriter {
             }
 
             for (int i = 0; i < bytes.length; i++) {
-                bytes[i] = (byte) (bytes[i] ^ wzKey[i] ^ mask);
+                bytes[i] = (byte) (bytes[i] ^ wzMutableKey.get(i) ^ mask);
                 mask++;
             }
             putBytes(bytes);

@@ -7,6 +7,7 @@ import orange.wz.provider.WzObject;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.provider.tools.WzMutableKey;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -45,12 +46,12 @@ public class WzPngProperty extends WzImageProperty {
         reader.skip(1); // 跳过1个字节
         if (len > 0) {
             compressedBytes = reader.getBytes(len);
-            parse(reader.getWzKey());
+            parse(reader.getWzMutableKey());
         }
     }
 
-    private void parse(byte[] wzKey) {
-        byte[] rawBytes = getRawImage(wzKey); // 注意是小端序的 b g r a
+    private void parse(WzMutableKey wzMutableKey) {
+        byte[] rawBytes = getRawImage(wzMutableKey); // 注意是小端序的 b g r a
         if (rawBytes.length == 0) {
             png = null;
             return;
@@ -199,12 +200,12 @@ public class WzPngProperty extends WzImageProperty {
         };
     }
 
-    private byte[] getRawImage(byte[] wzKey) {
+    private byte[] getRawImage(WzMutableKey wzMutableKey) {
         int decompressSize = getDecompressSize();
         byte[] decBuf = new byte[decompressSize]; // decompress byte
 
         // 使用 try-with-resources 确保资源正确关闭
-        try (InflaterInputStream zlib = createZlibStream(compressedBytes, wzKey)) {
+        try (InflaterInputStream zlib = createZlibStream(compressedBytes, wzMutableKey)) {
             // zlib.read(decBuf, 0, uncompressedSize); 可能一次读不完全部数据，要循环确认，所以有了这个方法
             int totalRead = 0;
             int bytesRead;
@@ -229,7 +230,7 @@ public class WzPngProperty extends WzImageProperty {
         };
     }
 
-    private InflaterInputStream createZlibStream(byte[] compressedBytes, byte[] wzKey) {
+    private InflaterInputStream createZlibStream(byte[] compressedBytes, WzMutableKey wzMutableKey) {
         // C# CompressionMode.Decompress -> Java InflaterInputStream
         // C# CompressionMode.Compress -> Java DeflaterOutputStream
         InflaterInputStream zlib;
@@ -246,7 +247,7 @@ public class WzPngProperty extends WzImageProperty {
             while (reader.getBuffer().hasRemaining()) {
                 int blockSize = reader.getInt();
                 for (int i = 0; i < blockSize; i++) {
-                    writer.putByte((byte) (reader.getByte() ^ wzKey[i]));
+                    writer.putByte((byte) (reader.getByte() ^ wzMutableKey.get(i)));
                 }
             }
             zlib = new InflaterInputStream(new ByteArrayInputStream(writer.output()));
@@ -544,17 +545,17 @@ public class WzPngProperty extends WzImageProperty {
         return base64String;
     }
 
-    public void setPng(String base64, byte[] wzKey, WzPngFormat pngFormat) {
+    public void setPng(String base64, WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
         png = readBase64(base64);
-        compressPng(wzKey, pngFormat);
+        compressPng(wzMutableKey, pngFormat);
     }
 
-    public void setPng(BufferedImage png, byte[] wzKey) {
+    public void setPng(BufferedImage png, WzMutableKey wzMutableKey) {
         this.png = png;
-        compressPng(wzKey, getPngFormat());
+        compressPng(wzMutableKey, getPngFormat());
     }
 
-    public void compressPng(byte[] wzKey, WzPngFormat pngFormat) {
+    public void compressPng(WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
         format = pngFormat.getValue();
         format2 = 0;
         width = png.getWidth();
@@ -564,14 +565,14 @@ public class WzPngProperty extends WzImageProperty {
         compressedBytes = zlibCompress(compressedBytes);
         if (listWzUsed) {
             BinaryWriter writer = new BinaryWriter(compressedBytes);
-            writer.setWzKey(wzKey);
+            writer.setWzMutableKey(wzMutableKey);
             writer.putInt(2);
             for (int i = 0; i < 2; i++) {
-                writer.putByte((byte) (compressedBytes[i] ^ wzKey[i]));
+                writer.putByte((byte) (compressedBytes[i] ^ wzMutableKey.get(i)));
             }
             writer.putInt(compressedBytes.length - 2);
             for (int i = 2; i < compressedBytes.length; i++)
-                writer.putByte((byte) (compressedBytes[i] ^ wzKey[i - 2]));
+                writer.putByte((byte) (compressedBytes[i] ^ wzMutableKey.get(i - 2)));
             compressedBytes = writer.output();
         }
 
