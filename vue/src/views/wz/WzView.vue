@@ -666,7 +666,7 @@
       case 'WZ':
         return genWzMenuItems();
       case 'IMAGE':
-        return data.file ? genImgFileMenuItems : genImgMenuItems();
+        return data.file ? genImgFileMenuItems() : genImgMenuItems();
       case 'WZ_DIRECTORY':
         return genWzDirMenuItems();
       case 'IMAGE_LIST':
