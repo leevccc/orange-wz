@@ -23,6 +23,7 @@ public enum WzNodeType {
     IMAGE_SOUND,
     IMAGE_STRING,
     IMAGE_UOL,
+    IMAGE_RAW_DATA,
     IMAGE_VECTOR;
 
     public static WzNodeType getByWzObjectType(WzObject wzObject) {
@@ -43,6 +44,7 @@ public enum WzNodeType {
             case WzStringProperty ignored -> WzNodeType.IMAGE_STRING;
             case WzUOLProperty ignored -> WzNodeType.IMAGE_UOL;
             case WzVectorProperty ignored -> WzNodeType.IMAGE_VECTOR;
+            case WzRawDataProperty ignored -> WzNodeType.IMAGE_RAW_DATA;
             case null, default -> null;
         };
     }

@@ -358,6 +358,8 @@ public final class WzEditorService {
                     type = WzNodeType.IMAGE_UOL;
                 } else if (property instanceof WzVectorProperty) {
                     type = WzNodeType.IMAGE_VECTOR;
+                } else if (property instanceof WzRawDataProperty) {
+                    type = WzNodeType.IMAGE_RAW_DATA;
                 }
 
                 WzNode child = new WzNode(node, nextId.getAndIncrement(), property.getName(), type, null, property);

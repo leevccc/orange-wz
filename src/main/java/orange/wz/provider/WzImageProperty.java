@@ -14,8 +14,6 @@ import java.util.List;
 @Getter
 @SuperBuilder
 public abstract class WzImageProperty extends WzObject {
-    private final String type = "property";
-
     public static List<WzImageProperty> parsePropertyList(int offset, BinaryReader reader, WzObject parent) {
         int entryCount = reader.readCompressedInt();
         List<WzImageProperty> properties = new ArrayList<>();
@@ -81,15 +79,15 @@ public abstract class WzImageProperty extends WzObject {
             switch (propertyType) {
                 case WzPropertyType.LIST: {
                     WzListProperty subProp = WzListProperty.builder().name(name).parent(parent).build();
-                    reader.jumpPosition(2); // Reserved?
+                    reader.skip(2); // Reserved?
                     subProp.addProperties(WzImageProperty.parsePropertyList(offset, reader, subProp));
                     return subProp;
                 }
                 case WzPropertyType.CANVAS: {
                     WzCanvasProperty canvasProp = WzCanvasProperty.builder().name(name).parent(parent).build();
-                    reader.jumpPosition(1);
+                    reader.skip(1);
                     if (reader.getByte() == 1) {
-                        reader.jumpPosition(2);
+                        reader.skip(2);
                         canvasProp.addProperties(WzImageProperty.parsePropertyList(offset, reader, canvasProp));
                     }
                     WzPngProperty png = WzPngProperty.builder().name(name).parent(canvasProp).build();
@@ -119,20 +117,36 @@ public abstract class WzImageProperty extends WzObject {
                     return soundProp;
                 }
                 case WzPropertyType.UOL: {
-                    reader.jumpPosition(1);
+                    reader.skip(1);
                     return switch (reader.getByte()) {
-                        case 0 ->
-                                WzUOLProperty.builder().name(name).parent(parent).uol(reader.readString()).build();
+                        case 0 -> WzUOLProperty.builder().name(name).parent(parent).uol(reader.readString()).build();
                         case 1 ->
                                 WzUOLProperty.builder().name(name).parent(parent).uol(reader.readStringAtOffset(offset + reader.getInt())).build();
                         default -> throw new Exception("Unsupported UOL type");
                     };
                 }
-                // case WzPropertyType.RAW_DATA: {  // GMS v220++
-                //     WzRawDataProperty rawData = WzRawDataProperty.builder().name(name).parent(parent).build();
-                //     rawData.setData(reader);
-                //     return rawData;
-                // }
+                case WzPropertyType.RAW_DATA: {  // GMS v220++
+                    // GMS v255+
+                    // UI_000.wz\Login.img\RaceSelect_new\Back0\3\skeleton.skel
+                    // UI_000.wz\Login.img\RaceSelect_new\Back0\16\skeleton.skel
+                    // UI_000.wz\Login.img\RaceSelect_new\Back0\1005\Sia.skel
+                    byte type = reader.getByte();
+                    WzRawDataProperty rawData = WzRawDataProperty.builder().name(name).parent(parent).type(type).build();
+
+                    // type 0: do nothing
+                    // type 1: similar to CanvasProperty that has binary data (the PNG) and sub properties (the origin, _hash, etc.)
+                    if (type == 1) {
+                        if (reader.getByte() == 1) {
+                            reader.skip(2);
+                            rawData.getProperties().addAll(parsePropertyList(offset, reader, rawData));
+                        }
+                    }
+                    // all types: parse the binary data (similar to parse WzPngProperty for WzCanvasProperty)
+                    int length = reader.readCompressedInt();
+                    rawData.setLength(length);
+                    rawData.setBytes(reader.getBytes(length));
+                    return rawData;
+                }
                 default: {
                     throw new Exception("Unknown iname: " + iname);
                 }

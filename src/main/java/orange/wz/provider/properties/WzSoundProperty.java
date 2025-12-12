@@ -49,7 +49,7 @@ public class WzSoundProperty extends WzExtended {
     }
 
     public void setData(BinaryReader reader) {
-        reader.jumpPosition(1);
+        reader.skip(1);
 
         soundDataLen = reader.readCompressedInt();
         lenMs = reader.readCompressedInt();

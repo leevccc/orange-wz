@@ -39,10 +39,10 @@ public class WzPngProperty extends WzImageProperty {
         height = reader.readCompressedInt();
         format = reader.readCompressedInt();
         format2 = reader.getByte();
-        reader.jumpPosition(4); // 跳过4个字节
+        reader.skip(4); // 跳过4个字节
         offset = reader.getPosition();
         int len = reader.getInt() - 1;
-        reader.jumpPosition(1); // 跳过1个字节
+        reader.skip(1); // 跳过1个字节
         if (len > 0) {
             compressedBytes = reader.getBytes(len);
             parse(reader.getWzKey());

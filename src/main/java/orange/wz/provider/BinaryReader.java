@@ -148,8 +148,8 @@ public final class BinaryReader {
         buffer.position(position);
     }
 
-    public void jumpPosition(int position) {
-        buffer.position(buffer.position() + position);
+    public void skip(int bytes) {
+        buffer.position(buffer.position() + bytes);
     }
 
     /* Get -----------------------------------------------------------------------------------------------------------*/
