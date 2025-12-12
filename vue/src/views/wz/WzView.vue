@@ -905,6 +905,7 @@
   const unloadAllClick = async () => {
     const id = viewId.value;
     await unload(id);
+    filterQuery.value = '';
     removeTreeNode(id);
     treeData.value = [...treeData.value];
     ElMessage.success({
