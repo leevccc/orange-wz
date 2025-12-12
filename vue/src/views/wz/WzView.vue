@@ -849,7 +849,7 @@
         exportWzFileToXmlClick(false);
         break;
       case 'outlink':
-        fixOutlink([...checkedKey.value]);
+        fixOutlinkClick();
         break;
       case 'setCMS':
         pFunc('setCmsId', contextMenuRow.value.id);
@@ -936,6 +936,11 @@
     ElMessage.success({
       message: '导出成功, 文件位于 export 目录下',
     });
+  };
+
+  const fixOutlinkClick = async () => {
+    await fixOutlink([...checkedKey.value]);
+    ElMessage.success({ message: '操作成功' });
   };
 
   const copyClick = async () => {

@@ -60,7 +60,7 @@ public class WzImage extends WzObject {
         parse(true);
     }
 
-    public void parse(boolean realParse) {
+    public synchronized void parse(boolean realParse) {
         if (!loaded) {
             reader = new BinaryReader(path, iv, key);
             size = reader.getBuffer().capacity();

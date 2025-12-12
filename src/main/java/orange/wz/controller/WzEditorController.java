@@ -130,7 +130,7 @@ public class WzEditorController {
 
     @GetMapping("/tools/outlink")
     public ResultBody<Void> fixOutlink(@RequestParam("id") int[] id) {
-        wzEditorService.fixOutLinkApi(id);
+        wzEditorService.fixOutLink(id);
         return ResultBody.success();
     }
 

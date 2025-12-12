@@ -128,14 +128,14 @@ public class WzFile extends WzObject {
     }
 
     public void save(String path) {
-        log.debug("保存 {} 开始", getName());
+        log.info("保存 {} 开始", getName());
         createVersionHash();
         wzDirectory.setVersionHash(versionHash);
         String saveFile = Path.of(path).toString();
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(saveFile, "rw")) {
             Map<String, Integer> tempStringCache = new HashMap<>();
             BinaryWriter tempWriter = new BinaryWriter();
-            log.debug("保存 {} Generate Data File 1/4", getName());
+            log.info("保存 {} Generate Data File 1/4", getName());
             wzDirectory.generateDataFile(tempWriter, tempStringCache);
             tempStringCache.clear();
             int totalLen = wzDirectory.getImgOffsets(wzDirectory.getOffsets(header.getStart() + 2));
@@ -155,15 +155,15 @@ public class WzFile extends WzObject {
             }
             writer.putShort(version);
             writer.setHeader(header);
-            log.debug("保存 {} Wz Dirs 2/4", getName());
+            log.info("保存 {} Wz Dirs 2/4", getName());
             wzDirectory.saveDirectory(writer);
             writer.getStringCache().clear();
-            log.debug("保存 {} Wz Images 3/4", getName());
+            log.info("保存 {} Wz Images 3/4", getName());
             wzDirectory.saveImages(writer, tempWriter);
             writer.getStringCache().clear();
-            log.debug("保存 {} Wz 写入文件 4/4", getName());
+            log.info("保存 {} Wz 写入文件 4/4", getName());
             randomAccessFile.write(writer.output());
-            log.debug("保存 {} Wz 完成", getName());
+            log.info("保存 {} Wz 完成", getName());
         } catch (IOException e) {
             throw new IllegalArgumentException("无法保存文件", e);
         }

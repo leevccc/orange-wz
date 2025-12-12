@@ -549,6 +549,11 @@ public class WzPngProperty extends WzImageProperty {
         compressPng(wzKey, pngFormat);
     }
 
+    public void setPng(BufferedImage png, byte[] wzKey) {
+        this.png = png;
+        compressPng(wzKey, getPngFormat());
+    }
+
     public void compressPng(byte[] wzKey, WzPngFormat pngFormat) {
         format = pngFormat.getValue();
         format2 = 0;
@@ -570,7 +575,7 @@ public class WzPngProperty extends WzImageProperty {
             compressedBytes = writer.output();
         }
 
-        parse(wzKey);
+        // parse(wzKey);
     }
 
     private byte[] zlibCompress(byte[] decompressedBuffer) {
@@ -611,8 +616,8 @@ public class WzPngProperty extends WzImageProperty {
                 byte r = (byte) ((pixel >> 16) & 0xFF);
                 byte a = (byte) ((pixel >> 24) & 0xFF);
 
-                buf[index++] = (byte)(((b >> 4) & 0x0F) | (g & 0xF0));
-                buf[index++] = (byte)(((r >> 4) & 0x0F) | (a & 0xF0));
+                buf[index++] = (byte) (((b >> 4) & 0x0F) | (g & 0xF0));
+                buf[index++] = (byte) (((r >> 4) & 0x0F) | (a & 0xF0));
             }
         }
         return buf;

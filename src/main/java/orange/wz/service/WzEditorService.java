@@ -4,9 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.config.ServerConfig;
 import orange.wz.exception.BizException;
 import orange.wz.exception.ExceptionEnum;
+import orange.wz.model.*;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
-import orange.wz.model.*;
 import orange.wz.utils.FileUtils;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +14,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -971,53 +974,78 @@ public final class WzEditorService {
         }
     }
 
-    public void fixOutLinkApi(int[] id) {
-        for (int i : id) {
-            fixOutlink(i);
+    public void fixOutLink(int[] ids) {
+        Instant now = Instant.now();
+        byte[] wzKey = null;
+        List<Pair<WzCanvasProperty, List<String>>> cavCollect = new ArrayList<>();
+        for (int id : ids) {
+            WzNode node = nodeCache.get(id);
+            if (node == null) throw new BizException(ExceptionEnum.NOT_FOUND);
+            loadCavWzFiles(node);
+            if (wzKey == null) wzKey = getWzKey(node.getWzObject());
+            fixOutlink(cavCollect, node);
         }
+
+        for (Pair<WzCanvasProperty, List<String>> pair : cavCollect) {
+            fixOutlink(pair.getLeft(), pair.getRight(), wzKey);
+        }
+
         lastCavPath = null;
         cavWzFiles.clear();
-        log.debug("结束");
+        Instant end = Instant.now();
+        log.info("Outlink 结束，耗时 {} 秒", Duration.between(now, end).toSeconds());
     }
 
-    public void fixOutlink(int id) {
-        WzNode node = nodeCache.get(id);
-        if (node == null) throw new BizException(ExceptionEnum.NOT_FOUND);
-
-        if (node.getType() == WzNodeType.FOLDER ||
-                node.getType() == WzNodeType.WZ ||
-                node.getType() == WzNodeType.WZ_DIRECTORY ||
-                node.getType() == WzNodeType.IMAGE ||
-                node.getType() == WzNodeType.IMAGE_LIST) {
+    private void fixOutlink(List<Pair<WzCanvasProperty, List<String>>> collector, WzNode node) {
+        if (node.getType() == WzNodeType.WZ || node.getType() == WzNodeType.IMAGE || node.getType() == WzNodeType.IMAGE_LIST || node.getType() == WzNodeType.WZ_DIRECTORY) { // WZ_DIRECTORY 应该不存在吧？
             List<WzNode> children = getNode(node.getId());
-            children.forEach(child -> fixOutlink(child.getId()));
+            children.forEach(child -> fixOutlink(collector, child));
         } else if (node.getType() == WzNodeType.IMAGE_CANVAS) {
             WzCanvasProperty canvas = (WzCanvasProperty) node.getWzObject();
 
             List<String> outlinkPaths = getOutlinkPaths(canvas.getProperties());
             if (outlinkPaths.isEmpty()) {
-                log.warn("不存在 outlink 节点或者 outlink 路径中找不到 _Canvas");
                 return;
             }
-            WzImage wzImage = getParentImg(canvas);
-            if (wzImage == null) return;
-            WzDirectory wzDirectory = (WzDirectory) wzImage.getParent();
-            if (wzDirectory == null) return;
-            WzFile wzFile = wzDirectory.getWzFile();
-            if (wzFile == null) return;
 
-            File file = new File(wzFile.getPath());
-            String dirPath = file.getParent();
-            Path cavFolderPath = Path.of(dirPath, "_Canvas");
-            loadCavWzFiles(cavFolderPath, wzFile.getFileVersion(), wzFile.getWzIv(), wzFile.getUserKey());
-
-            fixOutlink(node);
+            collector.add(new Pair<>((WzCanvasProperty) node.getWzObject(), outlinkPaths));
         }
     }
 
-    private void loadCavWzFiles(Path cavFolderPath, short fileVersion, byte[] iv, byte[] key) {
+    private void loadCavWzFiles(WzNode node) {
+        // getCavRelPath
+        WzFile wzFile;
+        Path cavFolderPath;
+        short fileVersion;
+        byte[] iv;
+        byte[] key;
+        if (node.getType() == WzNodeType.WZ) {
+            wzFile = (WzFile) node.getWzObject();
+        } else if (node.getType() == WzNodeType.IMAGE || node.getType() == WzNodeType.IMAGE_LIST || node.getType() == WzNodeType.IMAGE_CANVAS) {
+            WzImage wzImage;
+            if (node.getType() == WzNodeType.IMAGE) {
+                wzImage = (WzImage) node.getWzObject();
+            } else {
+                wzImage = getParentImg(node.getWzObject());
+            }
+            if (wzImage == null) return;
+            WzDirectory wzDirectory = (WzDirectory) wzImage.getParent();
+            if (wzDirectory == null) return;
+            wzFile = wzDirectory.getWzFile();
+        } else {
+            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "该类型 " + node.getType() + " 无法识别出_canvas目录在哪");
+        }
+
+        if (wzFile == null) return;
+        File file = new File(wzFile.getPath());
+        String dirPath = file.getParent();
+        cavFolderPath = Path.of(dirPath, "_Canvas");
+        fileVersion = wzFile.getFileVersion();
+        iv = wzFile.getWzIv();
+        key = wzFile.getUserKey();
         String sPath = cavFolderPath.toString();
         if (lastCavPath != null && lastCavPath.equalsIgnoreCase(sPath)) return;
+
         lastCavPath = sPath;
         cavWzFiles.clear();
         List<Path> cavFiles;
@@ -1036,17 +1064,7 @@ public final class WzEditorService {
         }
     }
 
-    private void fixOutlink(WzNode node) {
-        WzCanvasProperty canvas = (WzCanvasProperty) node.getWzObject();
-
-        List<String> outlinkPaths = getOutlinkPaths(canvas.getProperties());
-        if (outlinkPaths.isEmpty()) {
-            log.warn("不存在 outlink 节点或者 outlink 路径中找不到 _Canvas");
-            return;
-        }
-
-        WzImage wzImage = getParentImg(canvas);
-
+    private void fixOutlink(WzCanvasProperty canvas, List<String> outlinkPaths, byte[] wzKey) {
         // 搜索 Canvas
         WzObject nodeReady;
         for (WzObject obj : cavWzFiles) {
@@ -1080,16 +1098,19 @@ public final class WzEditorService {
                     }
                 }
                 obj = nodeReady;
-                if (obj == null) break;
+                if (obj == null) {
+                    log.warn("奇怪的路径 : {}", outlinkPaths);
+                    break;
+                }
             }
 
             if (obj != null) {
                 if (obj instanceof WzCanvasProperty n) {
-                    String base64 = n.getPng().getBase64();
-                    canvas.getPng().setPng(base64, wzImage.getReader().getWzKey(), n.getPng().getPngFormat());
+                    getParentImg(canvas).setChanged(true);
+                    canvas.getPng().setPng(n.getPng().getPng(), wzKey);
                     break;
                 }
-                log.warn("找到了节点，但不是 WzCanvas 类型");
+                log.warn("找到了节点，但不是 WzCanvas 类型 : {}", outlinkPaths);
             }
         }
     }
@@ -1104,10 +1125,18 @@ public final class WzEditorService {
         }
 
         if (outlink.isEmpty()) {
+            log.warn("不存在 _outlink 节点");
             return new ArrayList<>();
         }
 
-        List<String> outlinkPaths = List.of(outlink.split("/"));
+        List<String> outlinkPaths =
+                Arrays.stream(outlink.split("/"))
+                        .map(p -> {
+                            if (p.equals("??")) return "碟喻";
+                            if (p.equals("奢辨_??00")) return "奢辨_碟喻00";
+                            return p;
+                        })
+                        .collect(Collectors.toList());
         int rootIndex = outlinkPaths.indexOf("_Canvas") + 1;
         if (rootIndex == 0) {
             log.warn("outlink 路径中找不到 _Canvas");
@@ -1330,6 +1359,11 @@ public final class WzEditorService {
     }
 
     private byte[] getWzKey(WzObject wzObject) {
+        if (wzObject instanceof WzFile wzFile) {
+            wzFile.parse();
+            return wzFile.getWzDirectory().getReader().getWzKey();
+        }
+
         WzImage wzImage = getParentImg(wzObject);
         if (wzImage == null) return null;
         return wzImage.getReader().getWzKey();
