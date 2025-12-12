@@ -400,7 +400,7 @@ public final class WzEditorService {
         if (node.getWzObject() instanceof WzUOLProperty obj) {
             String uol = obj.getUol();
             WzCanvasProperty cav = getUolCanvas(obj.getParent(), uol.split("/"), 0);
-            if (cav == null) throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "目标不是图片 : " + uol);
+            if (cav == null) return new WzNodeValueDto(null, WzNodeType.IMAGE_UOL, uol, null, null, null, null, null);
             return new WzNodeValueDto(null, WzNodeType.IMAGE_UOL, uol, cav.getPng().getWidth(), cav.getPng().getHeight(), cav.getPng().getBase64(), cav.getPng().getPngFormat(), null);
         }
         // 通用处理
@@ -434,7 +434,15 @@ public final class WzEditorService {
 
         if (wzObject instanceof WzListProperty list) {
             if (path.length == step + 1) {
-                return (WzCanvasProperty) (list.get(path[step]));
+                WzObject obj = list.get(path[step]);
+                if (obj instanceof WzCanvasProperty cav) {
+                    return cav;
+                } else if (obj instanceof WzListProperty listObj && listObj.get("0") instanceof WzCanvasProperty cav) {
+                    return cav;
+                } else {
+                    log.warn("UOL 对象是个奇怪的东西 : {}", String.join("/", path));
+                    return null;
+                }
             } else {
                 String childName = path[step];
                 if (childName.equalsIgnoreCase("..")) {
@@ -455,7 +463,8 @@ public final class WzEditorService {
                 }
             }
         } else {
-            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "节点不是 List : " + String.join("/", Arrays.copyOfRange(path, 0, step + 1)));
+            log.warn("UOL 加载到 [{}] 目标不是List或者Image, 无法继续下去了", String.join("/", Arrays.copyOfRange(path, 0, step + 1)));
+            return null;
         }
     }
 
