@@ -1,10 +1,11 @@
 package orange.wz.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import orange.wz.provider.WzObject;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import orange.wz.provider.WzObject;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -25,6 +26,7 @@ public class WzNode {
     @Setter
     private WzNode parent;
     @Getter(AccessLevel.NONE)
+    @JsonIgnore
     private final List<WzNode> children = new ArrayList<>();
     @JsonIgnore
     private WzObject wzObject;
@@ -59,6 +61,11 @@ public class WzNode {
 
     public List<WzNode> getChildren() {
         return Collections.unmodifiableList(children);
+    }
+
+    @JsonProperty("children")
+    public List<WzNode> getChildrenForJson() {
+        return List.of();
     }
 
     // 添加子节点管理方法
