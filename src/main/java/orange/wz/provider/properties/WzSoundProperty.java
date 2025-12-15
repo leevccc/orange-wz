@@ -8,6 +8,7 @@ import orange.wz.provider.audio.*;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.BinaryWriter;
 import orange.wz.provider.tools.WzMutableKey;
+import orange.wz.provider.tools.WzType;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -28,14 +29,13 @@ public class WzSoundProperty extends WzExtended {
     @Getter
     private int lenMs;
     private byte[] header;
-    private final String type = "sound";
     private boolean headerEncrypted = false; // List.wz, header is encrypted
     private int offset;
     private int soundDataLen;
     private WaveFormat waveFormat;
 
     public WzSoundProperty(String name, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.SOUND_PROPERTY, parent, wzImage);
     }
 
     public void setSound(String base64String, WzMutableKey wzMutableKey) {
@@ -179,7 +179,7 @@ public class WzSoundProperty extends WzExtended {
 
     @Override
     public void writeValue(BinaryWriter writer) {
-        writer.writeStringBlock(WzPropertyType.SOUND.getString(), WzImage.withoutOffsetFlag, WzImage.withOffsetFlag);
+        writer.writeStringBlock(WzExtendedType.SOUND.getString(), WzImage.withoutOffsetFlag, WzImage.withOffsetFlag);
         writer.putByte((byte) 0);
         writer.writeCompressedInt(fileBytes.length);
         writer.writeCompressedInt(lenMs);

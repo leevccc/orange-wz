@@ -6,15 +6,15 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzType;
 
 @Setter
 @Getter
 public class WzIntProperty extends WzImageProperty {
     private int value;
-    private final String type = "int";
 
     public WzIntProperty(String name, int value, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.INT_PROPERTY, parent, wzImage);
         this.value = value;
     }
 

@@ -6,15 +6,15 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzType;
 
 @Setter
 @Getter
 public class WzDoubleProperty extends WzImageProperty {
     private double value;
-    private final String type = "double";
 
     public WzDoubleProperty(String name, double value, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.DOUBLE_PROPERTY, parent, wzImage);
         this.value = value;
     }
 

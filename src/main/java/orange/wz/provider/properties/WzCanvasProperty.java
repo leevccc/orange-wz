@@ -6,29 +6,24 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzType;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Setter
 @Getter
 public class WzCanvasProperty extends WzExtended {
-    private final List<WzImageProperty> properties = new ArrayList<>();
     private WzPngProperty png;
-    private final String type = "canvas";
 
     public WzCanvasProperty(String name, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
-    }
-
-    public void addProperties(List<WzImageProperty> properties) {
-        this.properties.addAll(properties);
+        super(name, WzType.CANVAS_PROPERTY, parent, wzImage);
     }
 
     @Override
     public void writeValue(BinaryWriter writer) {
-        writer.writeStringBlock(WzPropertyType.CANVAS.getString(), WzImage.withoutOffsetFlag, WzImage.withOffsetFlag);
+        writer.writeStringBlock(WzExtendedType.CANVAS.getString(), WzImage.withoutOffsetFlag, WzImage.withOffsetFlag);
         writer.putByte((byte) 0);
+        List<WzImageProperty> properties = children.get();
         if (!properties.isEmpty()) {
             writer.putByte((byte) 1);
             WzImage.writeListValue(writer, properties);
@@ -54,8 +49,8 @@ public class WzCanvasProperty extends WzExtended {
     public WzCanvasProperty deepClone(WzObject parent) {
         WzCanvasProperty clone = new WzCanvasProperty(name, parent, null);
         clone.setPng(png.deepClone(clone));
-        for (WzImageProperty property : properties) {
-            clone.properties.add(property.deepClone(clone));
+        for (WzImageProperty property : children.get()) {
+            clone.addChild(property.deepClone(clone));
         }
         return clone;
     }

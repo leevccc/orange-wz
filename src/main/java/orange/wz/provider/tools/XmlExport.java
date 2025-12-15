@@ -97,7 +97,7 @@ public final class XmlExport {
             doc.setXmlStandalone(true);
             root.setAttribute("name", image.getName());
             doc.appendChild(root);
-            image.getProperties().forEach(prop -> {
+            image.getChildren().forEach(prop -> {
                 writeProperties(doc, root, prop, media);
             });
 
@@ -131,12 +131,12 @@ public final class XmlExport {
 
                 if (media) e.setAttribute("png", prop.getPng().getBase64());
 
-                prop.getProperties().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
+                prop.getChildren().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
             }
             case WzConvexProperty prop -> {
                 e = doc.createElement("extended");
                 e.setAttribute("name", escapeText(prop.getName()));
-                prop.getProperties().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
+                prop.getChildren().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
             }
             case WzDoubleProperty prop -> {
                 e = doc.createElement("double");
@@ -156,7 +156,7 @@ public final class XmlExport {
             case WzListProperty prop -> {
                 e = doc.createElement("imgdir");
                 e.setAttribute("name", escapeText(prop.getName()));
-                prop.getProperties().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
+                prop.getChildren().forEach(subProperty -> writeProperties(doc, e, subProperty, media));
             }
             case WzLongProperty prop -> {
                 e = doc.createElement("long");

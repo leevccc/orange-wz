@@ -6,15 +6,15 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzType;
 
 @Setter
 @Getter
 public class WzLongProperty extends WzImageProperty {
     private long value;
-    private final String type = "long";
 
     public WzLongProperty(String name, long value, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.LONG_PROPERTY, parent, wzImage);
         this.value = value;
     }
 

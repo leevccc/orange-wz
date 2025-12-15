@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.properties.*;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzChildrenProperty;
+import orange.wz.provider.tools.WzType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,12 +17,46 @@ import java.util.List;
 @Getter
 public abstract class WzImageProperty extends WzObject {
     protected WzImage wzImage;
+    protected WzChildrenProperty children;
 
-    protected WzImageProperty(String name, WzObject parent, WzImage wzImage) {
-        super(name, parent);
+    protected WzImageProperty(String name, WzType type, WzObject parent, WzImage wzImage) {
+        super(name, type, parent);
         this.wzImage = wzImage;
+
+        this.children = switch (type) {
+            case WZ_FILE, DIRECTORY, IMAGE -> throw new RuntimeException("不可使用的属性: " + type);
+            case CANVAS_PROPERTY, CONVEX_PROPERTY, LIST_PROPERTY, RAW_DATA_PROPERTY -> new WzChildrenProperty();
+            case DOUBLE_PROPERTY, FLOAT_PROPERTY, INT_PROPERTY, LONG_PROPERTY, NULL_PROPERTY, PNG_PROPERTY,
+                 SHORT_PROPERTY, SOUND_PROPERTY, STRING_PROPERTY, UOL_PROPERTY, VECTOR_PROPERTY -> null;
+        };
     }
 
+    // Children --------------------------------------------------------------------------------------------------------
+    public WzImageProperty getChild(String name) {
+        return children.get(name);
+    }
+
+    public List<WzImageProperty> getChildren() {
+        return children.get();
+    }
+
+    public void addChild(WzImageProperty child) {
+        children.add(child);
+    }
+
+    public void addChildren(List<WzImageProperty> children) {
+        this.children.add(children);
+    }
+
+    public boolean removeChild(String name) {
+        return children.remove(name);
+    }
+
+    public boolean existChild(String name) {
+        return children.existChild(name);
+    }
+
+    // 解析 -------------------------------------------------------------------------------------------------------------
     public static List<WzImageProperty> parsePropertyList(int offset, BinaryReader reader, WzObject parent) {
         WzImage wzImage = null;
         if (parent instanceof WzImage img) {
@@ -94,46 +130,46 @@ public abstract class WzImageProperty extends WzObject {
         if (iname.equalsIgnoreCase("")) {
             iname = reader.readString();
         }
-        final WzPropertyType propertyType = WzPropertyType.getByString(iname);
+        final WzExtendedType propertyType = WzExtendedType.getByString(iname);
         try {
-            switch (propertyType) {
-                case WzPropertyType.LIST: {
+            return switch (propertyType) {
+                case WzExtendedType.LIST -> {
                     WzListProperty subProp = new WzListProperty(name, parent, wzImage);
                     reader.skip(2); // Reserved?
-                    subProp.addProperties(WzImageProperty.parsePropertyList(offset, reader, subProp));
-                    return subProp;
+                    subProp.addChildren(WzImageProperty.parsePropertyList(offset, reader, subProp));
+                    yield subProp;
                 }
-                case WzPropertyType.CANVAS: {
+                case WzExtendedType.CANVAS -> {
                     WzCanvasProperty canvasProp = new WzCanvasProperty(name, parent, wzImage);
                     reader.skip(1);
                     if (reader.getByte() == 1) {
                         reader.skip(2);
-                        canvasProp.addProperties(WzImageProperty.parsePropertyList(offset, reader, canvasProp));
+                        canvasProp.addChildren(WzImageProperty.parsePropertyList(offset, reader, canvasProp));
                     }
                     WzPngProperty png = new WzPngProperty(name, canvasProp, wzImage);
                     png.setData(reader);
                     canvasProp.setPng(png);
-                    return canvasProp;
+                    yield canvasProp;
                 }
-                case WzPropertyType.VECTOR: {
+                case WzExtendedType.VECTOR -> {
                     int x = reader.readCompressedInt();
                     int y = reader.readCompressedInt();
-                    return new WzVectorProperty(name, x, y, parent, wzImage);
+                    yield new WzVectorProperty(name, x, y, parent, wzImage);
                 }
-                case WzPropertyType.CONVEX: {
+                case WzExtendedType.CONVEX -> {
                     WzConvexProperty convexProp = new WzConvexProperty(name, parent, wzImage);
                     int convexEntryCount = reader.readCompressedInt();
                     for (int i = 0; i < convexEntryCount; i++) {
-                        convexProp.addProperty(parseExtendedProp(reader, offset, 0, name, convexProp));
+                        convexProp.addChild(parseExtendedProp(reader, offset, 0, name, convexProp));
                     }
-                    return convexProp;
+                    yield convexProp;
                 }
-                case WzPropertyType.SOUND: {
+                case WzExtendedType.SOUND -> {
                     WzSoundProperty soundProp = new WzSoundProperty(name, parent, wzImage);
                     soundProp.setData(reader);
-                    return soundProp;
+                    yield soundProp;
                 }
-                case WzPropertyType.UOL: {
+                case WzExtendedType.UOL -> {
                     reader.skip(1);
                     String value = switch (reader.getByte()) {
                         case 0 -> reader.readString();
@@ -141,9 +177,9 @@ public abstract class WzImageProperty extends WzObject {
                         default -> throw new Exception("Unsupported UOL type");
                     };
 
-                    return new WzUOLProperty(name, value, parent, wzImage);
+                    yield new WzUOLProperty(name, value, parent, wzImage);
                 }
-                case WzPropertyType.RAW_DATA: {  // GMS v220++
+                case WzExtendedType.RAW_DATA -> {  // GMS v220++
                     // GMS v255+
                     // UI_000.wz\Login.img\RaceSelect_new\Back0\3\skeleton.skel
                     // UI_000.wz\Login.img\RaceSelect_new\Back0\16\skeleton.skel
@@ -156,19 +192,16 @@ public abstract class WzImageProperty extends WzObject {
                     if (type == 1) {
                         if (reader.getByte() == 1) {
                             reader.skip(2);
-                            rawData.getProperties().addAll(parsePropertyList(offset, reader, rawData));
+                            rawData.addChildren(parsePropertyList(offset, reader, rawData));
                         }
                     }
                     // all types: parse the binary data (similar to parse WzPngProperty for WzCanvasProperty)
                     int length = reader.readCompressedInt();
                     rawData.setLength(length);
                     rawData.setBytes(reader.getBytes(length));
-                    return rawData;
+                    yield rawData;
                 }
-                default: {
-                    throw new Exception("Unknown iname: " + iname);
-                }
-            }
+            };
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

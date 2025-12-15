@@ -257,13 +257,13 @@ public final class WzEditorService {
             wz.load();
             if (node.getChildren().isEmpty()) {
                 List<WzNode> children = new ArrayList<>();
-                wz.getWzDirectory().getDirectories().forEach((s, wzDirectory) -> {
-                    WzNode child = new WzNode(node, nextId.getAndIncrement(), s, WzNodeType.WZ_DIRECTORY, null, wzDirectory);
+                wz.getWzDirectory().getDirectories().forEach(dir -> {
+                    WzNode child = new WzNode(node, nextId.getAndIncrement(), dir.getName(), WzNodeType.WZ_DIRECTORY, null, dir);
                     children.add(child);
                     nodeCache.put(child.getId(), child);
                 });
-                wz.getWzDirectory().getImages().forEach((s, wzImage) -> {
-                    WzNode child = new WzNode(node, nextId.getAndIncrement(), s, WzNodeType.IMAGE, null, wzImage);
+                wz.getWzDirectory().getImages().forEach(img -> {
+                    WzNode child = new WzNode(node, nextId.getAndIncrement(), img.getName(), WzNodeType.IMAGE, null, img);
                     children.add(child);
                     nodeCache.put(child.getId(), child);
                 });
@@ -278,13 +278,13 @@ public final class WzEditorService {
         if (node.getWzObject() instanceof WzDirectory wzDir) {
             if (node.getChildren().isEmpty()) {
                 List<WzNode> children = new ArrayList<>();
-                wzDir.getDirectories().forEach((s, subDir) -> {
-                    WzNode child = new WzNode(node, nextId.getAndIncrement(), s, WzNodeType.WZ_DIRECTORY, null, subDir);
+                wzDir.getDirectories().forEach(subDir -> {
+                    WzNode child = new WzNode(node, nextId.getAndIncrement(), subDir.getName(), WzNodeType.WZ_DIRECTORY, null, subDir);
                     children.add(child);
                     nodeCache.put(child.getId(), child);
                 });
-                wzDir.getImages().forEach((s, wzImage) -> {
-                    WzNode child = new WzNode(node, nextId.getAndIncrement(), s, WzNodeType.IMAGE, null, wzImage);
+                wzDir.getImages().forEach(subImg -> {
+                    WzNode child = new WzNode(node, nextId.getAndIncrement(), subImg.getName(), WzNodeType.IMAGE, null, subImg);
                     children.add(child);
                     nodeCache.put(child.getId(), child);
                 });
@@ -298,7 +298,7 @@ public final class WzEditorService {
     private void loadImgNode(WzNode node) {
         if (node.getWzObject() instanceof WzImage image) {
             image.parse();
-            loadNode(node, image.getProperties());
+            loadNode(node, image.getChildren());
         } else {
             log.error("错误的文件类型：IMAGE");
         }
@@ -306,7 +306,7 @@ public final class WzEditorService {
 
     private void loadListNode(WzNode node) {
         if (node.getWzObject() instanceof WzListProperty list) {
-            loadNode(node, list.getProperties());
+            loadNode(node, list.getChildren());
         } else {
             log.error("错误的文件类型：IMAGE_LIST");
         }
@@ -314,7 +314,7 @@ public final class WzEditorService {
 
     private void loadCanvasNode(WzNode node) {
         if (node.getWzObject() instanceof WzCanvasProperty canvas) {
-            loadNode(node, canvas.getProperties());
+            loadNode(node, canvas.getChildren());
         } else {
             log.error("错误的文件类型：IMAGE_CANVAS");
         }
@@ -322,7 +322,7 @@ public final class WzEditorService {
 
     private void loadConvexNode(WzNode node) {
         if (node.getWzObject() instanceof WzConvexProperty convex) {
-            loadNode(node, convex.getProperties());
+            loadNode(node, convex.getChildren());
         } else {
             log.error("错误的文件类型：IMAGE_CONVEX");
         }
@@ -437,10 +437,10 @@ public final class WzEditorService {
 
         if (wzObject instanceof WzListProperty list) {
             if (path.length == step + 1) {
-                WzObject obj = list.get(path[step]);
+                WzObject obj = list.getChild(path[step]);
                 if (obj instanceof WzCanvasProperty cav) {
                     return cav;
-                } else if (obj instanceof WzListProperty listObj && listObj.get("0") instanceof WzCanvasProperty cav) {
+                } else if (obj instanceof WzListProperty listObj && listObj.getChild("0") instanceof WzCanvasProperty cav) {
                     return cav;
                 } else {
                     log.warn("UOL 对象是个奇怪的东西 : {}", String.join("/", path));
@@ -451,18 +451,18 @@ public final class WzEditorService {
                 if (childName.equalsIgnoreCase("..")) {
                     return getUolCanvas(list.getParent(), path, step + 1);
                 } else {
-                    return getUolCanvas(list.get(childName), path, step + 1);
+                    return getUolCanvas(list.getChild(childName), path, step + 1);
                 }
             }
         } else if (wzObject instanceof WzImage img) {
             if (path.length == step + 1) {
-                return (WzCanvasProperty) (img.get(path[step]));
+                return (WzCanvasProperty) (img.getChild(path[step]));
             } else {
                 String childName = path[step];
                 if (childName.equalsIgnoreCase("..")) {
                     throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "Img节点无法再往上查询 : " + String.join("/", Arrays.copyOfRange(path, 0, step + 1)));
                 } else {
-                    return getUolCanvas(img.get(childName), path, step + 1);
+                    return getUolCanvas(img.getChild(childName), path, step + 1);
                 }
             }
         } else {
@@ -566,26 +566,26 @@ public final class WzEditorService {
 
     private void pasteToWzImage(WzNode targetNode, WzObject targetObj, WzImage wzImage) {
         checkClipboardType(WzNodeType.IMAGE);
-        delRepeatPropFromCb(targetNode, wzImage.getProperties());
-        addPropFromCb(targetNode, targetObj, wzImage.getProperties());
+        delRepeatPropFromCb(targetNode, wzImage);
+        addPropFromCb(targetNode, targetObj, wzImage);
     }
 
     private void pasteToWzList(WzNode targetNode, WzObject targetObj, WzListProperty property) {
         checkClipboardType(WzNodeType.IMAGE_LIST);
-        delRepeatPropFromCb(targetNode, property.getProperties());
-        addPropFromCb(targetNode, targetObj, property.getProperties());
+        delRepeatPropFromCb(targetNode, property);
+        addPropFromCb(targetNode, targetObj, property);
     }
 
     private void pasteToWzConvex(WzNode targetNode, WzObject targetObj, WzConvexProperty property) {
         checkClipboardType(WzNodeType.IMAGE_CONVEX);
-        delRepeatPropFromCb(targetNode, property.getProperties());
-        addPropFromCb(targetNode, targetObj, property.getProperties());
+        delRepeatPropFromCb(targetNode, property);
+        addPropFromCb(targetNode, targetObj, property);
     }
 
     private void pasteToWzCanvas(WzNode targetNode, WzObject targetObj, WzCanvasProperty property) {
         checkClipboardType(WzNodeType.IMAGE_CANVAS);
-        delRepeatPropFromCb(targetNode, property.getProperties());
-        addPropFromCb(targetNode, targetObj, property.getProperties());
+        delRepeatPropFromCb(targetNode, property);
+        addPropFromCb(targetNode, targetObj, property);
     }
 
     private void checkClipboardType(WzNodeType type) {
@@ -625,33 +625,29 @@ public final class WzEditorService {
     private void delRepeatDirFromCb(WzNode targetNode, WzDirectory directory) {
         clipboard.forEach(child -> {
             if (child instanceof WzDirectory) {
-                for (WzDirectory p : directory.getDirectories().values()) {
-                    if (p.getName().equalsIgnoreCase(child.getName())) {
-                        directory.getDirectories().remove(p.getName());
-                        delChildNodeByName(targetNode, child.getName());
-                        break;
-                    }
+                if (directory.removeDirectoryChild(child.getName())) {
+                    delChildNodeByName(targetNode, child.getName());
                 }
             } else if (child instanceof WzImage) {
-                for (WzImage p : directory.getImages().values()) {
-                    if (p.getName().equalsIgnoreCase(child.getName())) {
-                        directory.getImages().remove(p.getName());
-                        delChildNodeByName(targetNode, child.getName());
-                        break;
-                    }
+                if (directory.removeImageChild(child.getName())) {
+                    delChildNodeByName(targetNode, child.getName());
                 }
             }
         });
     }
 
-    private void delRepeatPropFromCb(WzNode targetNode, List<WzImageProperty> targetList) {
+    private void delRepeatPropFromCb(WzNode targetNode, WzImage wzImage) {
         clipboard.forEach(child -> {
-            for (WzImageProperty p : targetList) {
-                if (p.getName().equalsIgnoreCase(child.getName())) {
-                    targetList.remove(p);
-                    delChildNodeByName(targetNode, child.getName());
-                    break;
-                }
+            if (wzImage.removeChild(child.getName())) {
+                delChildNodeByName(targetNode, child.getName());
+            }
+        });
+    }
+
+    private void delRepeatPropFromCb(WzNode targetNode, WzImageProperty prop) {
+        clipboard.forEach(child -> {
+            if (prop.removeChild(child.getName())) {
+                delChildNodeByName(targetNode, child.getName());
             }
         });
     }
@@ -671,14 +667,32 @@ public final class WzEditorService {
         ids.forEach(nodeCache::remove);
     }
 
-    private void addPropFromCb(WzNode pNode, WzObject pObj, List<WzImageProperty> properties) {
+    private void addPropFromCb(WzNode pNode, WzObject pObj, WzImage wzImage) {
         List<WzNode> children = new ArrayList<>();
         WzMutableKey wzKey = getWzKey(pObj);
         clipboard.forEach(child -> {
             WzImageProperty property = (WzImageProperty) child;
             property.setParent(pObj);
             initSpProp(property, wzKey);
-            properties.add(property);
+            wzImage.addChild(property);
+
+            WzNodeType type = WzNodeType.getByWzObjectType(property);
+            WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), property.getName(), type, null, property);
+            children.add(childNode);
+            nodeCache.put(childNode.getId(), childNode);
+        });
+        pNode.addChildren(children);
+        Objects.requireNonNull(getParentImg(pObj)).setChanged(true);
+    }
+
+    private void addPropFromCb(WzNode pNode, WzObject pObj, WzImageProperty prop) {
+        List<WzNode> children = new ArrayList<>();
+        WzMutableKey wzKey = getWzKey(pObj);
+        clipboard.forEach(child -> {
+            WzImageProperty property = (WzImageProperty) child;
+            property.setParent(pObj);
+            initSpProp(property, wzKey);
+            prop.addChild(property);
 
             WzNodeType type = WzNodeType.getByWzObjectType(property);
             WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), property.getName(), type, null, property);
@@ -696,14 +710,14 @@ public final class WzEditorService {
             child.setParent(pDir);
 
             if (child instanceof WzDirectory directory) {
-                pDir.getDirectories().put(directory.getName(), directory);
+                pDir.addChild(directory);
                 WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), directory.getName(), WzNodeType.WZ_DIRECTORY, null, directory);
                 children.add(childNode);
                 nodeCache.put(childNode.getId(), childNode);
             } else if (child instanceof WzImage image) {
                 image.setReader(pDir.getWzFile().getReader()); // 为了避免从 Image 中取 key 取不到
-                image.getProperties().forEach(property -> initSpProp(property, wzKey));
-                pDir.getImages().put(image.getName(), image);
+                image.getChildren().forEach(property -> initSpProp(property, wzKey));
+                pDir.addChild(image);
                 WzNode childNode = new WzNode(pNode, nextId.getAndIncrement(), image.getName(), WzNodeType.IMAGE, null, image);
                 children.add(childNode);
                 nodeCache.put(childNode.getId(), childNode);
@@ -715,7 +729,7 @@ public final class WzEditorService {
 
     private void initSpProp(WzImageProperty property, WzMutableKey wzKey) {
         if (property instanceof WzListProperty list) {
-            list.getProperties().forEach(child -> initSpProp(child, wzKey));
+            list.getChildren().forEach(child -> initSpProp(child, wzKey));
         } else if (property instanceof WzCanvasProperty canvas) {
             canvas.getPng().compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(canvas.getPng().getFormat() + canvas.getPng().getFormat2())));
         } else if (property instanceof WzSoundProperty sound) {
@@ -736,25 +750,22 @@ public final class WzEditorService {
             case WzFile wzFile -> {
                 wzFile.load();
                 if (data.getType() == WzNodeType.WZ_DIRECTORY) {
-                    for (WzDirectory directory : wzFile.getWzDirectory().getDirectories().values()) {
-                        if (directory.getName().equalsIgnoreCase(data.getName()))
-                            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                    if (wzFile.getWzDirectory().existDirectory(data.getName())) {
+                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzDirectory obj = new WzDirectory(data.getName(), wzFile.getWzDirectory(), wzFile);
-                    wzFile.getWzDirectory().getDirectories().put(data.getName(), obj);
+                    wzFile.getWzDirectory().addChild(obj);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.WZ_DIRECTORY, null, obj);
                     pNode.addChild(node);
                     nodeCache.put(node.getId(), node);
                 } else if (data.getType() == WzNodeType.IMAGE) {
-                    for (WzImage image : wzFile.getWzDirectory().getImages().values()) {
-                        if (image.getName().equalsIgnoreCase(data.getName())) {
-                            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                        }
+                    if (wzFile.getWzDirectory().existImage(data.getName())) {
+                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzImage img = new WzImage(data.getName(), wzFile.getReader(), wzFile);
                     img.setParsed(true);
                     img.setChanged(true);
-                    wzFile.getWzDirectory().getImages().put(data.getName(), img);
+                    wzFile.getWzDirectory().addChild(img);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.IMAGE, null, img);
                     pNode.addChild(node);
                     nodeCache.put(node.getId(), node);
@@ -764,25 +775,22 @@ public final class WzEditorService {
             }
             case WzDirectory wzDirectory -> {
                 if (data.getType() == WzNodeType.WZ_DIRECTORY) {
-                    for (WzDirectory directory : wzDirectory.getDirectories().values()) {
-                        if (directory.getName().equalsIgnoreCase(data.getName()))
-                            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                    if (wzDirectory.existDirectory(data.getName())) {
+                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzDirectory obj = new WzDirectory(data.getName(), wzDirectory, wzDirectory.getWzFile());
-                    wzDirectory.getDirectories().put(data.getName(), obj);
+                    wzDirectory.addChild(obj);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.WZ_DIRECTORY, null, obj);
                     pNode.addChild(node);
                     nodeCache.put(node.getId(), node);
                 } else if (data.getType() == WzNodeType.IMAGE) {
-                    for (WzImage image : wzDirectory.getImages().values()) {
-                        if (image.getName().equalsIgnoreCase(data.getName())) {
-                            throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                        }
+                    if (wzDirectory.existImage(data.getName())) {
+                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzImage img = new WzImage(data.getName(), wzDirectory.getWzFile().getReader(), wzDirectory);
                     img.setParsed(true);
                     img.setChanged(true);
-                    wzDirectory.getImages().put(data.getName(), img);
+                    wzDirectory.addChild(img);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.IMAGE, null, img);
                     pNode.addChild(node);
                     nodeCache.put(node.getId(), node);
@@ -791,52 +799,44 @@ public final class WzEditorService {
                 }
             }
             case WzImage img -> {
-                img.getProperties().forEach(prop -> {
-                    if (prop.getName().equalsIgnoreCase(data.getName())) {
-                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                    }
-                });
+                if (img.existChild(data.getName())) {
+                    throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                }
                 WzImageProperty obj = genNewImageProperty(img, img, data);
-                img.getProperties().add(obj);
+                img.addChild(obj);
                 node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), data.getType(), null, obj);
                 pNode.addChild(node);
                 nodeCache.put(node.getId(), node);
                 img.setChanged(true);
             }
             case WzListProperty list -> {
-                list.getProperties().forEach(prop -> {
-                    if (prop.getName().equalsIgnoreCase(data.getName())) {
-                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                    }
-                });
+                if (list.existChild(data.getName())) {
+                    throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                }
                 WzImageProperty obj = genNewImageProperty(getParentImg(list), list, data);
-                list.getProperties().add(obj);
+                list.addChild(obj);
                 node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), data.getType(), null, obj);
                 pNode.addChild(node);
                 nodeCache.put(node.getId(), node);
                 Objects.requireNonNull(getParentImg(list)).setChanged(true);
             }
             case WzCanvasProperty canvas -> {
-                canvas.getProperties().forEach(prop -> {
-                    if (prop.getName().equalsIgnoreCase(data.getName())) {
-                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                    }
-                });
+                if (canvas.existChild(data.getName())) {
+                    throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                }
                 WzImageProperty obj = genNewImageProperty(getParentImg(canvas), canvas, data);
-                canvas.getProperties().add(obj);
+                canvas.addChild(obj);
                 node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), data.getType(), null, obj);
                 pNode.addChild(node);
                 nodeCache.put(node.getId(), node);
                 Objects.requireNonNull(getParentImg(canvas)).setChanged(true);
             }
             case WzConvexProperty convex -> {
-                convex.getProperties().forEach(prop -> {
-                    if (prop.getName().equalsIgnoreCase(data.getName())) {
-                        throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
-                    }
-                });
+                if (convex.existChild(data.getName())) {
+                    throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
+                }
                 WzImageProperty obj = genNewImageProperty(getParentImg(convex), convex, data);
-                convex.getProperties().add(obj);
+                convex.addChild(obj);
                 node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), data.getType(), null, obj);
                 pNode.addChild(node);
                 nodeCache.put(node.getId(), node);
@@ -863,32 +863,32 @@ public final class WzEditorService {
             case null -> throw new BizException(ExceptionEnum.NOT_FOUND);
             case WzFile wzFile -> {
                 if (obj instanceof WzDirectory) {
-                    wzFile.getWzDirectory().getDirectories().remove(obj.getName());
+                    wzFile.getWzDirectory().removeDirectoryChild(obj.getName());
                 } else if (obj instanceof WzImage) {
-                    wzFile.getWzDirectory().getImages().remove(obj.getName());
+                    wzFile.getWzDirectory().removeImageChild(obj.getName());
                 }
             }
             case WzDirectory wzDir -> {
                 if (obj instanceof WzDirectory) {
-                    wzDir.getDirectories().remove(obj.getName());
+                    wzDir.removeDirectoryChild(obj.getName());
                 } else if (obj instanceof WzImage) {
-                    wzDir.getImages().remove(obj.getName());
+                    wzDir.removeImageChild(obj.getName());
                 }
             }
             case WzImage img -> {
-                img.getProperties().remove((WzImageProperty) obj);
+                img.removeChild(obj.getName());
                 img.setChanged(true);
             }
             case WzListProperty list -> {
-                list.getProperties().remove((WzImageProperty) obj);
+                list.removeChild(obj.getName());
                 Objects.requireNonNull(getParentImg(list)).setChanged(true);
             }
             case WzCanvasProperty canvas -> {
-                canvas.getProperties().remove((WzImageProperty) obj);
+                canvas.removeChild(obj.getName());
                 Objects.requireNonNull(getParentImg(canvas)).setChanged(true);
             }
             case WzConvexProperty convex -> {
-                convex.getProperties().remove((WzImageProperty) obj);
+                convex.removeChild(obj.getName());
                 Objects.requireNonNull(getParentImg(convex)).setChanged(true);
             }
             default -> throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "不受支持的类型");
@@ -1025,7 +1025,7 @@ public final class WzEditorService {
         } else if (node.getType() == WzNodeType.IMAGE_CANVAS) {
             WzCanvasProperty canvas = (WzCanvasProperty) node.getWzObject();
 
-            List<String> outlinkPaths = getOutlinkPaths(canvas.getProperties());
+            List<String> outlinkPaths = getOutlinkPaths(canvas);
             if (outlinkPaths.isEmpty()) {
                 return;
             }
@@ -1094,24 +1094,13 @@ public final class WzEditorService {
             obj = wzFile.getWzDirectory();
             for (String p : outlinkPaths) {
                 nodeReady = null;
-                if (p.endsWith(".img")) {
-                    assert obj instanceof WzDirectory;
-                    nodeReady = ((WzDirectory) obj).getImages().get(p);
+                if (p.endsWith(".img") && obj instanceof WzDirectory dir) {
+                    nodeReady = dir.getImage(p);
                 } else if (obj instanceof WzImage img) {
                     img.parse();
-                    for (WzImageProperty prop : img.getProperties()) {
-                        if (prop.getName().equalsIgnoreCase(p)) {
-                            nodeReady = prop;
-                            break;
-                        }
-                    }
+                    nodeReady = img.getChild(p);
                 } else if (obj instanceof WzListProperty listProp) {
-                    for (WzImageProperty prop : listProp.getProperties()) {
-                        if (prop.getName().equalsIgnoreCase(p)) {
-                            nodeReady = prop;
-                            break;
-                        }
-                    }
+                    nodeReady = listProp.getChild(p);
                 }
                 obj = nodeReady;
                 if (obj == null) {
@@ -1137,19 +1126,14 @@ public final class WzEditorService {
         }
     }
 
-    private List<String> getOutlinkPaths(List<WzImageProperty> properties) {
-        String outlink = "";
-        for (WzImageProperty prop : properties) {
-            if (prop.getName().equalsIgnoreCase("_outlink")) {
-                outlink = ((WzStringProperty) prop).getValue();
-                break;
-            }
-        }
-
-        if (outlink.isEmpty()) {
+    private List<String> getOutlinkPaths(WzImageProperty prop) {
+        WzImageProperty outlinkNode = prop.getChild("_outlink");
+        if (outlinkNode == null) {
             log.warn("不存在 _outlink 节点");
             return new ArrayList<>();
         }
+
+        String outlink = ((WzStringProperty) outlinkNode).getValue();
 
         List<String> outlinkPaths =
                 Arrays.stream(outlink.split("/"))
@@ -1206,17 +1190,17 @@ public final class WzEditorService {
         if (to instanceof WzFile toFile && from instanceof WzFile fromFile) {
             toFile.load();
             fromFile.load();
-            toFile.getWzDirectory().getDirectories().forEach((s, toDir) -> localization(fromFile.getWzDirectory().getDirectories().get(s), toDir));
-            toFile.getWzDirectory().getImages().forEach((s, toImage) -> localization(fromFile.getWzDirectory().getImages().get(s), toImage));
+            toFile.getWzDirectory().getDirectories().forEach(toDir -> localization(fromFile.getWzDirectory().getDirectory(toDir.getName()), toDir));
+            toFile.getWzDirectory().getImages().forEach(toImage -> localization(fromFile.getWzDirectory().getImage(toImage.getName()), toImage));
         } else if (to instanceof WzDirectory toDirectory && from instanceof WzDirectory fromDirectory) {
-            toDirectory.getDirectories().forEach((s, toDir) -> localization(fromDirectory.getDirectories().get(s), toDir));
-            toDirectory.getImages().forEach((s, toImage) -> localization(fromDirectory.getImages().get(s), toImage));
+            toDirectory.getDirectories().forEach(toDir -> localization(fromDirectory.getDirectory(toDir.getName()), toDir));
+            toDirectory.getImages().forEach(toImage -> localization(fromDirectory.getImage(toImage.getName()), toImage));
         } else if (to instanceof WzImage toImage && from instanceof WzImage fromImage) {
             toImage.parse();
             fromImage.parse();
-            toImage.getProperties().forEach(img -> localization(fromImage.get(img.getName()), img));
+            toImage.getChildren().forEach(img -> localization(fromImage.getChild(img.getName()), img));
         } else if (to instanceof WzListProperty toListProperty && from instanceof WzListProperty fromList) {
-            toListProperty.getProperties().forEach(prop -> localization(fromList.get(prop.getName()), prop));
+            toListProperty.getChildren().forEach(prop -> localization(fromList.getChild(prop.getName()), prop));
         } else if (to instanceof WzStringProperty toString && from instanceof WzStringProperty fromString) {
             String fromValue = fromString.getValue();
             if (fromValue != null && !isChinese(toString.getValue()) && isChinese(fromValue)) {
@@ -1269,10 +1253,10 @@ public final class WzEditorService {
         // Packet Base.wz
         Path filePath = Path.of(ServerConfig.WZ_DIRECTORY, "export", "打包wz", "Base.wz");
         WzFile wzFile = WzFile.createNewFile(filePath.toString(), fileVersion, iv, key);
-        directories.forEach(director -> wzFile.getWzDirectory().getDirectories().put(director, new WzDirectory(director, wzFile.getWzDirectory(), wzFile)));
+        directories.forEach(director -> wzFile.getWzDirectory().addChild(new WzDirectory(director, wzFile.getWzDirectory(), wzFile)));
         images.forEach(image -> {
             image.parse(false);
-            wzFile.getWzDirectory().getImages().put(image.getName(), image);
+            wzFile.getWzDirectory().addChild(image);
         });
         wzFile.save();
 
@@ -1305,11 +1289,11 @@ public final class WzEditorService {
             if (node.getType() == WzNodeType.FOLDER) {
                 WzDirectory subDir = new WzDirectory(node.getName(), wzDir, wzDir.getWzFile());
                 packetSubToWz(node, subDir);
-                wzDir.getDirectories().put(node.getName(), subDir);
+                wzDir.addChild(subDir);
             } else if (node.getType() == WzNodeType.IMAGE) {
                 WzImage image = (WzImage) node.getWzObject();
                 image.parse(false);
-                wzDir.getImages().put(node.getName(), image);
+                wzDir.addChild(image);
             }
         }
     }
@@ -1338,7 +1322,7 @@ public final class WzEditorService {
         List<WzNodeValueDto> result = new ArrayList<>();
         if (node.getWzObject() instanceof WzImage image) {
             image.parse();
-            for (WzImageProperty prop : image.getProperties()) {
+            for (WzImageProperty prop : image.getChildren()) {
                 if (prop instanceof WzListProperty listProperty) {
                     searchAllCanvas(result, listProperty, listProperty.getName() + "/");
                 }
@@ -1353,7 +1337,7 @@ public final class WzEditorService {
     }
 
     private void searchAllCanvas(List<WzNodeValueDto> result, WzListProperty list, String path) {
-        for (WzObject sub : list.getProperties()) {
+        for (WzObject sub : list.getChildren()) {
             if (sub instanceof WzListProperty subList) {
                 searchAllCanvas(result, subList, path + subList.getName() + "/");
             } else if (sub instanceof WzCanvasProperty subCav) {

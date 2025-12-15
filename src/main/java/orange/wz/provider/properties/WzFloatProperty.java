@@ -6,15 +6,15 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzType;
 
 @Setter
 @Getter
 public class WzFloatProperty extends WzImageProperty {
     private float value;
-    private final String type = "float";
 
     public WzFloatProperty(String name, float value, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.FLOAT_PROPERTY, parent, wzImage);
         this.value = value;
     }
 

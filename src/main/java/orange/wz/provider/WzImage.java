@@ -5,15 +5,11 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.properties.WzExtended;
 import orange.wz.provider.properties.WzListProperty;
-import orange.wz.provider.tools.BinaryReader;
-import orange.wz.provider.tools.BinaryWriter;
-import orange.wz.provider.tools.WzMutableKey;
-import orange.wz.provider.tools.XmlExport;
+import orange.wz.provider.tools.*;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -24,7 +20,7 @@ public class WzImage extends WzObject {
     private int checksum; // reader 所有 bytes 值的和
     private int offset;
     private BinaryReader reader;
-    private final List<WzImageProperty> properties = new ArrayList<>();
+    private final WzChildrenProperty children = new WzChildrenProperty();
 
     private boolean parsed;
     private boolean changed;
@@ -35,18 +31,18 @@ public class WzImage extends WzObject {
     public static final int withoutOffsetFlag = 0x73;
 
     protected WzImage(String name, WzObject parent) {
-        super(name, parent);
+        super(name, WzType.IMAGE, parent);
     }
 
     public WzImage(String name, WzObject parent, BinaryReader binaryReader) {
-        super(name, parent);
+        super(name, WzType.IMAGE, parent);
         reader = binaryReader;
         parsed = true;
         changed = true;
     }
 
     public WzImage(String name, BinaryReader binaryReader, WzObject parent) { // 不要设置parsed 和 changed
-        super(name, parent);
+        super(name, WzType.IMAGE, parent);
         reader = binaryReader;
     }
 
@@ -69,12 +65,12 @@ public class WzImage extends WzObject {
             return;
         }
 
-        properties.addAll(WzImageProperty.parsePropertyList(offset, reader, this));
+        children.add(WzImageProperty.parsePropertyList(offset, reader, this));
         parsed = true;
     }
 
     public void unparse() {
-        properties.clear();
+        children.clear();
         parsed = false;
     }
 
@@ -102,7 +98,7 @@ public class WzImage extends WzObject {
         if (changed) {
             // if (reader != null && !isParsed()) parse(); // 有修改说明已经解析了？
             int startPos = writer.getPosition();
-            WzListProperty imgProp = new WzListProperty(properties);
+            WzListProperty imgProp = new WzListProperty(children.get());
             imgProp.writeValue(writer);
             writer.getStringCache().clear();
             dataSize = writer.getPosition() - startPos;
@@ -149,19 +145,38 @@ public class WzImage extends WzObject {
         reader.setWzMutableKey(new WzMutableKey(iv, key));
     }
 
-    public WzImageProperty get(String name) {
-        for (WzImageProperty property : properties) {
-            if (property.getName().equals(name)) return property;
-        }
-        return null;
-    }
-
+    // DeepClone -------------------------------------------------------------------------------------------------------
     public WzImage deepClone(WzObject parent) {
         parse();
         WzImage clone = new WzImage(getName(), parent, reader);
-        for (WzImageProperty property : properties) {
-            clone.properties.add(property.deepClone(clone));
+        for (WzImageProperty property : children.get()) {
+            clone.addChild(property.deepClone(clone));
         }
         return clone;
+    }
+
+    // Children --------------------------------------------------------------------------------------------------------
+    public WzImageProperty getChild(String name) {
+        return children.get(name);
+    }
+
+    public List<WzImageProperty> getChildren() {
+        return children.get();
+    }
+
+    public void addChild(WzImageProperty child) {
+        children.add(child);
+    }
+
+    public void addChildren(List<WzImageProperty> children) {
+        this.children.add(children);
+    }
+
+    public boolean removeChild(String name) {
+        return children.remove(name);
+    }
+
+    public boolean existChild(String name) {
+        return children.existChild(name);
     }
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.BinaryWriter;
 import orange.wz.provider.tools.WzMutableKey;
+import orange.wz.provider.tools.WzType;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -26,7 +27,7 @@ public class WzFile extends WzObject {
 
     // 初始化 -----------------------------------------------------------------------------------------------------------
     public WzFile(String filePath, short fileVersion, byte[] iv, byte[] key) {
-        super(Path.of(filePath).getFileName().toString(), null);
+        super(Path.of(filePath).getFileName().toString(), WzType.WZ_FILE, null);
         this.filePath = filePath;
         header = new WzHeader(fileVersion);
         wzIv = iv;

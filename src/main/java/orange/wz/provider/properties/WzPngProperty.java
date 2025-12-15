@@ -8,6 +8,7 @@ import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.BinaryWriter;
 import orange.wz.provider.tools.WzMutableKey;
+import orange.wz.provider.tools.WzType;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -32,10 +33,9 @@ public class WzPngProperty extends WzImageProperty {
     private byte[] compressedBytes;
     private boolean listWzUsed;
     private BufferedImage png;
-    private final String type = "png";
 
     public WzPngProperty(String name, WzObject parent, WzImage wzImage) {
-        super(name, parent, wzImage);
+        super(name, WzType.PNG_PROPERTY, parent, wzImage);
     }
 
     public void setData(BinaryReader reader) {

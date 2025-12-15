@@ -2,7 +2,7 @@ package orange.wz.provider.properties;
 
 import java.util.Map;
 
-public enum WzPropertyType {
+public enum WzExtendedType {
     LIST("Property"),
     CANVAS("Canvas"),
     VECTOR("Shape2D#Vector2D"),
@@ -11,7 +11,7 @@ public enum WzPropertyType {
     UOL("UOL"),
     RAW_DATA("RawData");
 
-    private static final Map<String, WzPropertyType> types = Map.of(
+    private static final Map<String, WzExtendedType> types = Map.of(
             LIST.getString(), LIST,
             CANVAS.getString(), CANVAS,
             VECTOR.getString(), VECTOR,
@@ -22,7 +22,7 @@ public enum WzPropertyType {
     );
     private final String string;
 
-    WzPropertyType(String string) {
+    WzExtendedType(String string) {
         this.string = string;
     }
 
@@ -30,7 +30,7 @@ public enum WzPropertyType {
         return string;
     }
 
-    public static WzPropertyType getByString(String name) {
+    public static WzExtendedType getByString(String name) {
         if (!types.containsKey(name)) {
             throw new IllegalArgumentException("Unknown WzPropertyType : " + name);
         }

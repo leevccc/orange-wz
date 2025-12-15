@@ -4,20 +4,22 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import orange.wz.provider.tools.WzType;
 
 @NoArgsConstructor
 @SuperBuilder
 public abstract class WzObject {
     @Getter
     @Setter
-    protected WzObject parent;
-    @Getter
-    @Setter
     protected String name;
     @Getter
     protected String path;
+    protected WzType type;
+    @Getter
+    @Setter
+    protected WzObject parent;
 
-    protected WzObject(String name, WzObject parent) {
+    protected WzObject(String name, WzType type, WzObject parent) {
         this.name = name;
         this.parent = parent;
 
@@ -26,5 +28,7 @@ public abstract class WzObject {
         } else {
             this.path = parent.getPath() + "/" + name;
         }
+
+        this.type = type;
     }
 }
