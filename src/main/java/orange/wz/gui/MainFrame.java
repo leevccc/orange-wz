@@ -561,7 +561,7 @@ public class MainFrame extends JFrame {
 
     public static Image loadImage(String name) {
         try (InputStream in = MainFrame.class.getResourceAsStream("/" + name)) {
-            assert in != null;
+            if (in == null) return null;
             return ImageIO.read(in);
         } catch (IOException e) {
             throw new RuntimeException(e);

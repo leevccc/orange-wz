@@ -65,8 +65,12 @@ public class WzImage extends WzObject {
             return;
         }
 
-        children.add(WzImageProperty.parsePropertyList(offset, reader, this));
-        parsed = true;
+        try {
+            children.add(WzImageProperty.parsePropertyList(offset, reader, this));
+            parsed = true;
+        } catch (Exception e) {
+            log.error("WzImage 解析错误 : {}", name, e);
+        }
     }
 
     public void unparse() {

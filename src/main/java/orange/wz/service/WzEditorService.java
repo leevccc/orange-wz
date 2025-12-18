@@ -595,6 +595,7 @@ public final class WzEditorService {
     }
 
     private void setWzFileToCP(List<? extends WzObject> clipboard, WzFile wzFile) {
+        if (clipboard == null) return;
         for (WzObject wzObject : clipboard) {
             if (wzObject instanceof WzDirectory directory) {
                 directory.setWzFile(wzFile);
@@ -604,6 +605,7 @@ public final class WzEditorService {
     }
 
     private void setWzImageToCP(List<? extends WzObject> clipboard, WzImage wzImage) {
+        if (clipboard == null) return;
         for (WzObject wzObject : clipboard) {
             if (wzObject instanceof WzImageProperty property) {
                 property.setWzImage(wzImage);

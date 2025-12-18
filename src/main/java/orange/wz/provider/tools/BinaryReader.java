@@ -102,7 +102,7 @@ public final class BinaryReader {
     }
 
     public short getShort() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.order(ByteOrder.LITTLE_ENDIAN); // 只备注一次：不要移除小端序，不知道为什么，一旦移除，每次调用这些方法又会写成大端序，即使在初始化的时候已经设置过小端序了。
         return buffer.getShort();
     }
 

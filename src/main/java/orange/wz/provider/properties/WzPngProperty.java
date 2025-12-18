@@ -61,7 +61,6 @@ public class WzPngProperty extends WzImageProperty {
         }
 
         WzPngFormat pngFormat = WzPngFormat.getByValue(format + format2);
-        assert pngFormat != null;
 
         byte[] argbByteArr;
         int[] argbIntArr;
@@ -229,7 +228,6 @@ public class WzPngProperty extends WzImageProperty {
             case Format2, Format3 -> width * height * 4;
             case Format517 -> width * height / 128;
             case Format1026, Format2050 -> width * height;
-            case null -> 0;
         };
     }
 

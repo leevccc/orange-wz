@@ -28,6 +28,6 @@ public enum WzPngFormat {
             }
         }
         log.warn("未知的图片压缩格式 {}", value);
-        return null;
+        throw new RuntimeException("未知的图片压缩格式 " + value);
     }
 }
