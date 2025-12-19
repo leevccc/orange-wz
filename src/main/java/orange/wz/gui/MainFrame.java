@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.form.impl.*;
 import orange.wz.gui.menu.WzFileMenu;
 import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.manager.ServerManager;
 import orange.wz.model.WzKey;
 import orange.wz.model.WzKeyStorage;
 import orange.wz.provider.*;
@@ -340,7 +341,7 @@ public class MainFrame extends JFrame {
         statusBar.add(statusLabel, BorderLayout.CENTER);
 
         // 状态文字
-        JLabel versionLabel = new JLabel("OrzRepacker v1.0.0");
+        JLabel versionLabel = new JLabel("OrzRepacker " + ServerManager.getVersion());
         versionLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         statusBar.add(versionLabel, BorderLayout.EAST);
 

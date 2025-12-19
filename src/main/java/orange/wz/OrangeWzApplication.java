@@ -1,24 +1,15 @@
 package orange.wz;
 
-import orange.wz.gui.MainFrame;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import javax.swing.*;
-import java.util.List;
-import java.util.Objects;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 
 @SpringBootApplication
 public class OrangeWzApplication {
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            MainFrame frame = MainFrame.getInstance();
-            frame.setIconImages(List.of(Objects.requireNonNull(MainFrame.loadImage("logo512.png"))));
-            frame.setVisible(true);
-        });
-
-        SpringApplication.run(OrangeWzApplication.class, args);
+        new SpringApplicationBuilder(OrangeWzApplication.class)
+                .headless(false)
+                .run(args);
     }
 
 }
