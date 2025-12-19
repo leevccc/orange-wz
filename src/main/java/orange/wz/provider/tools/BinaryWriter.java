@@ -83,6 +83,7 @@ public final class BinaryWriter {
         buffer.flip();
         newBuffer.put(buffer);
         buffer = newBuffer;
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
     public void putByte(byte value) {
@@ -103,7 +104,6 @@ public final class BinaryWriter {
         if (buffer.remaining() < 2) {
             expandBuffer(2);
         }
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putShort(value);
     }
 
@@ -111,7 +111,6 @@ public final class BinaryWriter {
         if (buffer.remaining() < 4) {
             expandBuffer(4);
         }
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putInt(value);
     }
 
@@ -119,7 +118,6 @@ public final class BinaryWriter {
         if (buffer.remaining() < 8) {
             expandBuffer(8);
         }
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putLong(value);
     }
 
@@ -127,7 +125,6 @@ public final class BinaryWriter {
         if (buffer.remaining() < 4) {
             expandBuffer(4);
         }
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putFloat(value);
     }
 
@@ -135,7 +132,6 @@ public final class BinaryWriter {
         if (buffer.remaining() < 8) {
             expandBuffer(8);
         }
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.putDouble(value);
     }
 

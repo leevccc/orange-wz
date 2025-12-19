@@ -68,6 +68,7 @@ public final class BinaryReader {
         buffer.flip();
         newBuffer.put(buffer);
         buffer = newBuffer;
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 
     public void putBytes(byte[] data) {
@@ -102,27 +103,22 @@ public final class BinaryReader {
     }
 
     public short getShort() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN); // 只备注一次：不要移除小端序，不知道为什么，一旦移除，每次调用这些方法又会写成大端序，即使在初始化的时候已经设置过小端序了。
         return buffer.getShort();
     }
 
     public int getInt() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getInt();
     }
 
     public long getLong() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getLong();
     }
 
     public float getFloat() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getFloat();
     }
 
     public double getDouble() {
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
         return buffer.getDouble();
     }
 
