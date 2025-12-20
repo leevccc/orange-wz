@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-public class JTreeUtil {
+public final class JTreeUtil {
     public static void remove(DefaultMutableTreeNode node) {
         JTree tree = MainFrame.getInstance().getTree();
         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();

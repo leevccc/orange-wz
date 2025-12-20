@@ -9,6 +9,7 @@ import orange.wz.gui.key.KeyBox;
 import orange.wz.gui.key.KeyManager;
 import orange.wz.gui.menu.WzFileMenu;
 import orange.wz.gui.menu.WzFolderMenu;
+import orange.wz.gui.menu.WzImageFileMenu;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.UrlUtil;
 import orange.wz.manager.ServerManager;
@@ -252,6 +253,7 @@ public class MainFrame extends JFrame {
         // 右键菜单
         JPopupMenu wzFilePopupMenu = WzFileMenu.create();
         JPopupMenu wzFolderPopupMenu = WzFolderMenu.create();
+        JPopupMenu wzImageFilePopupMenu = WzImageFileMenu.create();
         tree.addMouseListener(new MouseAdapter() {
             private void showPopup(MouseEvent e) {
                 if (!e.isPopupTrigger()) return;
@@ -272,6 +274,8 @@ public class MainFrame extends JFrame {
                     wzFilePopupMenu.show(tree, e.getX(), e.getY());
                 } else if (wzObject instanceof WzFolder) {
                     wzFolderPopupMenu.show(tree, e.getX(), e.getY());
+                } else if (wzObject instanceof WzImageFile) {
+                    wzImageFilePopupMenu.show(tree, e.getX(), e.getY());
                 }
             }
 

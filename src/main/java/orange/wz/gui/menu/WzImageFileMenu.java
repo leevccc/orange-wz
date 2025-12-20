@@ -7,6 +7,7 @@ import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.JTreeUtil;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzFile;
+import orange.wz.provider.WzImageFile;
 import orange.wz.utils.wzkey.WzKey;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-public final class WzFileMenu {
+public final class WzImageFileMenu {
     public static JPopupMenu create() {
         JPopupMenu popupMenu = new JPopupMenu();
 
@@ -48,27 +49,27 @@ public final class WzFileMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
                 DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
                 int index = pNode.getIndex(node);
-                WzFile wzFile = ((WzDirectory) node.getUserObject()).getWzFile();
-                short version = wzFile.getHeader().getFileVersion();
-                byte[] iv = wzFile.getWzIv();
-                byte[] key = wzFile.getUserKey();
-                if (!wzFile.isLoad()) {
-                    log.warn("未加载的文件 {} 无需保存", wzFile.getName());
+                WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
+                byte[] iv = wzImageFile.getIv();
+                byte[] key = wzImageFile.getKey();
+                if (!wzImageFile.isLoad()) {
+                    log.warn("未加载的文件 {} 无需保存", wzImageFile.getName());
                     return;
                 }
 
-                File oldFile = new File(wzFile.getFilePath());
-                File newFile = new File(oldFile.getParent(), wzFile.getName());
+                File oldFile = new File(wzImageFile.getFilePath());
+                File newFile = new File(oldFile.getParent(), wzImageFile.getName());
 
-                File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), "保存 " + wzFile.getName(), newFile, new String[]{"wz"});
+                File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), "保存 " + wzImageFile.getName(), newFile, new String[]{"img"});
                 if (saveFile == null) {
                     return;
                 }
-                String filePath = saveFile.getAbsolutePath();
-                wzFile.save(filePath);
+                Path filePath = Path.of(saveFile.getAbsolutePath());
+                wzImageFile.save(filePath);
                 JTreeUtil.remove(node);
-                wzFile = new WzFile(filePath, version, iv, key);
-                MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                String filename = filePath.getFileName().toString();
+                wzImageFile = new WzImageFile(filename, filePath.toString(), iv, key);
+                MainFrame.getInstance().insertNodeToTree(pNode, wzImageFile, true, index);
             } else {
                 // 批量保存的时候判断文件名是否发生改变，如果发生改变，跳过并提示。
                 Set<String> failed = new HashSet<>();
@@ -76,26 +77,26 @@ public final class WzFileMenu {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                     DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
                     int index = pNode.getIndex(node);
-                    WzFile wzFile = ((WzDirectory) node.getUserObject()).getWzFile();
-                    String filePath = wzFile.getFilePath();
-                    short version = wzFile.getHeader().getFileVersion();
-                    byte[] iv = wzFile.getWzIv();
-                    byte[] key = wzFile.getUserKey();
-                    if (!wzFile.isLoad()) {
-                        log.warn("未加载的文件 {} 无需保存", wzFile.getName());
+                    WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
+                    byte[] iv = wzImageFile.getIv();
+                    byte[] key = wzImageFile.getKey();
+                    if (!wzImageFile.isLoad()) {
+                        log.warn("未加载的文件 {} 无需保存", wzImageFile.getName());
                         continue;
                     }
 
-                    if (!Path.of(wzFile.getFilePath()).getFileName().toString().equals(wzFile.getName())) {
-                        failed.add(wzFile.getName());
-                        log.error("批量保存无法用于文件改名 {} : {}", wzFile.getName(), wzFile.getFilePath());
+                    Path filePath = Path.of(wzImageFile.getFilePath());
+                    if (!filePath.getFileName().toString().equals(wzImageFile.getName())) {
+                        failed.add(wzImageFile.getName());
+                        log.error("批量保存无法用于文件改名 {} : {}", wzImageFile.getName(), wzImageFile.getFilePath());
                         continue;
                     }
 
-                    wzFile.save();
+                    wzImageFile.save(filePath);
+                    String filename = filePath.getFileName().toString();
                     JTreeUtil.remove(node);
-                    wzFile = new WzFile(filePath, version, iv, key);
-                    MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                    wzImageFile = new WzImageFile(filename, filePath.toString(), iv, key);
+                    MainFrame.getInstance().insertNodeToTree(pNode, wzImageFile, true, index);
                 }
 
                 if (!failed.isEmpty()) {
@@ -130,13 +131,13 @@ public final class WzFileMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
                 int index = pNode.getIndex(node);
-                WzFile wzFile = ((WzDirectory) node.getUserObject()).getWzFile();
-                String filePath = wzFile.getFilePath();
-                short version = wzFile.getHeader().getFileVersion();
+                WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
+                Path filePath = Path.of(wzImageFile.getFilePath());
+                String filename = filePath.getFileName().toString();
 
                 JTreeUtil.remove(node);
-                wzFile = new WzFile(filePath, version, key.getIv(), key.getUserKey());
-                MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                wzImageFile = new WzImageFile(filename, filePath.toString(), key.getIv(), key.getUserKey());
+                MainFrame.getInstance().insertNodeToTree(pNode, wzImageFile, true, index);
             }
 
             System.gc();

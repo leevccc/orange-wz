@@ -5,7 +5,7 @@ import orange.wz.gui.MainFrame;
 import javax.swing.*;
 import java.awt.*;
 
-public class JMessageUtil {
+public final class JMessageUtil {
 
     public static void info(String message) {
         info("消息", message);

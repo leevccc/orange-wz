@@ -1,6 +1,6 @@
 package orange.wz.gui.key;
 
-import orange.wz.gui.HexDocumentFilter;
+import orange.wz.gui.filter.HexFilter;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.utils.wzkey.WzKey;
@@ -16,7 +16,7 @@ import java.util.Objects;
 
 import static orange.wz.provider.WzAESConstant.DEFAULT_KEY;
 
-public class KeyManager extends JDialog {
+public final class KeyManager extends JDialog {
     private KeyBox keyBox;
     private final JTextField[] ivFields = new JTextField[4];
     private final int rows = 8;
@@ -181,7 +181,7 @@ public class KeyManager extends JDialog {
         field.setHorizontalAlignment(JTextField.CENTER);
 
         // 只允许 0-9A-F 2个数字
-        ((AbstractDocument) field.getDocument()).setDocumentFilter(new HexDocumentFilter());
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new HexFilter());
         return field;
     }
 

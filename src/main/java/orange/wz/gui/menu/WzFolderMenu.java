@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 @Slf4j
-public class WzFolderMenu {
+public final class WzFolderMenu {
     public static JPopupMenu create() {
         JPopupMenu popupMenu = new JPopupMenu();
 

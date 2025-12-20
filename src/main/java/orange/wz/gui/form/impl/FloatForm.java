@@ -1,7 +1,7 @@
 package orange.wz.gui.form.impl;
 
 import orange.wz.gui.form.data.FloatFormData;
-import orange.wz.gui.form.filter.DecimalFilter;
+import orange.wz.gui.filter.DecimalFilter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;

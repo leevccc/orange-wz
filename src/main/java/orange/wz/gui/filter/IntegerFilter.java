@@ -1,10 +1,10 @@
-package orange.wz.gui.form.filter;
+package orange.wz.gui.filter;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
-public class IntegerFilter extends DocumentFilter {
+public final class IntegerFilter extends DocumentFilter {
 
     @Override
     public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {

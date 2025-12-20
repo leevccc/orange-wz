@@ -1,7 +1,7 @@
 package orange.wz.gui.form.impl;
 
 import orange.wz.gui.form.data.IntFormData;
-import orange.wz.gui.form.filter.IntegerFilter;
+import orange.wz.gui.filter.IntegerFilter;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
