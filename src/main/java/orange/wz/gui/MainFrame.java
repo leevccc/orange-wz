@@ -5,14 +5,16 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.form.impl.*;
+import orange.wz.gui.key.KeyBox;
+import orange.wz.gui.key.KeyManager;
 import orange.wz.gui.menu.WzFileMenu;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.manager.ServerManager;
-import orange.wz.model.WzKey;
-import orange.wz.model.WzKeyStorage;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
 import orange.wz.provider.tools.WzType;
+import orange.wz.utils.wzkey.WzKey;
+import orange.wz.utils.wzkey.WzKeyStorage;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -20,6 +22,8 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +35,9 @@ import java.util.List;
 public class MainFrame extends JFrame {
     private final WzKeyStorage wzKeyStorage = new WzKeyStorage();
     private static MainFrame instance;
+
+    private KeyBox keyBox;
+    private KeyManager keyManager;
 
     private JTree tree;
     private DefaultMutableTreeNode treeRoot;
@@ -131,8 +138,31 @@ public class MainFrame extends JFrame {
         });
         openItem.add(openFolders);
 
+        WzKey[] keys = wzKeyStorage.loadAll().toArray(new WzKey[0]);
+        keyBox = new KeyBox(keys);
+
+        JButton keyManager = new JButton("密钥管理");
+        keyManager.addActionListener(e -> {
+            if (this.keyManager == null) {
+                Window owner = SwingUtilities.getWindowAncestor(keyManager);
+                this.keyManager = new KeyManager(owner);
+
+                this.keyManager.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        MainFrame.this.keyManager = null;
+                    }
+                });
+            }
+            this.keyManager.setVisible(true);
+        });
+
         fileMenu.add(openItem);
         menuBar.add(fileMenu);
+        menuBar.add(Box.createHorizontalStrut(2));
+        menuBar.add(keyBox);
+        menuBar.add(Box.createHorizontalStrut(2));
+        menuBar.add(keyManager);
 
         return menuBar;
     }
@@ -349,7 +379,7 @@ public class MainFrame extends JFrame {
     }
 
     public void open(List<File> files) {
-        WzKey key = wzKeyStorage.findByName("GMS");
+        WzKey key = (WzKey) keyBox.getSelectedItem();
 
         files.forEach(f -> {
             if (f.isFile()) {

@@ -21,12 +21,21 @@ import java.util.Objects;
 public class ServerManager implements ApplicationContextAware, ApplicationRunner, DisposableBean {
     @Getter
     private static ApplicationContext context;
+
     @Getter
     private static String version;
 
     @Value("${version}")
     public void setVersion(String v) {
         version = v;
+    }
+
+    @Getter
+    private static String slog;
+
+    @Value("${server.logging}")
+    public void setSlog(String s) {
+        slog = s;
     }
 
     @Override

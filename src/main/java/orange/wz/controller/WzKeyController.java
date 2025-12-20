@@ -2,8 +2,8 @@ package orange.wz.controller;
 
 import lombok.RequiredArgsConstructor;
 import orange.wz.model.ResultBody;
-import orange.wz.model.WzKey;
 import orange.wz.service.WzKeyService;
+import orange.wz.utils.wzkey.WzKey;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

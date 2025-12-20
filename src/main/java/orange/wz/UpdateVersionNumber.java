@@ -81,7 +81,7 @@ public final class UpdateVersionNumber {
         int fixCount = 0;
         int minorCount = 0;
 
-        int sp =0;
+        int sp = 0;
         for (String msg : commits) {
             if (msg.startsWith("Fix")) {
                 fixCount++;
@@ -91,7 +91,7 @@ public final class UpdateVersionNumber {
                             || msg.startsWith("Chore")
             ) {
                 minorCount++;
-            }else{
+            } else {
                 sp++;
             }
         }

@@ -12,7 +12,7 @@ public class JMessageUtil {
     }
 
     public static void info(String title, String message) {
-        info(MainFrame.getInstance(), message, title);
+        info(MainFrame.getInstance(), title, message);
     }
 
     public static void info(Component parent, String title, String message) {

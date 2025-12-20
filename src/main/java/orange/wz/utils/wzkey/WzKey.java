@@ -1,14 +1,19 @@
-package orange.wz.model;
+package orange.wz.utils.wzkey;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Base64;
 
+@Getter
+@Setter
 public class WzKey {
     private Integer id;
     private String name;
     private byte[] iv;
     private byte[] userKey;
+    private boolean selected;
 
     // 无参构造函数
     public WzKey() {
@@ -19,39 +24,6 @@ public class WzKey {
         this.id = id;
         this.name = name;
         this.iv = iv;
-        this.userKey = userKey;
-    }
-
-    // Getter 和 Setter
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public byte[] getIv() {
-        return iv;
-    }
-
-    public void setIv(byte[] iv) {
-        this.iv = iv;
-    }
-
-    public byte[] getUserKey() {
-        return userKey;
-    }
-
-    public void setUserKey(byte[] userKey) {
         this.userKey = userKey;
     }
 

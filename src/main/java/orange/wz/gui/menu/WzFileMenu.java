@@ -5,9 +5,9 @@ import orange.wz.gui.FileDialog;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.JTreeUtil;
-import orange.wz.model.WzKey;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzFile;
+import orange.wz.utils.wzkey.WzKey;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -128,7 +128,7 @@ public class WzFileMenu {
             TreePath[] selectedPaths = MainFrame.getInstance().getTree().getSelectionPaths();
             if (selectedPaths == null) return;
 
-            WzKey key = MainFrame.getInstance().getWzKeyStorage().findByName("GMS"); // todo
+            WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
             for (TreePath treePath : selectedPaths) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();

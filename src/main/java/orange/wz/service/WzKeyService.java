@@ -2,8 +2,8 @@ package orange.wz.service;
 
 import orange.wz.exception.BizException;
 import orange.wz.exception.ExceptionEnum;
-import orange.wz.model.WzKey;
-import orange.wz.model.WzKeyStorage;
+import orange.wz.utils.wzkey.WzKey;
+import orange.wz.utils.wzkey.WzKeyStorage;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
