@@ -1,5 +1,6 @@
 package orange.wz.provider;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.tools.WzChildrenFolder;
 import orange.wz.provider.tools.WzType;
@@ -13,7 +14,9 @@ import java.util.List;
 public class WzFolder extends WzObject {
     private final String filePath;
     private final WzChildrenFolder children = new WzChildrenFolder();
+    @Getter
     private final byte[] iv;
+    @Getter
     private final byte[] key;
 
     public WzFolder(String filePath, byte[] iv, byte[] key) {

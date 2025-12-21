@@ -39,6 +39,7 @@ public class WzFile extends WzObject {
         WzFile wzFile = new WzFile(filePath, fileVersion, iv, key);
 
         wzFile.header = WzHeader.getDefault(fileVersion);
+        wzFile.reader = new BinaryReader(iv, key);
         wzFile.load = true;
         return wzFile;
     }
@@ -115,7 +116,7 @@ public class WzFile extends WzObject {
             tempStringCache.clear();
             int totalLen = wzDirectory.getImgOffsets(wzDirectory.getOffsets(header.getDataStartPos() + 2));
             BinaryWriter writer = new BinaryWriter(true);
-            writer.setWzMutableKey(wzDirectory.getWzMutableKey());
+            writer.setWzMutableKey(getWzMutableKey());
             header.setFileSize(totalLen - header.getDataStartPos());
             for (int i = 0; i < 4; i++) {
                 writer.putByte((byte) header.getSignature().charAt(i));

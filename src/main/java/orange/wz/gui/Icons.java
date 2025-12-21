@@ -32,6 +32,7 @@ public final class Icons {
     public static final FlatSVGIcon AiOutlineCloseIcon = getSVG("AiOutlineClose.svg", 16, 16);
     public static final FlatSVGIcon AiOutlineReloadIcon = getSVG("AiOutlineReload.svg", 16, 16);
     public static final FlatSVGIcon AiOutlineEye = getSVG("AiOutlineEye.svg", 16, 16);
+    public static final FlatSVGIcon FiPackage = getSVG("FiPackage.svg", 16, 16);
 
     private static FlatSVGIcon getSVG(String filename, int width, int height) {
         return getSVG(filename, width, height, null);
