@@ -4,12 +4,14 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.gui.form.impl.*;
-import orange.wz.gui.key.KeyBox;
-import orange.wz.gui.key.KeyManager;
-import orange.wz.gui.menu.WzFileMenu;
-import orange.wz.gui.menu.WzFolderMenu;
-import orange.wz.gui.menu.WzImageFileMenu;
+import orange.wz.gui.component.FileDialog;
+import orange.wz.gui.component.form.impl.*;
+import orange.wz.gui.component.key.KeyBox;
+import orange.wz.gui.component.key.KeyManager;
+import orange.wz.gui.component.menu.WzFileMenu;
+import orange.wz.gui.component.menu.WzFolderMenu;
+import orange.wz.gui.component.menu.WzImageFileMenu;
+import orange.wz.gui.component.tree.SameLevelTreeSelectionModel;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.UrlUtil;
 import orange.wz.manager.ServerManager;
@@ -129,7 +131,7 @@ public class MainFrame extends JFrame {
 
         JMenuItem openFiles = new JMenuItem("文件 wz/img", fcFileIcon);
         openFiles.addActionListener(e -> {
-            List<File> files = FileDialog.chooseOpenFiles(new String[]{"wz", "img"});
+            List<File> files = orange.wz.gui.component.FileDialog.chooseOpenFiles(new String[]{"wz", "img"});
             open(files);
         });
         openItem.add(openFiles);
