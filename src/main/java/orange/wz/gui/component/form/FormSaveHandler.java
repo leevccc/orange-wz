@@ -1,52 +1,45 @@
 package orange.wz.gui.component.form;
 
-import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.*;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.*;
 
-import javax.swing.*;
-
 public class FormSaveHandler {
-    private static final MainFrame mainFrame = MainFrame.getInstance();
-
-    public static void saveClick() {
-        WzObject wzObject = mainFrame.getCurWzObject();
-
+    public static void saveClick(WzObject wzObject, EditPane editPane) {
         if (wzObject == null) return;
 
         boolean res = switch (wzObject.getType()) {
             case FOLDER, WZ_FILE, PNG_PROPERTY, RAW_DATA_PROPERTY -> false;
-            case DIRECTORY -> changeDir((WzDirectory) wzObject);
-            case IMAGE -> changeImg((WzImage) wzObject);
-            case CANVAS_PROPERTY -> changeCanvas((WzCanvasProperty) wzObject);
-            case CONVEX_PROPERTY -> changeConvex((WzConvexProperty) wzObject);
-            case DOUBLE_PROPERTY -> changeDouble((WzDoubleProperty) wzObject);
-            case FLOAT_PROPERTY -> changeFloat((WzFloatProperty) wzObject);
-            case INT_PROPERTY -> changeInt((WzIntProperty) wzObject);
-            case LIST_PROPERTY -> changeList((WzListProperty) wzObject);
-            case LONG_PROPERTY -> changeLong((WzLongProperty) wzObject);
-            case NULL_PROPERTY -> changeNull((WzNullProperty) wzObject);
-            case SHORT_PROPERTY -> changeShort((WzShortProperty) wzObject);
-            case SOUND_PROPERTY -> changeSound((WzSoundProperty) wzObject);
-            case STRING_PROPERTY -> changeString((WzStringProperty) wzObject);
-            case UOL_PROPERTY -> changeUol((WzUOLProperty) wzObject);
-            case VECTOR_PROPERTY -> changeVector((WzVectorProperty) wzObject);
+            case DIRECTORY -> changeDir((WzDirectory) wzObject, editPane);
+            case IMAGE -> changeImg((WzImage) wzObject, editPane);
+            case CANVAS_PROPERTY -> changeCanvas((WzCanvasProperty) wzObject, editPane);
+            case CONVEX_PROPERTY -> changeConvex((WzConvexProperty) wzObject, editPane);
+            case DOUBLE_PROPERTY -> changeDouble((WzDoubleProperty) wzObject, editPane);
+            case FLOAT_PROPERTY -> changeFloat((WzFloatProperty) wzObject, editPane);
+            case INT_PROPERTY -> changeInt((WzIntProperty) wzObject, editPane);
+            case LIST_PROPERTY -> changeList((WzListProperty) wzObject, editPane);
+            case LONG_PROPERTY -> changeLong((WzLongProperty) wzObject, editPane);
+            case NULL_PROPERTY -> changeNull((WzNullProperty) wzObject, editPane);
+            case SHORT_PROPERTY -> changeShort((WzShortProperty) wzObject, editPane);
+            case SOUND_PROPERTY -> changeSound((WzSoundProperty) wzObject, editPane);
+            case STRING_PROPERTY -> changeString((WzStringProperty) wzObject, editPane);
+            case UOL_PROPERTY -> changeUol((WzUOLProperty) wzObject, editPane);
+            case VECTOR_PROPERTY -> changeVector((WzVectorProperty) wzObject, editPane);
         };
 
-        JTree tree = mainFrame.getTree();
-        tree.updateUI();
+        editPane.getTree().updateUI();
 
         if (!res) {
             JMessageUtil.warn("什么都没有保存");
         }
     }
 
-    private static boolean changeDir(WzDirectory directory) {
-        String newName = mainFrame.getNodeForm().getData().getName();
+    private static boolean changeDir(WzDirectory directory, EditPane editPane) {
+        String newName = editPane.getNodeForm().getData().getName();
         if (newName.equals(directory.getName())) return false;
 
         if (directory.isWzFile()) {
@@ -64,8 +57,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeImg(WzImage image) {
-        String newName = mainFrame.getNodeForm().getData().getName();
+    private static boolean changeImg(WzImage image, EditPane editPane) {
+        String newName = editPane.getNodeForm().getData().getName();
         if (newName.equals(image.getName())) return false;
 
         if (newName.endsWith(".img")) {
@@ -79,8 +72,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeCanvas(WzCanvasProperty property) {
-        CanvasFormData data = mainFrame.getCanvasForm().getData();
+    private static boolean changeCanvas(WzCanvasProperty property, EditPane editPane) {
+        CanvasFormData data = editPane.getCanvasForm().getData();
 
         property.setName(data.getName());
         property.setPng(data.getValue(), data.getFormat());
@@ -90,8 +83,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeConvex(WzConvexProperty property) {
-        String newName = mainFrame.getNodeForm().getData().getName();
+    private static boolean changeConvex(WzConvexProperty property, EditPane editPane) {
+        String newName = editPane.getNodeForm().getData().getName();
         if (newName.equals(property.getName())) return false;
 
         property.setName(newName);
@@ -101,8 +94,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeDouble(WzDoubleProperty property) {
-        DoubleFormData data = mainFrame.getDoubleForm().getData();
+    private static boolean changeDouble(WzDoubleProperty property, EditPane editPane) {
+        DoubleFormData data = editPane.getDoubleForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -112,8 +105,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeFloat(WzFloatProperty property) {
-        FloatFormData data = mainFrame.getFloatForm().getData();
+    private static boolean changeFloat(WzFloatProperty property, EditPane editPane) {
+        FloatFormData data = editPane.getFloatForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -123,8 +116,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeInt(WzIntProperty property) {
-        IntFormData data = mainFrame.getIntForm().getData();
+    private static boolean changeInt(WzIntProperty property, EditPane editPane) {
+        IntFormData data = editPane.getIntForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -134,8 +127,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeList(WzListProperty property) {
-        String newName = mainFrame.getNodeForm().getData().getName();
+    private static boolean changeList(WzListProperty property, EditPane editPane) {
+        String newName = editPane.getNodeForm().getData().getName();
 
         property.setName(newName);
 
@@ -144,8 +137,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeLong(WzLongProperty property) {
-        LongFormData data = mainFrame.getLongForm().getData();
+    private static boolean changeLong(WzLongProperty property, EditPane editPane) {
+        LongFormData data = editPane.getLongForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -155,8 +148,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeNull(WzNullProperty property) {
-        String newName = mainFrame.getNodeForm().getData().getName();
+    private static boolean changeNull(WzNullProperty property, EditPane editPane) {
+        String newName = editPane.getNodeForm().getData().getName();
         if (property.getName().equals(newName)) return false;
 
         property.setName(newName);
@@ -166,8 +159,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeShort(WzShortProperty property) {
-        ShortFormData data = mainFrame.getShortForm().getData();
+    private static boolean changeShort(WzShortProperty property, EditPane editPane) {
+        ShortFormData data = editPane.getShortForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -177,8 +170,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeSound(WzSoundProperty property) {
-        SoundFormData data = mainFrame.getSoundForm().getData();
+    private static boolean changeSound(WzSoundProperty property, EditPane editPane) {
+        SoundFormData data = editPane.getSoundForm().getData();
 
         property.setName(data.getName());
         property.setSound(data.getSoundBytes());
@@ -188,8 +181,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeString(WzStringProperty property) {
-        StringFormData data = mainFrame.getStringForm().getData();
+    private static boolean changeString(WzStringProperty property, EditPane editPane) {
+        StringFormData data = editPane.getStringForm().getData();
 
         property.setName(data.getName());
         property.setValue(data.getValue());
@@ -199,14 +192,14 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeUol(WzUOLProperty property) {
+    private static boolean changeUol(WzUOLProperty property, EditPane editPane) {
         StringFormData data = null;
 
         WzObject target = property.getUolTarget();
         if (target instanceof WzCanvasProperty) {
-            data = mainFrame.getUolCanvasForm().getUolData();
+            data = editPane.getUolCanvasForm().getUolData();
         } else if (target instanceof WzSoundProperty) {
-            data = mainFrame.getUolSoundForm().getUolData();
+            data = editPane.getUolSoundForm().getUolData();
         }
 
         if (data == null) return false;
@@ -219,8 +212,8 @@ public class FormSaveHandler {
         return true;
     }
 
-    private static boolean changeVector(WzVectorProperty property) {
-        VectorFormData data = mainFrame.getVectorForm().getData();
+    private static boolean changeVector(WzVectorProperty property, EditPane editPane) {
+        VectorFormData data = editPane.getVectorForm().getData();
 
         property.setName(data.getName());
         property.setX(data.getX());

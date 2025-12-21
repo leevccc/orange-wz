@@ -1,4 +1,4 @@
-package orange.wz.gui.component.tree;
+package orange.wz.gui.component.panel;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeSelectionModel;

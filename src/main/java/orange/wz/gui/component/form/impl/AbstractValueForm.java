@@ -1,16 +1,18 @@
 package orange.wz.gui.component.form.impl;
 
-import orange.wz.gui.component.form.FormPanel;
+import lombok.Getter;
 import orange.wz.gui.component.form.FormSaveHandler;
 import orange.wz.gui.component.form.data.NodeFormData;
+import orange.wz.gui.component.panel.EditPane;
+import orange.wz.provider.WzObject;
 
 import javax.swing.*;
 import java.awt.*;
 
-public abstract class AbstractValueForm implements FormPanel {
-
+public abstract class AbstractValueForm {
     protected final static int defaultColumns = 30;
-    protected final JPanel panel = new JPanel(new BorderLayout());
+    @Getter
+    protected final JPanel valuePane = new JPanel(new BorderLayout());
     protected final JPanel topLeftPanel = new JPanel(new GridBagLayout());
     protected final JPanel bottomRightPanel = new JPanel(new GridBagLayout());
     protected final JTextField nameInput = new JTextField(defaultColumns);
@@ -19,15 +21,18 @@ public abstract class AbstractValueForm implements FormPanel {
     private int topPanelRow = 0;
     private int bottomPanelCol = 0;
 
+    private EditPane editPane;
+    private WzObject curWzObject;
+
     protected AbstractValueForm() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(topLeftPanel, BorderLayout.CENTER);
-        panel.add(topPanel, BorderLayout.NORTH);
+        valuePane.add(topPanel, BorderLayout.NORTH);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomRightPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         bottomPanel.add(bottomRightPanel, BorderLayout.EAST);
-        panel.add(bottomPanel, BorderLayout.SOUTH);
+        valuePane.add(bottomPanel, BorderLayout.SOUTH);
 
         topLeftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -37,7 +42,7 @@ public abstract class AbstractValueForm implements FormPanel {
         addRow("类型:", typeInput);
 
         JButton saveBtn = new JButton("保存");
-        saveBtn.addActionListener(e -> FormSaveHandler.saveClick());
+        saveBtn.addActionListener(e -> FormSaveHandler.saveClick(curWzObject, editPane));
         addButton(saveBtn);
     }
 
@@ -76,17 +81,13 @@ public abstract class AbstractValueForm implements FormPanel {
         return gbc;
     }
 
-    @Override
-    public JPanel getPanel() {
-        return panel;
-    }
-
-    protected void setData(String name, String type) {
+    protected void setData(String name, String type, WzObject wzObject, EditPane editPane) {
         nameInput.setText(name);
         typeInput.setText(type);
+        this.curWzObject = wzObject;
+        this.editPane = editPane;
     }
 
-    @Override
     public abstract NodeFormData getData();
 }
 

@@ -2,6 +2,8 @@ package orange.wz.gui.component.form.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.form.data.StringFormData;
+import orange.wz.gui.component.panel.EditPane;
+import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.WzCanvasProperty;
 import orange.wz.provider.properties.WzPngFormat;
 
@@ -18,7 +20,7 @@ public class UolCanvasForm extends CanvasForm {
         formatField.setEnabled(false);
     }
 
-    public void setData(String name, String type, String value, WzCanvasProperty canvas) {
+    public void setData(String name, String type, String value, WzCanvasProperty canvas, WzObject wzObject, EditPane editPane) {
 
         valueInput.setText(value);
         BufferedImage image = null;
@@ -35,7 +37,7 @@ public class UolCanvasForm extends CanvasForm {
             format = canvas.getPngFormat();
         }
 
-        setData(name, type, image, width, height, format);
+        setData(name, type, image, width, height, format, wzObject, editPane);
     }
 
     public StringFormData getUolData() {

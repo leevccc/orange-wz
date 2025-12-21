@@ -5,7 +5,9 @@ import lombok.Setter;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.base.DisabledItemComboBox;
 import orange.wz.gui.component.form.data.CanvasFormData;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.WzPngFormat;
 
 import javax.imageio.ImageIO;
@@ -30,7 +32,7 @@ public class CanvasForm extends AbstractValueForm {
         splitPane.setDividerSize(0);
         splitPane.setEnabled(false);
 
-        panel.add(splitPane, BorderLayout.CENTER);
+        valuePane.add(splitPane, BorderLayout.CENTER);
 
 
         JButton downloadBtn = new JButton("下载");
@@ -58,7 +60,7 @@ public class CanvasForm extends AbstractValueForm {
             chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("PNG 文件 (*.png)", "png"));
 
             File file = null;
-            int res = chooser.showSaveDialog(panel);
+            int res = chooser.showSaveDialog(valuePane);
             if (res == SystemFileChooser.APPROVE_OPTION) {
                 file = chooser.getSelectedFile();
             }
@@ -197,8 +199,8 @@ public class CanvasForm extends AbstractValueForm {
         imagePanel.repaint();
     }
 
-    public void setData(String name, String type, BufferedImage image, int width, int height, WzPngFormat format) {
-        super.setData(name, type);
+    public void setData(String name, String type, BufferedImage image, int width, int height, WzPngFormat format, WzObject wzObject, EditPane editPane) {
+        super.setData(name, type, wzObject, editPane);
 
         widthField.setText(String.valueOf(width));
         heightField.setText(String.valueOf(height));

@@ -4,7 +4,9 @@ import com.formdev.flatlaf.util.SystemFileChooser;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.data.SoundFormData;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.provider.WzObject;
 import orange.wz.provider.audio.Mp3FileReader;
 
 import javax.sound.sampled.*;
@@ -54,7 +56,7 @@ public class SoundForm extends AbstractValueForm {
             chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("MP3 文件 (*.mp3)", "mp3"));
 
             File file = null;
-            int res = chooser.showSaveDialog(panel);
+            int res = chooser.showSaveDialog(valuePane);
             if (res == SystemFileChooser.APPROVE_OPTION) {
                 file = chooser.getSelectedFile();
             }
@@ -145,7 +147,7 @@ public class SoundForm extends AbstractValueForm {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(soundPanel, BorderLayout.NORTH);
         // --- 添加到父 panel ---
-        panel.add(topPanel, BorderLayout.CENTER);
+        valuePane.add(topPanel, BorderLayout.CENTER);
 
         // --- 初始化定时器 ---
         progressTimer = new Timer(200, e -> {
@@ -158,8 +160,8 @@ public class SoundForm extends AbstractValueForm {
         });
     }
 
-    public void setData(String name, String type, byte[] bytes) {
-        super.setData(name, type);
+    public void setData(String name, String type, byte[] bytes, WzObject wzObject, EditPane editPane) {
+        super.setData(name, type, wzObject, editPane);
         setData(bytes);
     }
 

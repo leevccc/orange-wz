@@ -1,6 +1,8 @@
 package orange.wz.gui.component.form.impl;
 
 import orange.wz.gui.component.form.data.StringFormData;
+import orange.wz.gui.component.panel.EditPane;
+import orange.wz.provider.WzObject;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -52,8 +54,8 @@ public class StringForm extends AbstractValueForm {
         });
     }
 
-    public void setData(String name, String type, String value) {
-        super.setData(name, type);
+    public void setData(String name, String type, String value, WzObject wzObject, EditPane editPane) {
+        super.setData(name, type, wzObject, editPane);
         valueInput.setText(value);
     }
 

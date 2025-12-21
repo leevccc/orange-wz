@@ -1,7 +1,9 @@
 package orange.wz.gui.component.form.impl;
 
 import orange.wz.gui.component.form.data.VectorFormData;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.filter.IntegerFilter;
+import orange.wz.provider.WzObject;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -18,8 +20,8 @@ public class VectorForm extends AbstractValueForm {
         addRow("Y:", yInput);
     }
 
-    public void setData(String name, String type, int x, int y) {
-        super.setData(name, type);
+    public void setData(String name, String type, int x, int y, WzObject wzObject, EditPane editPane) {
+        super.setData(name, type, wzObject, editPane);
         xInput.setText(String.valueOf(x));
         yInput.setText(String.valueOf(y));
     }

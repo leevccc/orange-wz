@@ -1,7 +1,9 @@
 package orange.wz.gui.component.form.impl;
 
 import orange.wz.gui.component.form.data.LongFormData;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.filter.IntegerFilter;
+import orange.wz.provider.WzObject;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -15,8 +17,8 @@ public class LongForm extends AbstractValueForm {
         addRow("值:", valueInput);
     }
 
-    public void setData(String name, String type, long value) {
-        super.setData(name, type);
+    public void setData(String name, String type, long value, WzObject wzObject, EditPane editPane) {
+        super.setData(name, type, wzObject, editPane);
         valueInput.setText(String.valueOf(value));
     }
 

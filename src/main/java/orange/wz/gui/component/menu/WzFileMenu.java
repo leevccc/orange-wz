@@ -3,8 +3,8 @@ package orange.wz.gui.component.menu;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.MainFrame;
+import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
-import orange.wz.gui.utils.JTreeUtil;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzFile;
 import orange.wz.utils.wzkey.WzKey;
@@ -20,9 +20,14 @@ import java.util.Set;
 import static orange.wz.gui.Icons.*;
 
 @Slf4j
-public final class WzFileMenu {
-    public static JPopupMenu create() {
-        JPopupMenu popupMenu = new JPopupMenu();
+public final class WzFileMenu extends JPopupMenu {
+    private final EditPane editPane;
+    private final JTree tree;
+
+    public WzFileMenu(EditPane editPane, JTree tree) {
+        super();
+        this.editPane = editPane;
+        this.tree = tree;
 
         JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
@@ -32,16 +37,14 @@ public final class WzFileMenu {
         unloadBtnAction(unloadBtn);
         reloadItemAction(reloadItem);
 
-        popupMenu.add(saveBtn);
-        popupMenu.add(unloadBtn);
-        popupMenu.add(reloadItem);
-
-        return popupMenu;
+        add(saveBtn);
+        add(unloadBtn);
+        add(reloadItem);
     }
 
-    private static void saveBtnAction(JMenuItem item) {
+    private void saveBtnAction(JMenuItem item) {
         item.addActionListener(e -> {
-            TreePath[] selectedPaths = MainFrame.getInstance().getTree().getSelectionPaths();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
             if (selectedPaths.length == 1) {
@@ -66,9 +69,9 @@ public final class WzFileMenu {
                 }
                 String filePath = saveFile.getAbsolutePath();
                 wzFile.save(filePath);
-                JTreeUtil.remove(node);
+                editPane.removeNodeFromTree(node);
                 wzFile = new WzFile(filePath, version, iv, key);
-                MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                editPane.insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
             } else {
                 // 批量保存的时候判断文件名是否发生改变，如果发生改变，跳过并提示。
                 Set<String> failed = new HashSet<>();
@@ -93,9 +96,9 @@ public final class WzFileMenu {
                     }
 
                     wzFile.save();
-                    JTreeUtil.remove(node);
+                    editPane.removeNodeFromTree(node);
                     wzFile = new WzFile(filePath, version, iv, key);
-                    MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                    editPane.insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
                 }
 
                 if (!failed.isEmpty()) {
@@ -107,22 +110,22 @@ public final class WzFileMenu {
         });
     }
 
-    private static void unloadBtnAction(JMenuItem item) {
+    private void unloadBtnAction(JMenuItem item) {
         item.addActionListener(e -> {
-            TreePath[] selectedPaths = MainFrame.getInstance().getTree().getSelectionPaths();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
             for (TreePath treePath : selectedPaths) {
-                JTreeUtil.remove((DefaultMutableTreeNode) treePath.getLastPathComponent());
+                editPane.removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
             }
 
             System.gc();
         });
     }
 
-    private static void reloadItemAction(JMenuItem item) {
+    private void reloadItemAction(JMenuItem item) {
         item.addActionListener(e -> {
-            TreePath[] selectedPaths = MainFrame.getInstance().getTree().getSelectionPaths();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
             WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
@@ -134,9 +137,9 @@ public final class WzFileMenu {
                 String filePath = wzFile.getFilePath();
                 short version = wzFile.getHeader().getFileVersion();
 
-                JTreeUtil.remove(node);
+                editPane.removeNodeFromTree(node);
                 wzFile = new WzFile(filePath, version, key.getIv(), key.getUserKey());
-                MainFrame.getInstance().insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
+                editPane.insertNodeToTree(pNode, wzFile.getWzDirectory(), true, index);
             }
 
             System.gc();
