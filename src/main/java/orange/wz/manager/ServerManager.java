@@ -3,6 +3,7 @@ package orange.wz.manager;
 import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.NonNull;
+import orange.wz.gui.Icons;
 import orange.wz.gui.MainFrame;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -47,7 +48,7 @@ public class ServerManager implements ApplicationContextAware, ApplicationRunner
     public void run(@Nullable ApplicationArguments args) {
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = MainFrame.getInstance();
-            frame.setIconImages(List.of(Objects.requireNonNull(MainFrame.loadImage("logo512.png"))));
+            frame.setIconImages(List.of(Objects.requireNonNull(Icons.loadImage("logo512.png"))));
             frame.setVisible(true);
         });
     }

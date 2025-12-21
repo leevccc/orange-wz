@@ -8,12 +8,14 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import static orange.wz.gui.Icons.AiOutlineCloseIcon;
+
 @Slf4j
 public final class WzFolderMenu {
     public static JPopupMenu create() {
         JPopupMenu popupMenu = new JPopupMenu();
 
-        JMenuItem unloadBtn = new JMenuItem("卸载", MainFrame.getSVG("AiOutlineClose.svg", 16, 16));
+        JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
 
         unloadBtnAction(unloadBtn);
 

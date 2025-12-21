@@ -2,7 +2,6 @@ package orange.wz.gui.component.form;
 
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.*;
-import orange.wz.gui.form.data.*;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;

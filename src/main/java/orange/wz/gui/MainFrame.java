@@ -1,7 +1,6 @@
 package orange.wz.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.extras.FlatSVGIcon;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.FileDialog;
@@ -21,7 +20,6 @@ import orange.wz.provider.tools.WzType;
 import orange.wz.utils.wzkey.WzKey;
 import orange.wz.utils.wzkey.WzKeyStorage;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -30,10 +28,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Comparator;
 import java.util.List;
+
+import static orange.wz.gui.Icons.*;
 
 @Slf4j
 @Getter
@@ -64,27 +62,6 @@ public class MainFrame extends JFrame {
 
     private JProgressBar progressBar;
     private JLabel statusLabel;
-
-    private static final FlatSVGIcon fcFolderIcon = getSVG("FcFolder.svg", 16, 16);
-    private static final FlatSVGIcon fcFolderBlueIcon = getSVG("FcFolder.svg", 16, 16, Color.BLUE);
-    private static final FlatSVGIcon fcFileIcon = getSVG("FcFile.svg", 16, 16);
-    private static final FlatSVGIcon aiOutlineFileWordIcon = getSVG("AiOutlineFileWord.svg", 16, 16);
-    private static final FlatSVGIcon aiOutlineFileMarkdownIcon = getSVG("AiOutlineFileMarkdown.svg", 16, 16);
-    private static final FlatSVGIcon imgIcon = getSVG("IMG.svg", 16, 16);
-    private static final FlatSVGIcon listIcon = getSVG("LIST.svg", 16, 16);
-    private static final FlatSVGIcon strIcon = getSVG("STR.svg", 16, 16);
-    private static final FlatSVGIcon pngIcon = getSVG("PNG.svg", 16, 16);
-    private static final FlatSVGIcon intIcon = getSVG("INT.svg", 16, 16);
-    private static final FlatSVGIcon doubleIcon = getSVG("DOUBLE.svg", 16, 16);
-    private static final FlatSVGIcon floatIcon = getSVG("FLOAT.svg", 16, 16);
-    private static final FlatSVGIcon longIcon = getSVG("LONG.svg", 16, 16);
-    private static final FlatSVGIcon nullIcon = getSVG("NULL.svg", 16, 16);
-    private static final FlatSVGIcon rawIcon = getSVG("RAW.svg", 16, 16);
-    private static final FlatSVGIcon shortIcon = getSVG("SHORT.svg", 16, 16);
-    private static final FlatSVGIcon wavIcon = getSVG("WAV.svg", 16, 16);
-    private static final FlatSVGIcon uolIcon = getSVG("UOL.svg", 16, 16);
-    private static final FlatSVGIcon convexIcon = getSVG("CONVEX.svg", 16, 16);
-    private static final FlatSVGIcon vectorIcon = getSVG("VECTOR.svg", 16, 16);
 
     public static MainFrame getInstance() {
         if (instance == null) {
@@ -127,16 +104,16 @@ public class MainFrame extends JFrame {
         JMenu fileMenu = new JMenu("文件");
 
         JMenu openItem = new JMenu("加载");
-        openItem.setIcon(fcFolderIcon);
+        openItem.setIcon(FcFolderIcon);
 
-        JMenuItem openFiles = new JMenuItem("文件 wz/img", fcFileIcon);
+        JMenuItem openFiles = new JMenuItem("文件 wz/img", FcFileIcon);
         openFiles.addActionListener(e -> {
             List<File> files = orange.wz.gui.component.FileDialog.chooseOpenFiles(new String[]{"wz", "img"});
             open(files);
         });
         openItem.add(openFiles);
 
-        JMenuItem openFolders = new JMenuItem("文件夹...", fcFolderIcon);
+        JMenuItem openFolders = new JMenuItem("文件夹...", FcFolderIcon);
         openFolders.addActionListener(e -> {
             List<File> files = FileDialog.chooseOpenFolders();
             open(files);
@@ -194,35 +171,35 @@ public class MainFrame extends JFrame {
 
                 if (value instanceof DefaultMutableTreeNode node && node.getUserObject() instanceof WzObject obj) {
                     Icon icon = switch (obj.getType()) {
-                        case FOLDER -> fcFolderIcon;
+                        case FOLDER -> FcFolderIcon;
                         case DIRECTORY -> {
                             if (((WzDirectory) obj).isWzFile()) {
-                                yield aiOutlineFileWordIcon;
+                                yield AiOutlineFileWordIcon;
                             } else {
-                                yield fcFolderBlueIcon;
+                                yield FcFolderBlueIcon;
                             }
                         }
                         case IMAGE -> {
                             if (obj instanceof WzImageFile) {
-                                yield aiOutlineFileMarkdownIcon;
+                                yield AiOutlineFileMarkdownIcon;
                             } else {
-                                yield imgIcon;
+                                yield ImgIcon;
                             }
                         }
-                        case CANVAS_PROPERTY -> pngIcon;
-                        case CONVEX_PROPERTY -> convexIcon;
-                        case DOUBLE_PROPERTY -> doubleIcon;
-                        case FLOAT_PROPERTY -> floatIcon;
-                        case INT_PROPERTY -> intIcon;
-                        case LIST_PROPERTY -> listIcon;
-                        case LONG_PROPERTY -> longIcon;
-                        case NULL_PROPERTY -> nullIcon;
-                        case RAW_DATA_PROPERTY -> rawIcon;
-                        case SHORT_PROPERTY -> shortIcon;
-                        case SOUND_PROPERTY -> wavIcon;
-                        case STRING_PROPERTY -> strIcon;
-                        case UOL_PROPERTY -> uolIcon;
-                        case VECTOR_PROPERTY -> vectorIcon;
+                        case CANVAS_PROPERTY -> PngIcon;
+                        case CONVEX_PROPERTY -> ConvexIcon;
+                        case DOUBLE_PROPERTY -> DoubleIcon;
+                        case FLOAT_PROPERTY -> FloatIcon;
+                        case INT_PROPERTY -> IntIcon;
+                        case LIST_PROPERTY -> ListIcon;
+                        case LONG_PROPERTY -> LongIcon;
+                        case NULL_PROPERTY -> NullIcon;
+                        case RAW_DATA_PROPERTY -> RawIcon;
+                        case SHORT_PROPERTY -> ShortIcon;
+                        case SOUND_PROPERTY -> WavIcon;
+                        case STRING_PROPERTY -> StrIcon;
+                        case UOL_PROPERTY -> UolIcon;
+                        case VECTOR_PROPERTY -> VectorIcon;
                         case WZ_FILE, PNG_PROPERTY -> null;
                     };
                     setIcon(icon);
@@ -620,33 +597,6 @@ public class MainFrame extends JFrame {
         if (statusLabel != null) {
             statusLabel.setText(String.format(format, args));
         }
-    }
-
-    public static Image loadImage(String name) {
-        try (InputStream in = MainFrame.class.getResourceAsStream("/" + name)) {
-            if (in == null) return null;
-            return ImageIO.read(in);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static FlatSVGIcon getSVG(String filename, int width, int height) {
-        return getSVG(filename, width, height, null);
-    }
-
-    public static FlatSVGIcon getSVG(String filename, int width, int height, Color color) {
-        FlatSVGIcon svg = new FlatSVGIcon("icons/" + filename, width, height);
-        if (color != null) {
-            svg.setColorFilter(new FlatSVGIcon.ColorFilter() {
-                @Override
-                public Color filter(Color color) {
-                    return new Color(0x2196F3);
-                }
-            });
-        }
-
-        return svg;
     }
 
     private static void sortWzObjects(List<? extends WzObject> objects) {
