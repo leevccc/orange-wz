@@ -19,8 +19,7 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.List;
 
-import static orange.wz.gui.Icons.FcFileIcon;
-import static orange.wz.gui.Icons.FcFolderIcon;
+import static orange.wz.gui.Icons.*;
 
 @Slf4j
 @Getter
@@ -108,10 +107,37 @@ public class MainFrame extends JFrame {
 
         fileMenu.add(openItem);
 
+
         JMenu tools = new JMenu("工具");
-        JMenuItem view = new JMenuItem("多视图");
-        view.addActionListener(e -> centerPane.switchRightEditPaneVisible());
+        JMenu view = new JMenu("视图");
+        view.setIcon(AiOutlineEye);
+
+        JMenuItem viewShow = new JMenuItem("显示");
+        viewShow.addActionListener(e -> {
+            if (centerPane.isRightShowing()) {
+                centerPane.showRightEditPane(false);
+                viewShow.setText("显示");
+            } else {
+                centerPane.showRightEditPane(true);
+                viewShow.setText("隐藏");
+            }
+        });
+
+        JMenuItem viewSync = new JMenuItem("禁用同步");
+        viewSync.addActionListener(e -> {
+            if (centerPane.isSync()) {
+                centerPane.switchSync();
+                viewSync.setText("启用同步");
+            } else {
+                centerPane.switchSync();
+                viewSync.setText("禁用同步");
+            }
+        });
+
+        view.add(viewShow);
+        view.add(viewSync);
         tools.add(view);
+
 
         JMenu help = new JMenu("帮助");
         JMenuItem bbs = new JMenuItem("论坛");

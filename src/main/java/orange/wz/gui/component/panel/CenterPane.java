@@ -9,10 +9,14 @@ import java.awt.event.ComponentEvent;
 public final class CenterPane extends JSplitPane {
     @Getter
     private final EditPane leftEditPane;
+    @Getter
     private final EditPane rightEditPane;
 
     private int lastDividerLocation = -1;
-    private boolean showRight = false;
+    @Getter
+    private boolean rightShowing = false;
+    @Getter
+    private boolean sync = true;
 
     public CenterPane() {
         super(JSplitPane.HORIZONTAL_SPLIT);
@@ -35,7 +39,7 @@ public final class CenterPane extends JSplitPane {
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                if (!showRight) {
+                if (!rightShowing) {
                     setDividerLocation(getWidth());
                 }
             }
@@ -43,22 +47,28 @@ public final class CenterPane extends JSplitPane {
 
     }
 
-    public void switchRightEditPaneVisible() {
-        if (showRight) {
-            // 当前显示 → 隐藏
-            lastDividerLocation = getDividerLocation();
-            setDividerLocation(getWidth());
-            setDividerSize(0);
-        } else {
-            // 当前隐藏 → 显示
+    public void showRightEditPane(boolean show) {
+        if (show) {
             setDividerSize(6);
             if (lastDividerLocation > 0) {
                 setDividerLocation(lastDividerLocation);
             } else {
                 setDividerLocation(0.5); // 第一次显示给个合理默认
             }
+        } else {
+            lastDividerLocation = getDividerLocation();
+            setDividerLocation(getWidth());
+            setDividerSize(0);
         }
 
-        showRight = !showRight;
+        rightShowing = show;
+    }
+
+    public void switchSync() {
+        sync = !sync;
+    }
+
+    public EditPane getAnotherPane(EditPane editPane) {
+        return leftEditPane == editPane ? rightEditPane : leftEditPane;
     }
 }

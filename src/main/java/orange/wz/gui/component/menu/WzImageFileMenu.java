@@ -1,8 +1,8 @@
 package orange.wz.gui.component.menu;
 
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.MainFrame;
+import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzImageFile;
@@ -31,14 +31,17 @@ public final class WzImageFileMenu extends JPopupMenu {
         JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
         JMenuItem reloadItem = new JMenuItem("重载", AiOutlineReloadIcon);
+        JMenuItem moveItem = new JMenuItem("切换视图", AiOutlineEye);
 
         saveBtnAction(saveBtn);
         unloadBtnAction(unloadBtn);
         reloadItemAction(reloadItem);
+        moveItemAction(moveItem);
 
         add(saveBtn);
         add(unloadBtn);
         add(reloadItem);
+        add(moveItem);
     }
 
     private void saveBtnAction(JMenuItem item) {
@@ -142,6 +145,25 @@ public final class WzImageFileMenu extends JPopupMenu {
             }
 
             System.gc();
+        });
+    }
+
+    private void moveItemAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            if (!MainFrame.getInstance().getCenterPane().isRightShowing()) {
+                MainFrame.getInstance().getCenterPane().showRightEditPane(true);
+            }
+
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            EditPane targetPane = MainFrame.getInstance().getCenterPane().getAnotherPane(editPane);
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
+                targetPane.insertNodeToTree(targetPane.getTreeRoot(), wzImageFile, true);
+                editPane.removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
+            }
         });
     }
 }

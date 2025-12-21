@@ -124,7 +124,9 @@ public final class EditPane extends JSplitPane {
             TreePath selectedPath = tree.getSelectionPath();
             if (selectedPath != null) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPath.getLastPathComponent();
-                handleTreeClick((WzObject) node.getUserObject());
+                WzObject wzObject = (WzObject) node.getUserObject();
+                handleTreeClick(wzObject);
+                MainFrame.getInstance().getCenterPane().getAnotherPane(EditPane.this).syncTreeClick(wzObject);
             }
         });
 
@@ -178,17 +180,23 @@ public final class EditPane extends JSplitPane {
 
                     // 左键双击
                     if (e.getClickCount() == 2) {
+                        WzObject wzObject = (WzObject) node.getUserObject();
+                        EditPaneAction finalAction;
                         if (node.isLeaf()) {
                             // 叶子节点：执行业务逻辑
-                            handleTreeDoubleClick(node, (WzObject) node.getUserObject());
+                            handleTreeDoubleClick(node, wzObject);
+                            finalAction = EditPaneAction.ACTION;
                         } else {
                             // 非叶子节点：手动切换展开状态
                             if (tree.isExpanded(path)) {
                                 tree.collapsePath(path);
+                                finalAction = EditPaneAction.COLLAPSE;
                             } else {
                                 tree.expandPath(path);
+                                finalAction = EditPaneAction.EXPAND;
                             }
                         }
+                        MainFrame.getInstance().getCenterPane().getAnotherPane(EditPane.this).syncTreeDoubleClick(wzObject, finalAction);
                     }
                 }
             }
@@ -526,5 +534,68 @@ public final class EditPane extends JSplitPane {
         if (node.getParent() == null) return;
 
         model.removeNodeFromParent(node);
+    }
+
+    public void syncTreeClick(WzObject object) {
+        if (!MainFrame.getInstance().getCenterPane().isRightShowing()) return;
+        if (!MainFrame.getInstance().getCenterPane().isSync()) return;
+
+        DefaultMutableTreeNode node = treeRoot;
+        String[] paths = object.getPath().split("/");
+        for (int i = 0; i < paths.length; i++) {
+            node = findTreeNodeByName(node, paths[i]);
+            if (node == null) break;
+
+            if (i == paths.length - 1) {
+                tree.setSelectionPath(new TreePath(node.getPath()));
+            } else {
+                if (node.isLeaf()) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    handleTreeDoubleClick(node, wzObject);
+                } else {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
+            }
+        }
+    }
+
+    public void syncTreeDoubleClick(WzObject object, EditPaneAction finalAction) {
+        if (!MainFrame.getInstance().getCenterPane().isRightShowing()) return;
+        if (!MainFrame.getInstance().getCenterPane().isSync()) return;
+
+        DefaultMutableTreeNode node = treeRoot;
+        String[] paths = object.getPath().split("/");
+        for (int i = 0; i < paths.length; i++) {
+            node = findTreeNodeByName(node, paths[i]);
+            if (node == null) break;
+
+            if (i == paths.length - 1) {
+                if (finalAction == EditPaneAction.ACTION) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    handleTreeDoubleClick(node, wzObject);
+                } else if (finalAction == EditPaneAction.COLLAPSE) {
+                    tree.collapsePath(new TreePath(node.getPath()));
+                } else if (finalAction == EditPaneAction.EXPAND) {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
+            } else {
+                if (node.isLeaf()) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    handleTreeDoubleClick(node, wzObject);
+                } else {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
+            }
+        }
+    }
+
+    private DefaultMutableTreeNode findTreeNodeByName(DefaultMutableTreeNode parent, String name) {
+        for (int j = 0; j < parent.getChildCount(); j++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(j);
+            if (name.equals(((WzObject) child.getUserObject()).getName())) {
+                return child;
+            }
+        }
+        return null;
     }
 }
