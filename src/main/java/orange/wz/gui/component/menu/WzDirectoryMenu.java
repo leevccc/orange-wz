@@ -1,5 +1,6 @@
 package orange.wz.gui.component.menu;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.dialog.NodeDialog;
 import orange.wz.gui.component.form.data.NodeFormData;
@@ -21,6 +22,8 @@ import static orange.wz.gui.Icons.AiOutlinePlus;
 public final class WzDirectoryMenu extends JPopupMenu {
     private final EditPane editPane;
     private final JTree tree;
+    @Getter
+    private final JMenuItem deleteBtn;
 
     public WzDirectoryMenu(EditPane editPane, JTree tree) {
         super();
@@ -33,7 +36,8 @@ public final class WzDirectoryMenu extends JPopupMenu {
         JMenuItem addImgBtn = new JMenuItem("Image");
         addBtn.add(addDirBtn);
         addBtn.add(addImgBtn);
-        JMenuItem deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
+
+        deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
 
         addDirBtnAction(addDirBtn);
         addImgBtnAction(addImgBtn);

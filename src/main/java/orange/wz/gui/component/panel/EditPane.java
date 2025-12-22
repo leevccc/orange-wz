@@ -13,8 +13,7 @@ import orange.wz.utils.wzkey.WzKey;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +38,14 @@ public final class EditPane extends JSplitPane {
     private UolCanvasForm uolCanvasForm;
     private UolSoundForm uolSoundForm;
     private VectorForm vectorForm;
+
+    private WzFileMenu wzFilePopupMenu;
+    private WzFolderMenu wzFolderPopupMenu;
+    private WzImageFileMenu wzImageFilePopupMenu;
+    private WzDirectoryMenu wzDirectoryPopupMenu;
+    private WzImageMenu wzImagePopupMenu;
+    private WzListPropertyMenu wzListPropertyPopupMenu;
+    private WzValuePropertyMenu wzValuePropertyPopupMenu;
 
     public EditPane(boolean oneTouchExpandable) {
         super();
@@ -129,13 +136,13 @@ public final class EditPane extends JSplitPane {
         });
 
         // 右键菜单
-        JPopupMenu wzFilePopupMenu = new WzFileMenu(this, tree);
-        JPopupMenu wzFolderPopupMenu = new WzFolderMenu(this, tree);
-        JPopupMenu wzImageFilePopupMenu = new WzImageFileMenu(this, tree);
-        JPopupMenu wzDirectoryPopupMenu = new WzDirectoryMenu(this, tree);
-        JPopupMenu wzImagePopupMenu = new WzImageMenu(this, tree);
-        JPopupMenu wzListPropertyPopupMenu = new WzListPropertyMenu(this, tree);
-        JPopupMenu wzValuePropertyPopupMenu = new WzValuePropertyMenu(this, tree);
+        wzFilePopupMenu = new WzFileMenu(this, tree);
+        wzFolderPopupMenu = new WzFolderMenu(this, tree);
+        wzImageFilePopupMenu = new WzImageFileMenu(this, tree);
+        wzDirectoryPopupMenu = new WzDirectoryMenu(this, tree);
+        wzImagePopupMenu = new WzImageMenu(this, tree);
+        wzListPropertyPopupMenu = new WzListPropertyMenu(this, tree);
+        wzValuePropertyPopupMenu = new WzValuePropertyMenu(this, tree);
         tree.addMouseListener(new MouseAdapter() {
             private void showPopup(MouseEvent e) {
                 if (!e.isPopupTrigger()) return;
@@ -221,6 +228,8 @@ public final class EditPane extends JSplitPane {
                 }
             }
         });
+
+        addKeyEvent();
 
         return new JScrollPane(tree);
     }
@@ -610,5 +619,67 @@ public final class EditPane extends JSplitPane {
             }
         }
         return null;
+    }
+
+    /**
+     * 快捷键
+     */
+    private void addKeyEvent() {
+        // 获取 JTree 的输入映射和动作映射
+        InputMap im = tree.getInputMap(JComponent.WHEN_FOCUSED);
+        ActionMap am = tree.getActionMap();
+        // Delete 删除
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "delete");
+        am.put("delete", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("删除: " + tree.getLastSelectedPathComponent());
+                // 在这里实现你的删除逻辑
+                TreePath[] selectedPaths = tree.getSelectionPaths();
+                if (selectedPaths == null || selectedPaths.length==0) return;
+
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+                WzObject wzObject = (WzObject) node.getUserObject();
+                if (wzObject instanceof WzFolder) {
+                    return;
+                } else if (wzObject instanceof WzDirectory directory) {
+                    if (directory.isWzFile()) {
+                        return;
+                    } else {
+                        wzDirectoryPopupMenu.getDeleteBtn().doClick();
+                    }
+                } else if (wzObject instanceof WzImageFile) {
+                    return;
+                } else if (wzObject instanceof WzImage) {
+                    wzImagePopupMenu.getDeleteBtn().doClick();
+                } else if (wzObject instanceof WzImageProperty prop) {
+                    if (prop.isListProperty()) {
+                        wzListPropertyPopupMenu.getDeleteBtn().doClick();
+                    } else {
+                        wzValuePropertyPopupMenu.getDeleteBtn().doClick();
+                    }
+                }
+            }
+        });
+
+        // Ctrl+C 复制
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK), "copy");
+        am.put("copy", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("复制节点: " + tree.getLastSelectedPathComponent());
+                // 在这里实现你的复制逻辑
+            }
+        });
+
+        // Ctrl+V 粘贴
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK), "paste");
+        am.put("paste", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("粘贴到节点: " + tree.getLastSelectedPathComponent());
+                // 在这里实现你的粘贴逻辑
+            }
+        });
     }
 }

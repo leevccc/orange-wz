@@ -1,5 +1,6 @@
 package orange.wz.gui.component.menu;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.provider.WzImage;
@@ -16,13 +17,15 @@ import static orange.wz.gui.Icons.AiOutlineDelete;
 public final class WzValuePropertyMenu extends JPopupMenu {
     private final EditPane editPane;
     private final JTree tree;
+    @Getter
+    private final JMenuItem deleteBtn;
 
     public WzValuePropertyMenu(EditPane editPane, JTree tree) {
         super();
         this.editPane = editPane;
         this.tree = tree;
 
-        JMenuItem deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
+        deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
 
         deleteBtnAction(deleteBtn);
 
