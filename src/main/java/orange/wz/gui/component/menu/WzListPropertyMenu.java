@@ -2,6 +2,8 @@ package orange.wz.gui.component.menu;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.Clipboard;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
@@ -15,8 +17,9 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import static orange.wz.gui.Icons.AiOutlineDelete;
-import static orange.wz.gui.Icons.AiOutlinePlus;
+import java.util.List;
+
+import static orange.wz.gui.Icons.*;
 
 @Slf4j
 public final class WzListPropertyMenu extends JPopupMenu {
@@ -24,6 +27,10 @@ public final class WzListPropertyMenu extends JPopupMenu {
     private final JTree tree;
     @Getter
     private final JMenuItem deleteBtn;
+    @Getter
+    private final JMenuItem copyBtn;
+    @Getter
+    private final JMenuItem pasteBtn;
 
     public WzListPropertyMenu(EditPane editPane, JTree tree) {
         super();
@@ -59,6 +66,8 @@ public final class WzListPropertyMenu extends JPopupMenu {
         addBtn.add(addUOLBtn);
         addBtn.add(addVectorBtn);
 
+        copyBtn = new JMenuItem("复制", AiOutlineCopy);
+        pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
 
         addCanvasBtnItem(addCanvasBtn);
@@ -74,10 +83,108 @@ public final class WzListPropertyMenu extends JPopupMenu {
         addStringBtnItem(addStringBtn);
         addUOLBtnItem(addUOLBtn);
         addVectorBtnItem(addVectorBtn);
+        addCopyBtnAction(copyBtn);
+        addPasteBtnAction(pasteBtn);
         deleteBtnAction(deleteBtn);
 
         add(addBtn);
+        add(copyBtn);
+        add(pasteBtn);
         add(deleteBtn);
+    }
+
+    private void addCopyBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            Clipboard clipboard = MainFrame.getInstance().getClipboard();
+            clipboard.lock();
+            clipboard.clear();
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzImageProperty wzObject = (WzImageProperty) node.getUserObject();
+                clipboard.add(wzObject.deepClone(null));
+            }
+            clipboard.unlock();
+        });
+    }
+
+    private void addPasteBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            if (selectedPaths.length != 1) {
+                JMessageUtil.error("不要多选");
+                return;
+            }
+
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+            WzImageProperty target = (WzImageProperty) node.getUserObject();
+
+            Clipboard clipboard = MainFrame.getInstance().getClipboard();
+            clipboard.lock();
+
+            if (clipboard.canPaste(target)) {
+                List<WzObject> objects = clipboard.getItems();
+                setPasteParent(objects, target);
+                setPasteWzImage(objects, target.getWzImage());
+
+                OverwriteChoice choice = null;
+                for (WzObject obj : objects) {
+                    obj.setTempChanged(true);
+                    int index = 0;
+                    if (obj instanceof WzImageProperty prop) {
+                        if (target.existChild(prop.getName())) { // 发现重名
+                            if (choice == OverwriteChoice.SKIP_ALL) continue;
+                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
+                                target.removeChild(prop.getName());
+                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, prop.getName());
+                                index = node.getIndex(childNode);
+                                editPane.removeNodeFromTree(childNode);
+                            } else {
+                                choice = OverwriteDialog.show(editPane, prop.getName());
+                                switch (choice) {
+                                    case OVERWRITE, OVERWRITE_ALL -> {
+                                        target.removeChild(prop.getName());
+                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, prop.getName());
+                                        index = node.getIndex(childNode);
+                                        editPane.removeNodeFromTree(childNode);
+                                    }
+                                    case SKIP, SKIP_ALL, CANCEL -> {
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        target.addChild(prop);
+                    }
+                    editPane.insertNodeToTree(node, obj, true, index);
+                }
+            } else {
+                JMessageUtil.error("Property 只能粘贴 Property");
+            }
+
+            clipboard.clear();
+            clipboard.unlock();
+        });
+    }
+
+    private void setPasteParent(List<WzObject> objects, WzObject parent) {
+        for (WzObject obj : objects) {
+            obj.setParent(parent);
+        }
+    }
+
+    private void setPasteWzImage(List<? extends WzObject> objects, WzImage wzImage) {
+        if (objects == null) return;
+        for (WzObject obj : objects) {
+            if (obj instanceof WzImageProperty property) {
+                property.setWzImage(wzImage);
+                setPasteWzImage(property.getChildren(), wzImage);
+            }
+        }
     }
 
     private void deleteBtnAction(JMenuItem item) {

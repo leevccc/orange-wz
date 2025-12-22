@@ -2,6 +2,8 @@ package orange.wz.gui.component.menu;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.Clipboard;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
@@ -11,6 +13,7 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
+import static orange.wz.gui.Icons.AiOutlineCopy;
 import static orange.wz.gui.Icons.AiOutlineDelete;
 
 @Slf4j
@@ -19,17 +22,39 @@ public final class WzValuePropertyMenu extends JPopupMenu {
     private final JTree tree;
     @Getter
     private final JMenuItem deleteBtn;
+    @Getter
+    private final JMenuItem copyBtn;
 
     public WzValuePropertyMenu(EditPane editPane, JTree tree) {
         super();
         this.editPane = editPane;
         this.tree = tree;
 
+        copyBtn = new JMenuItem("复制", AiOutlineCopy);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
 
+        addCopyBtnAction(copyBtn);
         deleteBtnAction(deleteBtn);
 
+        add(copyBtn);
         add(deleteBtn);
+    }
+
+    private void addCopyBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            Clipboard clipboard = MainFrame.getInstance().getClipboard();
+            clipboard.lock();
+            clipboard.clear();
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzImageProperty wzObject = (WzImageProperty) node.getUserObject();
+                clipboard.add(wzObject.deepClone(null));
+            }
+            clipboard.unlock();
+        });
     }
 
     private void deleteBtnAction(JMenuItem item) {

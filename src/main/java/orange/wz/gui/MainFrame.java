@@ -35,6 +35,8 @@ public class MainFrame extends JFrame {
     private JProgressBar progressBar;
     private JLabel statusLabel;
 
+    private final Clipboard clipboard = new Clipboard();
+
     public static MainFrame getInstance() {
         if (instance == null) {
             instance = new MainFrame();

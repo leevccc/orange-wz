@@ -611,7 +611,7 @@ public final class EditPane extends JSplitPane {
         }
     }
 
-    private DefaultMutableTreeNode findTreeNodeByName(DefaultMutableTreeNode parent, String name) {
+    public DefaultMutableTreeNode findTreeNodeByName(DefaultMutableTreeNode parent, String name) {
         for (int j = 0; j < parent.getChildCount(); j++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(j);
             if (name.equals(((WzObject) child.getUserObject()).getName())) {
@@ -633,10 +633,8 @@ public final class EditPane extends JSplitPane {
         am.put("delete", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("删除: " + tree.getLastSelectedPathComponent());
-                // 在这里实现你的删除逻辑
                 TreePath[] selectedPaths = tree.getSelectionPaths();
-                if (selectedPaths == null || selectedPaths.length==0) return;
+                if (selectedPaths == null || selectedPaths.length == 0) return;
 
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
                 WzObject wzObject = (WzObject) node.getUserObject();
@@ -667,8 +665,30 @@ public final class EditPane extends JSplitPane {
         am.put("copy", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("复制节点: " + tree.getLastSelectedPathComponent());
-                // 在这里实现你的复制逻辑
+                TreePath[] selectedPaths = tree.getSelectionPaths();
+                if (selectedPaths == null || selectedPaths.length == 0) return;
+
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+                WzObject wzObject = (WzObject) node.getUserObject();
+                if (wzObject instanceof WzFolder) {
+                    return;
+                } else if (wzObject instanceof WzDirectory directory) {
+                    if (directory.isWzFile()) {
+                        return;
+                    } else {
+                        wzDirectoryPopupMenu.getCopyBtn().doClick();
+                    }
+                } else if (wzObject instanceof WzImageFile) {
+                    wzImageFilePopupMenu.getCopyBtn().doClick();
+                } else if (wzObject instanceof WzImage) {
+                    wzImagePopupMenu.getCopyBtn().doClick();
+                } else if (wzObject instanceof WzImageProperty prop) {
+                    if (prop.isListProperty()) {
+                        wzListPropertyPopupMenu.getCopyBtn().doClick();
+                    } else {
+                        wzValuePropertyPopupMenu.getCopyBtn().doClick();
+                    }
+                }
             }
         });
 
@@ -677,8 +697,35 @@ public final class EditPane extends JSplitPane {
         am.put("paste", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("粘贴到节点: " + tree.getLastSelectedPathComponent());
-                // 在这里实现你的粘贴逻辑
+                TreePath[] selectedPaths = tree.getSelectionPaths();
+                if (selectedPaths == null) return;
+
+                if (selectedPaths.length != 1) {
+                    JMessageUtil.error("不要多选");
+                    return;
+                }
+
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+                WzObject wzObject = (WzObject) node.getUserObject();
+                if (wzObject instanceof WzFolder) {
+                    return;
+                } else if (wzObject instanceof WzDirectory directory) {
+                    if (directory.isWzFile()) {
+                        wzFilePopupMenu.getPasteBtn().doClick();
+                    } else {
+                        wzDirectoryPopupMenu.getPasteBtn().doClick();
+                    }
+                } else if (wzObject instanceof WzImageFile) {
+                    wzImageFilePopupMenu.getPasteBtn().doClick();
+                } else if (wzObject instanceof WzImage) {
+                    wzImagePopupMenu.getPasteBtn().doClick();
+                } else if (wzObject instanceof WzImageProperty prop) {
+                    if (prop.isListProperty()) {
+                        wzListPropertyPopupMenu.getPasteBtn().doClick();
+                    } else {
+                        return;
+                    }
+                }
             }
         });
     }

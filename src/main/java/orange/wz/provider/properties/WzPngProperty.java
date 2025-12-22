@@ -13,11 +13,14 @@ import orange.wz.provider.tools.WzType;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
@@ -906,6 +909,13 @@ public class WzPngProperty extends WzImageProperty {
         return result;
     }
 
+    private static BufferedImage deepClone(BufferedImage src) {
+        ColorModel cm = src.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = src.copyData(null);
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+    }
+
     @Override
     public void writeValue(BinaryWriter writer) {
         throw new RuntimeException("WzPngProperty writeValue不能单独调用");
@@ -919,7 +929,8 @@ public class WzPngProperty extends WzImageProperty {
         clone.format = format;
         clone.format2 = format2;
         clone.listWzUsed = false;
-        clone.png = readBase64(getBase64());
+        clone.compressedBytes = Arrays.copyOf(compressedBytes, compressedBytes.length);
+        clone.png = deepClone(png);
 
         return clone;
     }
