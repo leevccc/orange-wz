@@ -42,7 +42,7 @@ public class WzSoundProperty extends WzExtended {
         Mp3FileReader reader = new Mp3FileReader(soundBytes);
         waveFormat = reader.getWaveFormat();
         lenMs = reader.getLenMs();
-        rebuildHeader(wzImage.getReader().getWzMutableKey());
+        rebuildHeader();
         this.soundBytes = soundBytes;
     }
 
@@ -55,7 +55,7 @@ public class WzSoundProperty extends WzExtended {
         Mp3FileReader reader = new Mp3FileReader(soundBytes);
         waveFormat = reader.getWaveFormat();
         lenMs = reader.getLenMs();
-        rebuildHeader(wzMutableKey);
+        rebuildHeader();
         this.soundBytes = soundBytes;
     }
 
@@ -83,7 +83,7 @@ public class WzSoundProperty extends WzExtended {
 
     public byte[] getHeader() {
         if (header == null) {
-            rebuildHeader(wzImage.getReader().getWzMutableKey());
+            rebuildHeader();
         }
 
         return header;
@@ -94,16 +94,19 @@ public class WzSoundProperty extends WzExtended {
     }
 
     public byte[] getSoundBytes(boolean saveInMem) {
-        byte[] soundBytes = this.soundBytes;
         if (soundBytes == null) {
-            BinaryReader reader = wzImage.getReader();
-            int curOffset = reader.getPosition();
-            reader.setPosition(offset);
-            soundBytes = reader.getBytes(soundDataLen);
-            reader.setPosition(curOffset);
-            if (saveInMem) {
-                this.soundBytes = soundBytes;
+            byte[] returnBytes = null;
+            if (offset != 0) {
+                BinaryReader reader = wzImage.getReader();
+                int curOffset = reader.getPosition();
+                reader.setPosition(offset);
+                returnBytes = reader.getBytes(soundDataLen);
+                reader.setPosition(curOffset);
+                if (saveInMem) {
+                    soundBytes = returnBytes;
+                }
             }
+            return returnBytes;
         }
 
         return soundBytes;
@@ -140,7 +143,8 @@ public class WzSoundProperty extends WzExtended {
         }
     }
 
-    public void rebuildHeader(WzMutableKey wzMutableKey) {
+    public void rebuildHeader() {
+        WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
         BinaryWriter writer = new BinaryWriter();
         writer.putBytes(soundHeader);
         byte[] wavHeader = mp3StructToBytes((Mp3WaveFormat) waveFormat);

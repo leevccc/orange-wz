@@ -764,7 +764,7 @@ public final class WzEditorService {
         } else if (property instanceof WzCanvasProperty canvas) {
             canvas.compressPng(wzKey, Objects.requireNonNull(WzPngFormat.getByValue(canvas.getFormat() + canvas.getFormat2())));
         } else if (property instanceof WzSoundProperty sound) {
-            sound.rebuildHeader(wzKey);
+            sound.rebuildHeader();
         }
     }
 
@@ -1144,12 +1144,12 @@ public final class WzEditorService {
 
             if (obj != null) {
                 if (obj instanceof WzCanvasProperty n) {
-                    if (n.getPngImage() == null) {
+                    if (n.getPngImage(false) == null) {
                         log.error("目标canvas的图片为空, 完整路径 {} 文件 {}", outlinkPaths, wzFile.getName());
                         break;
                     }
                     getParentImg(canvas).setChanged(true);
-                    canvas.setPng(n.getPngImage(), wzKey);
+                    canvas.setPng(n.getPngImage(false), wzKey);
                     break;
                 }
                 log.warn("找到了节点，但不是 WzCanvas 类型 : {}", outlinkPaths);

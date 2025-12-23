@@ -31,7 +31,7 @@ public class UolCanvasForm extends CanvasForm {
         if (canvas == null) {
             log.warn("canvas is null");
         } else {
-            image = canvas.getPngImage();
+            image = canvas.getPngImage(false);
             width = canvas.getWidth();
             height = canvas.getHeight();
             format = canvas.getPngFormat();

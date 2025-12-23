@@ -1,5 +1,6 @@
 package orange.wz.provider.properties;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.WzImage;
@@ -33,9 +34,11 @@ public class WzPngProperty extends WzImageProperty {
     private int format;
     private int format2;
     private int offset;
+    @Getter(AccessLevel.NONE)
     private byte[] compressedBytes;
     private boolean listWzUsed;
-    private BufferedImage png;
+    @Getter(AccessLevel.NONE)
+    private BufferedImage image;
 
     public WzPngProperty(String name, WzObject parent, WzImage wzImage) {
         super(name, WzType.PNG_PROPERTY, parent, wzImage);
@@ -48,18 +51,18 @@ public class WzPngProperty extends WzImageProperty {
         format2 = reader.getByte();
         reader.skip(4); // 跳过4个字节
         offset = reader.getPosition();
-        int len = reader.getInt() - 1;
-        reader.skip(1); // 跳过1个字节
-        if (len > 0) {
-            compressedBytes = reader.getBytes(len);
-            parse(reader.getWzMutableKey());
-        }
+        // int len = reader.getInt() - 1;
+        // reader.skip(1); // 跳过1个字节
+        // if (len > 0) {
+        //     compressedBytes = reader.getBytes(len);
+        //     parse(reader.getWzMutableKey());
+        // }
     }
 
-    private void parse(WzMutableKey wzMutableKey) {
-        byte[] rawBytes = getRawImage(wzMutableKey); // 注意是小端序的 b g r a
+    private void parse(boolean saveInMem) {
+        byte[] rawBytes = getRawImage(saveInMem); // 注意是小端序的 b g r a
         if (rawBytes.length == 0) {
-            png = null;
+            image = null;
             return;
         }
 
@@ -194,7 +197,40 @@ public class WzPngProperty extends WzImageProperty {
                 break;
         }
 
-        png = bmp;
+        image = bmp;
+    }
+
+    public byte[] getCompressedBytes(boolean saveInMem) {
+        if (compressedBytes == null) {
+            byte[] returnBytes = null;
+            if (offset != 0) {
+                BinaryReader reader = wzImage.getReader();
+                int curOffset = reader.getPosition();
+                reader.setPosition(offset);
+                int len = reader.getInt() - 1;
+                reader.skip(1); // 跳过1个字节
+                if (len > 0) {
+                    returnBytes = reader.getBytes(len);
+                }
+                reader.setPosition(curOffset);
+
+                if (saveInMem) {
+                    compressedBytes = returnBytes;
+                }
+            } else if (image != null) {
+                compressPng(getPngFormat());
+            }
+            return returnBytes;
+        }
+        return compressedBytes;
+    }
+
+    public BufferedImage getImage(boolean saveInMem) {
+        if (image == null) {
+            parse(saveInMem);
+        }
+
+        return image;
     }
 
     private int getImageType(WzPngFormat pngFormat) {
@@ -205,12 +241,13 @@ public class WzPngProperty extends WzImageProperty {
         };
     }
 
-    private byte[] getRawImage(WzMutableKey wzMutableKey) {
+    private byte[] getRawImage(boolean saveInMem) {
+        WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
         int decompressSize = getDecompressSize();
         byte[] decBuf = new byte[decompressSize]; // decompress byte
 
         // 使用 try-with-resources 确保资源正确关闭
-        try (InflaterInputStream zlib = createZlibStream(compressedBytes, wzMutableKey)) {
+        try (InflaterInputStream zlib = createZlibStream(getCompressedBytes(saveInMem), wzMutableKey)) {
             // zlib.read(decBuf, 0, uncompressedSize); 可能一次读不完全部数据，要循环确认，所以有了这个方法
             int totalRead = 0;
             int bytesRead;
@@ -497,10 +534,11 @@ public class WzPngProperty extends WzImageProperty {
     }
 
     public String getBase64() {
-        if (png == null) return "";
+        BufferedImage image = getImage(false);
+        if (image == null) return "";
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            ImageIO.write(png, "PNG", stream);
+            ImageIO.write(image, "PNG", stream);
             byte[] imageBytes = stream.toByteArray();
             return Base64.getEncoder().encodeToString(imageBytes);
         } catch (IOException e) {
@@ -549,28 +587,29 @@ public class WzPngProperty extends WzImageProperty {
         return base64String;
     }
 
-    public void setPng(String base64, WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
-        png = readBase64(base64);
-        compressPng(wzMutableKey, pngFormat);
+    public void setImage(String base64, WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
+        image = readBase64(base64);
+        compressPng(pngFormat);
     }
 
-    public void setPng(BufferedImage pngImage, WzPngFormat pngFormat) {
-        png = pngImage;
-        compressPng(wzImage.getReader().getWzMutableKey(), pngFormat);
+    public void setImage(BufferedImage pngImage, WzPngFormat pngFormat) {
+        image = pngImage;
+        compressPng(pngFormat);
     }
 
-    public void setPng(BufferedImage pngImage, WzMutableKey wzMutableKey) {
-        png = pngImage;
-        compressPng(wzMutableKey, getPngFormat());
+    public void setImage(BufferedImage pngImage, WzMutableKey wzMutableKey) {
+        image = pngImage;
+        compressPng(getPngFormat());
     }
 
-    public void compressPng(WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
+    public void compressPng(WzPngFormat pngFormat) {
+        WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
         format = pngFormat.getValue();
         format2 = 0;
-        width = png.getWidth();
-        height = png.getHeight();
+        width = image.getWidth();
+        height = image.getHeight();
 
-        compressedBytes = compress(png, WzPngFormat.getByValue(format + format2));
+        compressedBytes = compress(image, WzPngFormat.getByValue(format + format2));
         compressedBytes = zlibCompress(compressedBytes);
         if (listWzUsed) {
             BinaryWriter writer = new BinaryWriter(compressedBytes);
@@ -929,8 +968,8 @@ public class WzPngProperty extends WzImageProperty {
         clone.format = format;
         clone.format2 = format2;
         clone.listWzUsed = false;
-        clone.compressedBytes = Arrays.copyOf(compressedBytes, compressedBytes.length);
-        clone.png = deepClone(png);
+        // clone.compressedBytes = Arrays.copyOf(compressedBytes, compressedBytes.length); // 这个需要用新密钥重新压缩
+        clone.image = deepClone(getImage(false));
 
         return clone;
     }
