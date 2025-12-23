@@ -210,7 +210,7 @@ public abstract class WzImageProperty extends WzObject {
                     // all types: parse the binary data (similar to parse WzPngProperty for WzCanvasProperty)
                     int length = reader.readCompressedInt();
                     rawData.setLength(length);
-                    rawData.setBytes(reader.getBytes(length));
+                    rawData.setOffset(reader.getPosition());
                     yield rawData;
                 }
             };
