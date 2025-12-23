@@ -8,6 +8,7 @@ import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
+import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
@@ -18,6 +19,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,6 +79,7 @@ public final class WzImageFileMenu extends JPopupMenu {
         JMenu exportBtn = new JMenu("导出");
         JMenuItem exportXmlBtn = new JMenuItem("Xml");
         exportBtn.add(exportXmlBtn);
+        JMenuItem chineseBtn = new JMenuItem("汉化");
 
 
         addCanvasBtnItem(addCanvasBtn);
@@ -99,6 +103,7 @@ public final class WzImageFileMenu extends JPopupMenu {
         addPasteBtnAction(pasteBtn);
         addKeyBtnAction(keyBtn);
         addExportXmlBtnAction(exportXmlBtn);
+        addChineseBtnAction(chineseBtn);
 
         add(addBtn);
         add(saveBtn);
@@ -109,6 +114,7 @@ public final class WzImageFileMenu extends JPopupMenu {
         add(pasteBtn);
         add(keyBtn);
         add(exportBtn);
+        add(chineseBtn);
     }
 
     private void saveBtnAction(JMenuItem item) {
@@ -877,6 +883,33 @@ public final class WzImageFileMenu extends JPopupMenu {
             if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
             prop.setTempChanged(true);
             editPane.insertNodeToTree(node, prop, true, 0);
+        });
+    }
+
+    private void addChineseBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            Instant start = Instant.now();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzImage to = (WzImage) node.getUserObject();
+                to.parse();
+
+                WzImage from = (WzImage) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findAnotherTreeWzObjectByPath(to.getPath());
+                if (from == null) {
+                    log.error("找不到中文版本的 {}", to.getName());
+                    continue;
+                }
+                from.parse();
+
+                ChineseUtil.chinese(from, to);
+            }
+
+            Instant end = Instant.now();
+            Duration duration = Duration.between(start, end);
+            MainFrame.getInstance().setStatusText("汉化完成! 耗时 %d ms", duration.toMillis());
         });
     }
 }

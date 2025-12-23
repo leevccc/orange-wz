@@ -7,6 +7,7 @@ import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
+import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;
@@ -17,7 +18,8 @@ import orange.wz.provider.properties.*;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import static orange.wz.gui.Icons.*;
@@ -70,6 +72,7 @@ public final class WzListPropertyMenu extends JPopupMenu {
         copyBtn = new JMenuItem("复制", AiOutlineCopy);
         pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
+        JMenuItem chineseBtn = new JMenuItem("汉化");
 
         addCanvasBtnItem(addCanvasBtn);
         addConvexBtnItem(addConvexBtn);
@@ -87,11 +90,13 @@ public final class WzListPropertyMenu extends JPopupMenu {
         addCopyBtnAction(copyBtn);
         addPasteBtnAction(pasteBtn);
         deleteBtnAction(deleteBtn);
+        addChineseBtnAction(chineseBtn);
 
         add(addBtn);
         add(copyBtn);
         add(pasteBtn);
         add(deleteBtn);
+        add(chineseBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {
@@ -710,6 +715,31 @@ public final class WzListPropertyMenu extends JPopupMenu {
             if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
             prop.setTempChanged(true);
             editPane.insertNodeToTree(node, prop, true, 0);
+        });
+    }
+
+    private void addChineseBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            Instant start = Instant.now();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzImageProperty to = (WzImageProperty) node.getUserObject();
+
+                WzImageProperty from = (WzImageProperty) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findAnotherTreeWzObjectByPath(to.getPath());
+                if (from == null) {
+                    log.error("找不到中文版本的 {}", to.getName());
+                    continue;
+                }
+
+                ChineseUtil.chinese(from, to);
+            }
+
+            Instant end = Instant.now();
+            Duration duration = Duration.between(start, end);
+            MainFrame.getInstance().setStatusText("汉化完成! 耗时 %d ms", duration.toMillis());
         });
     }
 }

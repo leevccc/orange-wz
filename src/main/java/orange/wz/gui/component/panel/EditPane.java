@@ -621,6 +621,30 @@ public final class EditPane extends JSplitPane {
         return null;
     }
 
+    public WzObject findAnotherTreeWzObjectByPath(String path) {
+        if (!MainFrame.getInstance().getCenterPane().isRightShowing()) return null;
+
+        DefaultMutableTreeNode node = treeRoot;
+        String[] paths = path.split("/");
+        for (int i = 0; i < paths.length; i++) {
+            node = findTreeNodeByName(node, paths[i]);
+            if (node == null) break;
+
+            if (i == paths.length - 1) {
+                return (WzObject) node.getUserObject();
+            } else {
+                if (node.isLeaf()) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    handleTreeDoubleClick(node, wzObject);
+                } else {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * 快捷键
      */

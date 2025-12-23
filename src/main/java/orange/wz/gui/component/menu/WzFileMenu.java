@@ -10,10 +10,9 @@ import orange.wz.gui.component.form.data.ExportXmlData;
 import orange.wz.gui.component.form.data.KeyData;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
+import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
-import orange.wz.provider.properties.WzListProperty;
-import orange.wz.provider.properties.WzStringProperty;
 import orange.wz.utils.wzkey.WzKey;
 
 import javax.swing.*;
@@ -21,6 +20,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -473,6 +474,7 @@ public final class WzFileMenu extends JPopupMenu {
 
     private void addChineseBtnAction(JMenuItem item) {
         item.addActionListener(e -> {
+            Instant start = Instant.now();
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
@@ -484,44 +486,17 @@ public final class WzFileMenu extends JPopupMenu {
                 if (to.getName().equalsIgnoreCase("List.wz")) return;
                 to.load();
 
-                DefaultMutableTreeNode rightNode = editPane.findTreeNodeByName(rightTreeRoot, to.getName());
+                DefaultMutableTreeNode rightNode = MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findTreeNodeByName(rightTreeRoot, to.getName());
                 if (rightNode == null) continue;
                 WzFile from = ((WzDirectory) rightNode.getUserObject()).getWzFile();
                 from.load();
 
-                chinese(from, to);
+                ChineseUtil.chinese(from, to);
             }
+
+            Instant end = Instant.now();
+            Duration duration = Duration.between(start, end);
+            MainFrame.getInstance().setStatusText("汉化完成! 耗时 %d ms", duration.toMillis());
         });
-    }
-
-    private void chinese(WzObject from, WzObject to) {
-        if (from == null || to == null) return;
-
-        if (to instanceof WzFile toFile && from instanceof WzFile fromFile) {
-            toFile.load();
-            fromFile.load();
-            toFile.getWzDirectory().getDirectories().forEach(toDir -> chinese(fromFile.getWzDirectory().getDirectory(toDir.getName()), toDir));
-            toFile.getWzDirectory().getImages().forEach(toImage -> chinese(fromFile.getWzDirectory().getImage(toImage.getName()), toImage));
-        } else if (to instanceof WzDirectory toDirectory && from instanceof WzDirectory fromDirectory) {
-            toDirectory.getDirectories().forEach(toDir -> chinese(fromDirectory.getDirectory(toDir.getName()), toDir));
-            toDirectory.getImages().forEach(toImage -> chinese(fromDirectory.getImage(toImage.getName()), toImage));
-        } else if (to instanceof WzImage toImage && from instanceof WzImage fromImage) {
-            toImage.parse();
-            fromImage.parse();
-            toImage.getChildren().forEach(img -> chinese(fromImage.getChild(img.getName()), img));
-        } else if (to instanceof WzListProperty toListProperty && from instanceof WzListProperty fromList) {
-            toListProperty.getChildren().forEach(prop -> chinese(fromList.getChild(prop.getName()), prop));
-        } else if (to instanceof WzStringProperty toString && from instanceof WzStringProperty fromString) {
-            String fromValue = fromString.getValue();
-            if (fromValue != null && !isChinese(toString.getValue()) && isChinese(fromValue)) {
-                toString.getWzImage().setChanged(true);
-                toString.setValue(fromValue);
-            }
-        }
-    }
-
-    private boolean isChinese(String str) {
-        return !str.matches(".*[\\uAC00-\\uD7A3].*")  // 不能有韩文
-                && str.matches(".*[\\u4e00-\\u9fa5].*");  // 有中文字符
     }
 }
