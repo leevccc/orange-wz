@@ -28,11 +28,13 @@ public final class ImageCellPanel extends JPanel {
 
     private static ImageCellPanel selected;
 
+    private final ImageGridPanel imageGridPanel;
     private final CanvasUtilData data;
     private boolean isSelected;
 
-    public ImageCellPanel(CanvasUtilData data, DefaultMutableTreeNode node, EditPane editPane) {
+    public ImageCellPanel(CanvasUtilData data, DefaultMutableTreeNode node, EditPane editPane, ImageGridPanel imageGridPanel) {
         this.data = data;
+        this.imageGridPanel = imageGridPanel;
         setPreferredSize(new Dimension(180, 180));
         setBackground(Color.BLACK);
         setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
@@ -219,7 +221,7 @@ public final class ImageCellPanel extends JPanel {
         );
 
         dialog.setSize(800, 600);
-        dialog.setLocationRelativeTo(this);
+        dialog.setLocationRelativeTo(imageGridPanel);
 
         PreviewImagePanel panel = new PreviewImagePanel(data.getImage());
         JScrollPane scrollPane = new JScrollPane(panel);

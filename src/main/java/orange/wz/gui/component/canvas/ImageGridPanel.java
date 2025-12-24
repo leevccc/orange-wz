@@ -59,7 +59,7 @@ public final class ImageGridPanel extends JScrollPane {
             x = GAP + col * (CELL_SIZE + GAP);
             y = GAP + row * (CELL_SIZE + GAP);
 
-            ImageCellPanel cell = new ImageCellPanel(data.get(i), node, editPane);
+            ImageCellPanel cell = new ImageCellPanel(data.get(i), node, editPane, this);
             cell.setBounds(x, y, CELL_SIZE, CELL_SIZE);
             gridPanel.add(cell);
             loadedIndices.add(i);
