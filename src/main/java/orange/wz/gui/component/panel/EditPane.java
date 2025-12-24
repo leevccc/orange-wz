@@ -17,6 +17,7 @@ import java.awt.event.*;
 import java.io.File;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static orange.wz.gui.Icons.*;
 
@@ -365,10 +366,10 @@ public final class EditPane extends JSplitPane {
         MainFrame.getInstance().setStatusText(wzObject.getPath());
     }
 
-    private void handleTreeDoubleClick(DefaultMutableTreeNode node, WzObject wzObject) {
+    private SwingWorker<Void, Void> handleTreeDoubleClick(DefaultMutableTreeNode node, WzObject wzObject) {
         MainFrame.getInstance().setStatusText("加载 %s...", wzObject.getName());
 
-        new SwingWorker<Void, Void>() {
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() {
                 switch (wzObject) {
@@ -412,7 +413,10 @@ public final class EditPane extends JSplitPane {
                     throw new RuntimeException(ex);
                 }
             }
-        }.execute();
+        };
+
+        worker.execute();
+        return worker;
     }
 
     // 递归方法：只插入子节点，不展开
@@ -621,9 +625,7 @@ public final class EditPane extends JSplitPane {
         return null;
     }
 
-    public WzObject findAnotherTreeWzObjectByPath(String path) {
-        if (!MainFrame.getInstance().getCenterPane().isRightShowing()) return null;
-
+    public WzObject findTreeWzObjectByPath(String path) {
         DefaultMutableTreeNode node = treeRoot;
         String[] paths = path.split("/");
         for (int i = 0; i < paths.length; i++) {
@@ -643,6 +645,32 @@ public final class EditPane extends JSplitPane {
         }
 
         return null;
+    }
+
+    public void selectTreeNodeByPath(List<String> paths) {
+        DefaultMutableTreeNode node = treeRoot;
+        for (int i = 0; i < paths.size(); i++) {
+            node = findTreeNodeByName(node, paths.get(i));
+            if (node == null) break;
+
+            if (i == paths.size() - 1) {
+                TreePath path = new TreePath(node.getPath());
+                tree.setSelectionPath(path);
+                tree.scrollPathToVisible(path); // 关键，滚动到可见
+            } else {
+                if (node.isLeaf()) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    SwingWorker<Void, Void> worker = handleTreeDoubleClick(node, wzObject);
+                    try {
+                        worker.get(); // 等待完成
+                    } catch (ExecutionException | InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
+            }
+        }
     }
 
     /**

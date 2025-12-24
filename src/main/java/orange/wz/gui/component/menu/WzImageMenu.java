@@ -5,9 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
+import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
+import orange.wz.gui.utils.CanvasUtil;
+import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzDirectory;
@@ -23,6 +26,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static orange.wz.gui.Icons.*;
@@ -81,6 +85,7 @@ public final class WzImageMenu extends JPopupMenu {
         exportBtn.add(exportImgBtn);
         exportBtn.add(exportXmlBtn);
         JMenuItem chineseBtn = new JMenuItem("汉化");
+        JMenuItem imageBtn = new JMenuItem("图片嗅探");
 
         addCanvasBtnItem(addCanvasBtn);
         addConvexBtnItem(addConvexBtn);
@@ -101,6 +106,7 @@ public final class WzImageMenu extends JPopupMenu {
         addExportImgBtnAction(exportImgBtn);
         addExportXmlBtnAction(exportXmlBtn);
         addChineseBtnAction(chineseBtn);
+        addImageBtnAction(imageBtn);
 
         add(addBtn);
         add(copyBtn);
@@ -108,6 +114,7 @@ public final class WzImageMenu extends JPopupMenu {
         add(deleteBtn);
         add(exportBtn);
         add(chineseBtn);
+        add(imageBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {
@@ -791,7 +798,7 @@ public final class WzImageMenu extends JPopupMenu {
                 WzImage to = (WzImage) node.getUserObject();
                 to.parse();
 
-                WzImage from = (WzImage) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findAnotherTreeWzObjectByPath(to.getPath());
+                WzImage from = (WzImage) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findTreeWzObjectByPath(to.getPath());
                 if (from == null) {
                     log.error("找不到中文版本的 {}", to.getName());
                     continue;
@@ -804,6 +811,27 @@ public final class WzImageMenu extends JPopupMenu {
             Instant end = Instant.now();
             Duration duration = Duration.between(start, end);
             MainFrame.getInstance().setStatusText("汉化完成! 耗时 %d ms", duration.toMillis());
+        });
+    }
+
+    private void addImageBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            if (selectedPaths.length != 1) {
+                JMessageUtil.error("该功能不支持多选");
+                return;
+            }
+
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+            WzImage wzImage = (WzImage) node.getUserObject();
+            wzImage.parse();
+            List<CanvasUtilData> data = new ArrayList<>();
+            CanvasUtil.search(data, wzImage.getChildren());
+
+            CanvasWall canvasWall = new CanvasWall(data, wzImage.getPath(), node, editPane);
+            canvasWall.setVisible(true);
         });
     }
 }

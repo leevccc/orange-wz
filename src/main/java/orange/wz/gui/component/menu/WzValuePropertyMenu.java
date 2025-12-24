@@ -94,7 +94,7 @@ public final class WzValuePropertyMenu extends JPopupMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 WzImageProperty to = (WzImageProperty) node.getUserObject();
 
-                WzImageProperty from = (WzImageProperty) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findAnotherTreeWzObjectByPath(to.getPath());
+                WzImageProperty from = (WzImageProperty) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findTreeWzObjectByPath(to.getPath());
                 if (from == null) {
                     log.error("找不到中文版本的 {}", to.getName());
                     continue;

@@ -4,17 +4,21 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
+import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.NodeDialog;
 import orange.wz.gui.component.dialog.OverwriteChoice;
 import orange.wz.gui.component.dialog.OverwriteDialog;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
+import orange.wz.gui.utils.CanvasUtil;
+import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
+import java.util.ArrayList;
 import java.util.List;
 
 import static orange.wz.gui.Icons.*;
@@ -45,17 +49,20 @@ public final class WzDirectoryMenu extends JPopupMenu {
         copyBtn = new JMenuItem("复制", AiOutlineCopy);
         pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
+        JMenuItem imageBtn = new JMenuItem("图片嗅探");
 
         addDirBtnAction(addDirBtn);
         addImgBtnAction(addImgBtn);
         addCopyBtnAction(copyBtn);
         addPasteBtnAction(pasteBtn);
         deleteBtnAction(deleteBtn);
+        addImageBtnAction(imageBtn);
 
         add(addBtn);
         add(copyBtn);
         add(pasteBtn);
         add(deleteBtn);
+        add(imageBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {
@@ -296,6 +303,26 @@ public final class WzDirectoryMenu extends JPopupMenu {
             if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
             newImg.setTempChanged(true);
             editPane.insertNodeToTree(node, newImg, true, 0);
+        });
+    }
+
+    private void addImageBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            if (selectedPaths.length != 1) {
+                JMessageUtil.error("该功能不支持多选");
+                return;
+            }
+
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+            WzDirectory wzDirectory = (WzDirectory) node.getUserObject();
+            List<CanvasUtilData> data = new ArrayList<>();
+            CanvasUtil.search(data, wzDirectory.getChildren());
+
+            CanvasWall canvasWall = new CanvasWall(data, wzDirectory.getPath(), node, editPane);
+            canvasWall.setVisible(true);
         });
     }
 }
