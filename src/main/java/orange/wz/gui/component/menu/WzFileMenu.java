@@ -12,6 +12,7 @@ import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.gui.utils.Outlink;
 import orange.wz.provider.*;
 import orange.wz.utils.wzkey.WzKey;
 
@@ -22,6 +23,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,6 +60,7 @@ public final class WzFileMenu extends JPopupMenu {
         exportBtn.add(exportImgBtn);
         exportBtn.add(exportXmlBtn);
         JMenuItem chineseBtn = new JMenuItem("汉化");
+        JMenuItem outlinkBtn = new JMenuItem("Outlink");
 
 
         addDirBtnAction(addDirBtn);
@@ -71,6 +74,7 @@ public final class WzFileMenu extends JPopupMenu {
         addExportImgBtnAction(exportImgBtn);
         addExportXmlBtnAction(exportXmlBtn);
         addChineseBtnAction(chineseBtn);
+        addOutlinkBtnAction(outlinkBtn);
 
         add(addBtn);
         add(saveBtn);
@@ -81,6 +85,7 @@ public final class WzFileMenu extends JPopupMenu {
         add(keyBtn);
         add(exportBtn);
         add(chineseBtn);
+        add(outlinkBtn);
     }
 
     private void saveBtnAction(JMenuItem item) {
@@ -516,6 +521,41 @@ public final class WzFileMenu extends JPopupMenu {
             Instant end = Instant.now();
             Duration duration = Duration.between(start, end);
             MainFrame.getInstance().setStatusText("汉化完成! 耗时 %d ms", duration.toMillis());
+        });
+    }
+
+    private void addOutlinkBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            Instant now = Instant.now();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            List<WzObject> objects = new ArrayList<>();
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzObject wzObject = (WzObject) node.getUserObject();
+                objects.add(wzObject);
+            }
+
+            SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() {
+                    Outlink.replace(objects);
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        Instant end = Instant.now();
+                        MainFrame.getInstance().setStatusText("Outlink 结束，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            };
+            worker.execute();
         });
     }
 }

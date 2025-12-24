@@ -403,7 +403,7 @@ public final class EditPane extends JSplitPane {
     private SwingWorker<Void, Void> handleTreeDoubleClick(DefaultMutableTreeNode node, WzObject wzObject) {
         MainFrame.getInstance().setStatusText("加载 %s...", wzObject.getName());
 
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
                 switch (wzObject) {

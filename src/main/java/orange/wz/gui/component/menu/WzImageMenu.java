@@ -9,10 +9,7 @@ import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
-import orange.wz.gui.utils.CanvasUtil;
-import orange.wz.gui.utils.CanvasUtilData;
-import orange.wz.gui.utils.ChineseUtil;
-import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.gui.utils.*;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
@@ -86,6 +83,7 @@ public final class WzImageMenu extends JPopupMenu {
         exportBtn.add(exportXmlBtn);
         JMenuItem chineseBtn = new JMenuItem("汉化");
         JMenuItem imageBtn = new JMenuItem("图片嗅探");
+        JMenuItem outlinkBtn = new JMenuItem("Outlink");
 
         addCanvasBtnItem(addCanvasBtn);
         addConvexBtnItem(addConvexBtn);
@@ -107,6 +105,7 @@ public final class WzImageMenu extends JPopupMenu {
         addExportXmlBtnAction(exportXmlBtn);
         addChineseBtnAction(chineseBtn);
         addImageBtnAction(imageBtn);
+        addOutlinkBtnAction(outlinkBtn);
 
         add(addBtn);
         add(copyBtn);
@@ -115,6 +114,7 @@ public final class WzImageMenu extends JPopupMenu {
         add(exportBtn);
         add(chineseBtn);
         add(imageBtn);
+        add(outlinkBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {
@@ -834,6 +834,41 @@ public final class WzImageMenu extends JPopupMenu {
 
             CanvasWall canvasWall = new CanvasWall(data, wzImage.getPath(), node, editPane);
             canvasWall.setVisible(true);
+        });
+    }
+
+    private void addOutlinkBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            Instant now = Instant.now();
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            List<WzObject> objects = new ArrayList<>();
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                WzObject wzObject = (WzObject) node.getUserObject();
+                objects.add(wzObject);
+            }
+
+            SwingWorker<Void, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() {
+                    Outlink.replace(objects);
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        Instant end = Instant.now();
+                        MainFrame.getInstance().setStatusText("Outlink 结束，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            };
+            worker.execute();
         });
     }
 }

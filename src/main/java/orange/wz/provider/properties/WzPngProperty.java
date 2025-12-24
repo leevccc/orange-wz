@@ -587,6 +587,16 @@ public class WzPngProperty extends WzImageProperty {
         return base64String;
     }
 
+    public void setFormat(int format, int format2) {
+        this.format = format;
+        this.format2 = format2;
+    }
+
+    public void setImage(BufferedImage pngImage) {
+        image = pngImage;
+        compressPng();
+    }
+
     public void setImage(String base64, WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
         image = readBase64(base64);
         compressPng(pngFormat);
@@ -600,6 +610,29 @@ public class WzPngProperty extends WzImageProperty {
     public void setImage(BufferedImage pngImage, WzMutableKey wzMutableKey) {
         image = pngImage;
         compressPng(getPngFormat());
+    }
+
+    public void compressPng() {
+        WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
+        width = image.getWidth();
+        height = image.getHeight();
+
+        compressedBytes = compress(image, WzPngFormat.getByValue(format + format2));
+        compressedBytes = zlibCompress(compressedBytes);
+        if (listWzUsed) {
+            BinaryWriter writer = new BinaryWriter(compressedBytes);
+            writer.setWzMutableKey(wzMutableKey);
+            writer.putInt(2);
+            for (int i = 0; i < 2; i++) {
+                writer.putByte((byte) (compressedBytes[i] ^ wzMutableKey.get(i)));
+            }
+            writer.putInt(compressedBytes.length - 2);
+            for (int i = 2; i < compressedBytes.length; i++)
+                writer.putByte((byte) (compressedBytes[i] ^ wzMutableKey.get(i - 2)));
+            compressedBytes = writer.output();
+        }
+
+        // parse(wzKey);
     }
 
     public void compressPng(WzPngFormat pngFormat) {
