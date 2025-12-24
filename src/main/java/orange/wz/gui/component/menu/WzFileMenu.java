@@ -168,6 +168,7 @@ public final class WzFileMenu extends JPopupMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 WzDirectory wzFile = (WzDirectory) node.getUserObject();
                 DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
+                if (pNode == null) continue;
                 if (pNode.getUserObject() instanceof WzFolder wzFolder) {
                     wzFolder.remove(wzFile);
                 }
