@@ -30,12 +30,12 @@
             <directory>${project.build.directory}/lib</directory>
             <outputDirectory>/lib</outputDirectory>
         </fileSet>
-<!--        <fileSet>-->
-<!--            <directory>${project.basedir}</directory>-->
-<!--            <outputDirectory>/</outputDirectory>-->
-<!--            <includes>-->
-<!--                <include>OrzRepacker.bat</include>-->
-<!--            </includes>-->
-<!--        </fileSet>-->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>libcrypto-3-x64.dll</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

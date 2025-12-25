@@ -7,4 +7,3 @@
 4. 修改 Luncher 的版本号（最新版本号在 application.properties 里）
 5. 重新编译 Luncher
 6. 将 Luncher 放入解压后的目录中，执行 Luncher 将 Jar 加密成 data.bin
-7. 删除 Jar
