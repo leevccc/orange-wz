@@ -375,7 +375,7 @@ public final class EditPane extends JSplitPane {
                 switchForm("short");
             }
             case WzSoundProperty obj -> {
-                getSoundForm().setData(obj.getName(), WzType.SOUND_PROPERTY.name(), obj.getSoundBytes(), wzObject, this);
+                getSoundForm().setData(obj.getName(), WzType.SOUND_PROPERTY.name(), obj.getSoundBytes(), obj.getLenMs(), wzObject, this);
                 switchForm("sound");
             }
             case WzStringProperty obj -> {

@@ -85,7 +85,7 @@ public class SoundForm extends AbstractValueForm {
             }
 
             try {
-                setData(Files.readAllBytes(file.toPath()));
+                setData(Files.readAllBytes(file.toPath()), -1);
             } catch (IOException ex) {
                 log.error(ex.getMessage());
                 JMessageUtil.error("读取文件失败：" + ex.getMessage());
@@ -160,16 +160,16 @@ public class SoundForm extends AbstractValueForm {
         });
     }
 
-    public void setData(String name, String type, byte[] bytes, WzObject wzObject, EditPane editPane) {
+    public void setData(String name, String type, byte[] bytes, int lenMs, WzObject wzObject, EditPane editPane) {
         super.setData(name, type, wzObject, editPane);
-        setData(bytes);
+        setData(bytes, lenMs);
     }
 
-    private void setData(byte[] bytes) {
+    private void setData(byte[] bytes, int lenMs) {
         cleanOldPlayer();
 
         this.soundBytes = bytes;
-        this.totalMs = computeTotalMs(bytes);
+        this.totalMs = lenMs == -1 ? computeTotalMs(bytes) : lenMs;
 
         resetUIState();
 
@@ -177,7 +177,12 @@ public class SoundForm extends AbstractValueForm {
         updateTimeLabel(0, totalMs / 1000);
 
         if (this.soundBytes != null && this.soundBytes.length > 0) {
-            loadAudioClip();
+            // loadAudioClip();
+            // 准备就绪，启用按钮
+            clip = null;
+            btnPlay.setEnabled(true);
+            btnLoop.setEnabled(true);
+            slider.setEnabled(true);
         }
     }
 
@@ -234,10 +239,6 @@ public class SoundForm extends AbstractValueForm {
                     }
                 }
             });
-            // 准备就绪，启用按钮
-            btnPlay.setEnabled(true);
-            btnLoop.setEnabled(true);
-            slider.setEnabled(true);
         } catch (Exception e) {
             log.error(e.getMessage());
             JMessageUtil.error("无法加载音频: " + e.getMessage());
@@ -245,6 +246,7 @@ public class SoundForm extends AbstractValueForm {
     }
 
     private void togglePlay() {
+        if (clip == null) loadAudioClip();
         if (clip == null) return;
 
         if (clip.isRunning()) {

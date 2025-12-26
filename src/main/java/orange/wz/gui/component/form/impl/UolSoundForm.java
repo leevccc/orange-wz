@@ -20,14 +20,16 @@ public class UolSoundForm extends SoundForm {
     public void setData(String name, String type, String value, WzSoundProperty sound, WzObject wzObject, EditPane editPane) {
         valueInput.setText(value);
         byte[] bytes = null;
+        int lenMs = 0;
 
         if (sound == null) {
             log.warn("sound is null");
         } else {
             bytes = sound.getSoundBytes(false);
+            lenMs = sound.getLenMs();
         }
 
-        setData(name, type, bytes, wzObject, editPane);
+        setData(name, type, bytes, lenMs, wzObject, editPane);
     }
 
     public StringFormData getUolData() {
