@@ -251,7 +251,10 @@ public class WzDirectory extends WzObject {
     public void parseAllImages() {
         children.getDirectories().forEach(WzDirectory::parseAllImages);
         children.getImages().forEach(image -> {
-            image.parse();
+            if (!image.parse()) {
+                log.error("文件 {} 解析失败", name);
+                throw new RuntimeException();
+            }
             image.setChanged(true); // 确保保存的时候重新写入，而不是取原来的
         });
     }

@@ -128,7 +128,10 @@ public final class Outlink {
             } else if (wzObject instanceof WzDirectory wzDir) {
                 collect(collector, wzDir.getChildren());
             } else if (wzObject instanceof WzImage wzImg) {
-                wzImg.parse();
+                if (!wzImg.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
                 collect(collector, wzImg.getChildren());
             } else if (wzObject instanceof WzImageProperty property && property.isListProperty()) {
                 collect(collector, property.getChildren());
@@ -171,7 +174,10 @@ public final class Outlink {
                 current += dataList.size();
                 continue;
             }
-            image.parse();
+            if (!image.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", image.getName(), image.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             for (Data data : dataList) {
                 WzCanvasProperty to = data.object();

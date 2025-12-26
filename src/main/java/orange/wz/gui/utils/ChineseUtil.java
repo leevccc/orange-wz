@@ -13,8 +13,12 @@ public final class ChineseUtil {
         if (from == null || to == null) return;
 
         if (to instanceof WzFile toFile && from instanceof WzFile fromFile) {
-            if (!toFile.parse() || !fromFile.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 或 文件 %s 解析失败", toFile.getName(), fromFile.getName());
+            if (!toFile.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toFile.getName(), toFile.getStatus().getMessage());
+                throw new RuntimeException();
+            }
+            if (!fromFile.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromFile.getName(), fromFile.getStatus().getMessage());
                 throw new RuntimeException();
             }
 
@@ -24,8 +28,14 @@ public final class ChineseUtil {
             toDirectory.getDirectories().forEach(toDir -> chinese(fromDirectory.getDirectory(toDir.getName()), toDir));
             toDirectory.getImages().forEach(toImage -> chinese(fromDirectory.getImage(toImage.getName()), toImage));
         } else if (to instanceof WzImage toImage && from instanceof WzImage fromImage) {
-            toImage.parse();
-            fromImage.parse();
+            if (!toImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toImage.getName(), toImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
+            if (!fromImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromImage.getName(), fromImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
             toImage.getChildren().forEach(img -> chinese(fromImage.getChild(img.getName()), img));
         } else if (to instanceof WzListProperty toListProperty && from instanceof WzListProperty fromList) {
             toListProperty.getChildren().forEach(prop -> chinese(fromList.getChild(prop.getName()), prop));

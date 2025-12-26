@@ -430,7 +430,7 @@ public final class WzFileMenu extends JPopupMenu {
             }
 
             WzImage newImg = new WzImage(name, wzFile.getReader(), wzDirectory);
-            newImg.setParsed(true);
+            newImg.setStatus(WzFileStatus.PARSE_SUCCESS);
             newImg.setChanged(true);
             if (!wzDirectory.addChild(newImg)) {
                 JMessageUtil.error("名称已存在");
@@ -522,13 +522,16 @@ public final class WzFileMenu extends JPopupMenu {
                 WzDirectory wzDirectory = (WzDirectory) node.getUserObject();
                 WzFile to = wzDirectory.getWzFile();
                 if (to.getName().equalsIgnoreCase("List.wz")) return;
+                if (!to.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", to.getName(), to.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
 
                 DefaultMutableTreeNode rightNode = MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findTreeNodeByName(rightTreeRoot, to.getName());
                 if (rightNode == null) continue;
                 WzFile from = ((WzDirectory) rightNode.getUserObject()).getWzFile();
-
-                if (!to.parse() || !from.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 或 文件 %s 解析失败", to.getName(), from.getName());
+                if (!from.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", from.getName(), from.getStatus().getMessage());
                     throw new RuntimeException();
                 }
 

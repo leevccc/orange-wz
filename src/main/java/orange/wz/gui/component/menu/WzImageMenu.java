@@ -254,7 +254,10 @@ public final class WzImageMenu extends JPopupMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 WzImage wzImage = (WzImage) node.getUserObject();
 
-                wzImage.parse();
+                if (!wzImage.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
                 wzImage.save(folder.toPath().resolve(wzImage.getName()));
             }
         });
@@ -273,7 +276,10 @@ public final class WzImageMenu extends JPopupMenu {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 WzImage wzImage = (WzImage) node.getUserObject();
 
-                wzImage.parse();
+                if (!wzImage.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
                 wzImage.exportToXml(Path.of(data.getExportPath()), data.getIndent(), data.isExportMedia());
             }
         });
@@ -304,7 +310,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzCanvasProperty prop = new WzCanvasProperty(name, wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -345,7 +354,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzConvexProperty prop = new WzConvexProperty(name, wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -384,7 +396,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzDoubleProperty prop = new WzDoubleProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -423,7 +438,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzFloatProperty prop = new WzFloatProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -462,7 +480,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzIntProperty prop = new WzIntProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -501,7 +522,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzListProperty prop = new WzListProperty(name, wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -540,7 +564,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzLongProperty prop = new WzLongProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -579,7 +606,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzNullProperty prop = new WzNullProperty(name, wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -618,7 +648,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzShortProperty prop = new WzShortProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -657,7 +690,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzSoundProperty prop = new WzSoundProperty(name, wzImage, wzImage);
             prop.setSound(data.getSoundBytes());
@@ -697,7 +733,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzStringProperty prop = new WzStringProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -736,7 +775,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzUOLProperty prop = new WzUOLProperty(name, data.getValue(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -775,7 +817,10 @@ public final class WzImageMenu extends JPopupMenu {
             }
 
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
 
             WzVectorProperty prop = new WzVectorProperty(name, data.getX(), data.getY(), wzImage, wzImage);
             if (!wzImage.addChild(prop)) {
@@ -798,14 +843,20 @@ public final class WzImageMenu extends JPopupMenu {
             for (TreePath treePath : selectedPaths) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                 WzImage to = (WzImage) node.getUserObject();
-                to.parse();
+                if (!to.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", to.getName(), to.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
 
                 WzImage from = (WzImage) MainFrame.getInstance().getCenterPane().getAnotherPane(editPane).findTreeWzObjectByPath(to.getPath());
                 if (from == null) {
                     log.error("找不到中文版本的 {}", to.getName());
                     continue;
                 }
-                from.parse();
+                if (!from.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", from.getName(), from.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
 
                 ChineseUtil.chinese(from, to);
             }
@@ -828,7 +879,10 @@ public final class WzImageMenu extends JPopupMenu {
 
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
             WzImage wzImage = (WzImage) node.getUserObject();
-            wzImage.parse();
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
             List<CanvasUtilData> data = new ArrayList<>();
             CanvasUtil.search(data, wzImage.getChildren());
 

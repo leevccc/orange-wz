@@ -22,7 +22,7 @@ public class WzImage extends WzObject {
     private BinaryReader reader;
     private final WzChildrenProperty children = new WzChildrenProperty();
 
-    private boolean parsed;
+    protected WzFileStatus status;
     private boolean changed;
     private int tempFileStart;
     private int tempFileEnd;
@@ -37,7 +37,7 @@ public class WzImage extends WzObject {
     public WzImage(String name, WzObject parent, BinaryReader binaryReader) {
         super(name, WzType.IMAGE, parent);
         reader = binaryReader;
-        parsed = true;
+        status = WzFileStatus.PARSE_SUCCESS;
         changed = true;
     }
 
@@ -46,36 +46,44 @@ public class WzImage extends WzObject {
         reader = binaryReader;
     }
 
-    public void parse() {
-        parse(true);
+    public boolean parse() {
+        return parse(true);
     }
 
-    public synchronized void parse(boolean realParse) {
-        if (parsed) {
-            return;
+    public synchronized boolean parse(boolean realParse) {
+        if (status == WzFileStatus.PARSE_SUCCESS) {
+            return true;
         } else if (changed) {
-            parsed = true;
-            return;
+            status = WzFileStatus.PARSE_SUCCESS;
+            return true;
         }
 
-        if (!realParse) return;
+        if (!realParse) return true;
         reader.setPosition(offset);
         byte b = reader.getByte();
-        if (b != withoutOffsetFlag || !reader.readString().equals("Property") || reader.getShort() != 0) {
-            return;
+        if (b != withoutOffsetFlag) {
+            status = WzFileStatus.ERROR_SPECIAL_ENCODE;
+            return false;
+        }
+
+        if (!reader.readString().equals("Property") || reader.getShort() != 0) {
+            status = WzFileStatus.ERROR_KEY;
+            return false;
         }
 
         try {
             children.add(WzImageProperty.parsePropertyList(offset, reader, this));
-            parsed = true;
+            status = WzFileStatus.PARSE_SUCCESS;
+            return true;
         } catch (Exception e) {
             log.error("WzImage 解析错误 : {}", name);
+            return false;
         }
     }
 
     public void unparse() {
         children.clear();
-        parsed = false;
+        status = WzFileStatus.UNPARSE;
     }
 
     public void save(Path path) {
@@ -92,8 +100,13 @@ public class WzImage extends WzObject {
     }
 
     public void exportToXml(Path path, int indent, boolean exportMedia) {
-        boolean parseStatus = parsed;
-        if (!parseStatus) parse();
+        boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
+        if (!parseStatus) {
+            if (!parse()) {
+                log.error("解析文件失败");
+                return;
+            }
+        }
         XmlExport.export(this, path, indent, exportMedia);
         if (!parseStatus) unparse();
     }
@@ -144,14 +157,21 @@ public class WzImage extends WzObject {
     }
 
     public void changeKey(byte[] iv, byte[] key) {
-        parse(); // 先解析把原有内容解码出来缓存在内存里
+        // 先解析把原有内容解码出来缓存在内存里
+        if (!parse()) {
+            log.error("文件 {} 解析失败", name);
+            return;
+        }
         changed = true; // 确保保存的时候重新写入，而不是取原来的
         reader.setWzMutableKey(new WzMutableKey(iv, key));
     }
 
     // DeepClone -------------------------------------------------------------------------------------------------------
     public WzImage deepClone(WzObject parent) {
-        parse();
+        if (!parse()) {
+            log.error("文件 {} 解析失败", name);
+            throw new RuntimeException();
+        }
         WzImage clone = new WzImage(getName(), parent, reader);
         for (WzImageProperty property : children.get()) {
             clone.addChild(property.deepClone(clone));

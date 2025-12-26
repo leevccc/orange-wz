@@ -423,7 +423,10 @@ public final class EditPane extends JSplitPane {
                     }
                     case WzImage wzImg -> {
                         if (node.getChildCount() == 0) {
-                            wzImg.parse();
+                            if (!wzImg.parse()) {
+                                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                                throw new RuntimeException();
+                            }
                             java.util.List<WzImageProperty> children = wzImg.getChildren();
                             sortWzObjects(children);
                             children.forEach(child -> {

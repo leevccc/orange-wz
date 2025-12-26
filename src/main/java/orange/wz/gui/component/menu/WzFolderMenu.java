@@ -149,7 +149,10 @@ public final class WzFolderMenu extends JPopupMenu {
         WzFile wzFile = WzFile.createNewFile(savePath, fileVersion, wzFolder.getIv(), wzFolder.getKey());
         directories.forEach(directory -> wzFile.getWzDirectory().addChild(new WzDirectory(directory, wzFile.getWzDirectory(), wzFile)));
         imageFiles.forEach(imageFile -> {
-            imageFile.parse(false);
+            if (!imageFile.parse(false)) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", imageFile.getName(), imageFile.getStatus().getMessage());
+                throw new RuntimeException();
+            }
             wzFile.getWzDirectory().addChild(imageFile);
         });
         wzFile.save();
@@ -168,7 +171,10 @@ public final class WzFolderMenu extends JPopupMenu {
                 packageSubToWz(subFolder, wzDirectory);
                 parent.addChild(wzDirectory);
             } else if (child instanceof WzImageFile imageFile) {
-                imageFile.parse(false);
+                if (!imageFile.parse(false)) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", imageFile.getName(), imageFile.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
                 parent.addChild(imageFile);
             }
         }

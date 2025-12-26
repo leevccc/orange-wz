@@ -14,6 +14,7 @@ import orange.wz.gui.utils.CanvasUtil;
 import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
+import orange.wz.provider.tools.WzFileStatus;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -302,7 +303,7 @@ public final class WzDirectoryMenu extends JPopupMenu {
             }
 
             WzImage newImg = new WzImage(name, wzFile.getReader(), wzDirectory);
-            newImg.setParsed(true);
+            newImg.setStatus(WzFileStatus.PARSE_SUCCESS);
             newImg.setChanged(true);
             if (!wzDirectory.addChild(newImg)) {
                 JMessageUtil.error("名称已存在");

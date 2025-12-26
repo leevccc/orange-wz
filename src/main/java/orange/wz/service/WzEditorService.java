@@ -10,6 +10,7 @@ import orange.wz.model.WzNodeType;
 import orange.wz.model.WzNodeValueDto;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
+import orange.wz.provider.tools.WzFileStatus;
 import orange.wz.provider.tools.WzMutableKey;
 import orange.wz.utils.FileUtils;
 import orange.wz.utils.wzkey.WzKey;
@@ -794,7 +795,7 @@ public final class WzEditorService {
                         throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzImage img = new WzImage(data.getName(), wzFile.getReader(), wzFile);
-                    img.setParsed(true);
+                    img.setStatus(WzFileStatus.PARSE_SUCCESS);
                     img.setChanged(true);
                     wzFile.getWzDirectory().addChild(img);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.IMAGE, null, img);
@@ -819,7 +820,7 @@ public final class WzEditorService {
                         throw new BizException(ExceptionEnum.INTERNAL_SERVER_ERROR, "已有相同节点名了");
                     }
                     WzImage img = new WzImage(data.getName(), wzDirectory.getWzFile().getReader(), wzDirectory);
-                    img.setParsed(true);
+                    img.setStatus(WzFileStatus.PARSE_SUCCESS);
                     img.setChanged(true);
                     wzDirectory.addChild(img);
                     node = new WzNode(pNode, nextId.getAndIncrement(), data.getName(), WzNodeType.IMAGE, null, img);

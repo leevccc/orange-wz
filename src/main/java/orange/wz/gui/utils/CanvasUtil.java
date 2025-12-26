@@ -29,7 +29,10 @@ public final class CanvasUtil {
                 }
                 search(result, wzDir.getChildren());
             } else if (wzObject instanceof WzImage wzImg) {
-                wzImg.parse();
+                if (!wzImg.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
                 search(result, wzImg.getChildren());
             }
         }
