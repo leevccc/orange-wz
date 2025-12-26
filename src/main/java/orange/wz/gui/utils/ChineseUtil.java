@@ -42,6 +42,7 @@ public final class ChineseUtil {
         } else if (to instanceof WzStringProperty toString && from instanceof WzStringProperty fromString) {
             String fromValue = fromString.getValue();
             if (fromValue != null && !isChineseStr(toString.getValue()) && isChineseStr(fromValue)) {
+                toString.setTempChanged(true);
                 toString.getWzImage().setChanged(true);
                 toString.setValue(fromValue);
             }
