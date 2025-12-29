@@ -280,7 +280,7 @@ public final class WzImageMenu extends JPopupMenu {
                     MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
                     throw new RuntimeException();
                 }
-                wzImage.exportToXml(Path.of(data.getExportPath()), data.getIndent(), data.getMeType());
+                wzImage.exportToXml(Path.of(data.getExportPath(), wzImage.getName() + ".xml"), data.getIndent(), data.getMeType());
             }
         });
     }
