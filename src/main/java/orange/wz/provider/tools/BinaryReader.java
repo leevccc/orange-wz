@@ -184,16 +184,6 @@ public final class BinaryReader {
         return new String(data, StandardCharsets.US_ASCII);
     }
 
-    public String readNullTerminatedString() {
-        StringBuilder retString = new StringBuilder();
-        byte b = buffer.get();
-        while (b != 0) {
-            retString.append((char) b);
-            b = buffer.get();
-        }
-        return retString.toString();
-    }
-
     public int readCompressedInt() {
         byte b = buffer.get();
         if (b == Byte.MIN_VALUE) {

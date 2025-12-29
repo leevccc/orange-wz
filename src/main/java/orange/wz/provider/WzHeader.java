@@ -9,7 +9,7 @@ public final class WzHeader {
     private String signature;
     private String copyright;
     private long fileSize;
-    private int dataStartPos;
+    private int headerSize;
 
     private short fileVersion; // 外部指定的版本号
     private short encVersion; // 从文件中读取的版本号
@@ -22,12 +22,16 @@ public final class WzHeader {
     public static WzHeader getDefault(short fileVersion) {
         WzHeader header = new WzHeader(fileVersion);
         header.signature = "PKG1";
-        header.copyright = "Package file v1.0 Copyright 2002 Wizet, ZMS";
+        header.copyright = "Package file v1.0 Copyright 2002 Wizet, ZMS\0";
         header.fileSize = 0;
-        header.dataStartPos = 60;
+        header.headerSize = 60; // 签名4字节 + 版权文字44字节 + 文件大小8字节 + headerSize自己4字节，总共4+44+8+4=60字节
         header.createVersionHash();
 
         return header;
+    }
+
+    public int getDataStartPos() {
+        return headerSize; // 数组是从0开始计的，因此，刚好size的值就是Data开始的位置
     }
 
     public int checkAndGetVersionHash(short checkEncVersion, short fileVersion) {

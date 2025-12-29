@@ -91,9 +91,13 @@ public class WzFile extends WzObject {
 
         reader = new BinaryReader(wzPath.toString(), wzIv, userKey);
         header.setSignature(reader.readString(4));
+        if (!header.getSignature().equals("PKG1") && !header.getSignature().equals("PKG2")) {
+            log.error("{} 错误的包头 {}", name, header.getSignature());
+            return false;
+        }
         header.setFileSize(reader.getLong());
-        header.setDataStartPos(reader.getInt());
-        header.setCopyright(reader.readNullTerminatedString());
+        header.setHeaderSize(reader.getInt());
+        header.setCopyright(reader.readString(header.getDataStartPos() - reader.getPosition()));
 
         withEncVerHeader = check64BitClient();
         reader.setPosition(header.getDataStartPos());
@@ -189,17 +193,13 @@ public class WzFile extends WzObject {
             int totalLen = wzDirectory.getImgOffsets(wzDirectory.getOffsets(header.getDataStartPos() + (is64BitWzFile() ? 0 : 2)));
             BinaryWriter writer = new BinaryWriter(true);
             writer.setWzMutableKey(getWzMutableKey());
-            header.setFileSize(totalLen - header.getDataStartPos());
+            header.setFileSize(totalLen - header.getHeaderSize());
             for (int i = 0; i < 4; i++) {
                 writer.putByte((byte) header.getSignature().charAt(i));
             }
             writer.putLong(header.getFileSize());
-            writer.putInt(header.getDataStartPos());
+            writer.putInt(header.getHeaderSize());
             writer.putAsciiString(header.getCopyright());
-            long extraHeaderLength = header.getDataStartPos() - writer.getPosition();
-            if (extraHeaderLength > 0) {
-                writer.putBytes(new byte[(int) extraHeaderLength]);
-            }
             if (!is64BitWzFile()) {
                 writer.putShort(header.getEncVersion());
             }
