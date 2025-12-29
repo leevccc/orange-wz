@@ -54,19 +54,6 @@ public class WzSoundProperty extends WzExtended {
         this.soundBytes = soundBytes;
     }
 
-    public void setSound(String base64String, WzMutableKey wzMutableKey) {
-        if (base64String == null || base64String.isEmpty()) {
-            throw new IllegalArgumentException("Base64字符串不能为空");
-        }
-
-        byte[] soundBytes = Base64.getDecoder().decode(base64String);
-        Mp3FileReader reader = new Mp3FileReader(soundBytes);
-        waveFormat = reader.getWaveFormat();
-        lenMs = reader.getLenMs();
-        rebuildHeader();
-        this.soundBytes = soundBytes;
-    }
-
     public void setData(BinaryReader reader) {
         reader.skip(1);
 
@@ -213,12 +200,6 @@ public class WzSoundProperty extends WzExtended {
         writer.putShort(waveFormat.getCodecDelay());
 
         return writer.output();
-    }
-
-    public String getBase64() {
-        byte[] soundBytes = getSoundBytes(false);
-        if (soundBytes == null) return "";
-        return Base64.getEncoder().encodeToString(soundBytes);
     }
 
     @Override

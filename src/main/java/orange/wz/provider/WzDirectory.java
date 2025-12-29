@@ -259,10 +259,6 @@ public class WzDirectory extends WzObject {
         });
     }
 
-    public WzMutableKey getWzMutableKey() {
-        return wzFile.getWzMutableKey();
-    }
-
     // DeepClone -------------------------------------------------------------------------------------------------------
     public WzDirectory deepClone(WzObject parent) {
         WzDirectory clone = new WzDirectory(getName(), parent, null);

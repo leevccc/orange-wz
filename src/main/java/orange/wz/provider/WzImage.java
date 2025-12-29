@@ -104,10 +104,6 @@ public class WzImage extends WzObject {
         }
     }
 
-    public void exportToXml(Path path, int indent, boolean exportMedia) {
-        exportToXml(path, indent, exportMedia ? MediaExportType.BASE64 : MediaExportType.NONE);
-    }
-
     public void exportToXml(Path path, int indent, MediaExportType mediaExportType) {
         boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
         if (!parseStatus) {

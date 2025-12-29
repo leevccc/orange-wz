@@ -569,58 +569,8 @@ public class WzPngProperty extends WzImageProperty {
         return null;
     }
 
-    public String getBase64() {
-        BufferedImage image = getImage(false);
-        if (image == null) return "";
-        try {
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            ImageIO.write(image, "PNG", stream);
-            byte[] imageBytes = stream.toByteArray();
-            return Base64.getEncoder().encodeToString(imageBytes);
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-        return "";
-    }
-
     public WzPngFormat getPngFormat() {
         return WzPngFormat.getByValue(format + format2);
-    }
-
-    private BufferedImage readBase64(String base64String) {
-        if (base64String == null || base64String.isEmpty()) {
-            throw new IllegalArgumentException("Base64字符串不能为空");
-        }
-
-        try {
-            String cleanedBase64 = cleanBase64String(base64String);
-            byte[] imageBytes = Base64.getDecoder().decode(cleanedBase64);
-
-            try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
-                BufferedImage image = ImageIO.read(bis);
-                if (image == null) {
-                    throw new IOException("无法解码图片数据，可能不是支持的图片格式");
-                }
-                return image;
-            }
-
-        } catch (IllegalArgumentException e) {
-            System.err.println("Base64格式错误: " + e.getMessage());
-            return null;
-        } catch (IOException e) {
-            System.err.println("图片解码错误: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 清理Base64字符串，移除Data URL前缀
-     */
-    private static String cleanBase64String(String base64String) {
-        if (base64String.startsWith("data:image")) {
-            return base64String.split(",")[1];
-        }
-        return base64String;
     }
 
     public void setFormat(int format, int format2) {
@@ -633,19 +583,9 @@ public class WzPngProperty extends WzImageProperty {
         compressPng();
     }
 
-    public void setImage(String base64, WzMutableKey wzMutableKey, WzPngFormat pngFormat) {
-        image = readBase64(base64);
-        compressPng(pngFormat);
-    }
-
     public void setImage(BufferedImage pngImage, WzPngFormat pngFormat) {
         image = pngImage;
         compressPng(pngFormat);
-    }
-
-    public void setImage(BufferedImage pngImage, WzMutableKey wzMutableKey) {
-        image = pngImage;
-        compressPng(getPngFormat());
     }
 
     public void compressPng() {
