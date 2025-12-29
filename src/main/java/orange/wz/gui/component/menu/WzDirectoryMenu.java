@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
+import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.NodeDialog;
 import orange.wz.gui.component.dialog.OverwriteChoice;
@@ -14,11 +15,11 @@ import orange.wz.gui.utils.CanvasUtil;
 import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
-import orange.wz.provider.tools.WzFileStatus;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +52,11 @@ public final class WzDirectoryMenu extends JPopupMenu {
         pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
         JMenuItem imageBtn = new JMenuItem("图片嗅探");
+        JMenuItem importBtn = new JMenu("导入");
+        JMenuItem importImgBtn = new JMenuItem("Img");
+        JMenuItem importXmlBtn = new JMenuItem("Xml");
+        importBtn.add(importImgBtn);
+        importBtn.add(importXmlBtn);
 
         addDirBtnAction(addDirBtn);
         addImgBtnAction(addImgBtn);
@@ -58,12 +64,15 @@ public final class WzDirectoryMenu extends JPopupMenu {
         addPasteBtnAction(pasteBtn);
         deleteBtnAction(deleteBtn);
         addImageBtnAction(imageBtn);
+        addImportImgBtnAction(importImgBtn);
+        addImportXmlBtnAction(importXmlBtn);
 
         add(addBtn);
         add(copyBtn);
         add(pasteBtn);
         add(deleteBtn);
         add(imageBtn);
+        add(importBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {
@@ -331,6 +340,154 @@ public final class WzDirectoryMenu extends JPopupMenu {
 
             CanvasWall canvasWall = new CanvasWall(data, wzDirectory.getPath(), node, editPane);
             canvasWall.setVisible(true);
+        });
+    }
+
+    private void addImportImgBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+            if (selectedPaths.length != 1) {
+                JMessageUtil.error("该功能不支持多选");
+                return;
+            }
+
+            List<File> imgFiles = FileDialog.chooseOpenFiles(new String[]{"img"});
+            final int[] count = {0};
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+                    WzDirectory target = (WzDirectory) node.getUserObject();
+                    WzFile wzFile = target.getWzFile();
+                    String keyBoxName = wzFile.getKeyBoxName();
+                    byte[] iv = wzFile.getWzIv();
+                    byte[] key = wzFile.getUserKey();
+                    int total = imgFiles.size();
+                    OverwriteChoice choice = null;
+                    int index = 0;
+                    for (File imgFile : imgFiles) {
+                        String name = imgFile.getName();
+                        if (target.existImage(name)) {
+                            if (choice == OverwriteChoice.SKIP_ALL) continue;
+                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
+                                target.removeImageChild(name);
+                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, name);
+                                index = node.getIndex(childNode);
+                                editPane.removeNodeFromTree(childNode);
+                            } else {
+                                choice = OverwriteDialog.show(editPane, name);
+                                switch (choice) {
+                                    case OVERWRITE, OVERWRITE_ALL -> {
+                                        target.removeImageChild(name);
+                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, name);
+                                        index = node.getIndex(childNode);
+                                        editPane.removeNodeFromTree(childNode);
+                                    }
+                                    case SKIP, SKIP_ALL, CANCEL -> {
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        WzImageFile wzImageFile = new WzImageFile(name, imgFile.getAbsolutePath(), keyBoxName, iv, key);
+                        wzImageFile.parse();
+                        WzImage wzImage = wzImageFile.deepClone(target);
+                        wzImage.setTempChanged(true);
+                        target.addChild(wzImage);
+                        editPane.insertNodeToTree(node, wzImage, true, index);
+                        MainFrame.getInstance().updateProgress(++count[0], total);
+                    }
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }.execute();
+
+        });
+    }
+
+    private void addImportXmlBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+            if (selectedPaths.length != 1) {
+                JMessageUtil.error("该功能不支持多选");
+                return;
+            }
+
+            List<File> xmlFiles = FileDialog.chooseOpenFiles(new String[]{"xml"});
+            final int[] count = {0};
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+                    WzDirectory target = (WzDirectory) node.getUserObject();
+                    WzFile wzFile = target.getWzFile();
+                    String keyBoxName = wzFile.getKeyBoxName();
+                    byte[] iv = wzFile.getWzIv();
+                    byte[] key = wzFile.getUserKey();
+                    int total = xmlFiles.size();
+                    OverwriteChoice choice = null;
+                    int index = 0;
+                    for (File xmlFile : xmlFiles) {
+                        String name = xmlFile.getName();
+                        name = name.endsWith(".xml")
+                                ? name.substring(0, name.length() - 4)
+                                : name;
+                        if (target.existImage(name)) {
+                            if (choice == OverwriteChoice.SKIP_ALL) continue;
+                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
+                                target.removeImageChild(name);
+                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, name);
+                                index = node.getIndex(childNode);
+                                editPane.removeNodeFromTree(childNode);
+                            } else {
+                                choice = OverwriteDialog.show(editPane, name);
+                                switch (choice) {
+                                    case OVERWRITE, OVERWRITE_ALL -> {
+                                        target.removeImageChild(name);
+                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, name);
+                                        index = node.getIndex(childNode);
+                                        editPane.removeNodeFromTree(childNode);
+                                    }
+                                    case SKIP, SKIP_ALL, CANCEL -> {
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                        WzXmlFile wzXmlFile = new WzXmlFile(name, xmlFile.getAbsolutePath(), keyBoxName, iv, key);
+                        wzXmlFile.parse();
+                        WzImage wzImage = wzXmlFile.deepClone(target);
+                        wzImage.setTempChanged(true);
+                        target.addChild(wzImage);
+                        editPane.insertNodeToTree(node, wzImage, true, index);
+                        MainFrame.getInstance().updateProgress(++count[0], total);
+                    }
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }.execute();
         });
     }
 }
