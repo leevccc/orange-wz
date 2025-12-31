@@ -343,7 +343,7 @@ public final class EditPane extends JSplitPane {
                 switchForm("node");
             }
             case WzCanvasProperty obj -> {
-                getCanvasForm().setData(obj.getName(), WzType.CANVAS_PROPERTY.name(), obj.getPngImage(true), obj.getWidth(), obj.getHeight(), obj.getPngFormat(), wzObject, this);
+                getCanvasForm().setData(obj.getName(), WzType.CANVAS_PROPERTY.name(), obj.getPngImage(true), obj.getWidth(), obj.getHeight(), obj.getFormat(), wzObject, this);
                 switchForm("canvas");
             }
             case WzConvexProperty obj -> {

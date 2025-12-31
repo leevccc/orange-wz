@@ -35,11 +35,7 @@ public class WzCanvasProperty extends WzExtended {
         return png.getHeight();
     }
 
-    public WzPngFormat getPngFormat() {
-        return png.getPngFormat();
-    }
-
-    public int getFormat() {
+    public WzPngFormat getFormat() {
         return png.getFormat();
     }
 
@@ -68,7 +64,7 @@ public class WzCanvasProperty extends WzExtended {
         png.setImage(pngImage);
     }
 
-    public void setFormat(int format, int scale) {
+    public void setFormat(WzPngFormat format, int scale) {
         png.setFormat(format, scale);
     }
 
@@ -88,7 +84,7 @@ public class WzCanvasProperty extends WzExtended {
         // Image Info
         writer.writeCompressedInt(png.getWidth());
         writer.writeCompressedInt(png.getHeight());
-        writer.writeCompressedInt(png.getFormat());
+        writer.writeCompressedInt(png.getFormat().getValue());
         writer.putByte((byte) png.getScale());
         writer.putInt(0);
 

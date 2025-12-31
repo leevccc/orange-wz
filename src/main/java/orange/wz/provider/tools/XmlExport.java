@@ -108,7 +108,7 @@ public final class XmlExport {
                 e.setAttribute("name", escapeText(prop.getName()));
                 e.setAttribute("width", String.valueOf(prop.getWidth()));
                 e.setAttribute("height", String.valueOf(prop.getHeight()));
-                e.setAttribute("format", String.valueOf(prop.getFormat()));
+                e.setAttribute("format", String.valueOf(prop.getFormat().getValue()));
                 e.setAttribute("scale", String.valueOf(prop.getScale()));
 
                 if (meType == MediaExportType.BASE64)

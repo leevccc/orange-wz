@@ -18,7 +18,7 @@ public final class CanvasUtil {
                         canvas.getPngImage(false),
                         canvas.getWidth(),
                         canvas.getHeight(),
-                        canvas.getPngFormat()
+                        canvas.getFormat()
                 ));
             } else if (wzObject instanceof WzImageProperty prop && prop.isListProperty()) {
                 search(result, prop.getChildren());

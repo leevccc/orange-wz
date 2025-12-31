@@ -34,7 +34,7 @@ public class UolCanvasForm extends CanvasForm {
             image = canvas.getPngImage(false);
             width = canvas.getWidth();
             height = canvas.getHeight();
-            format = canvas.getPngFormat();
+            format = canvas.getFormat();
         }
 
         setData(name, type, image, width, height, format, wzObject, editPane);

@@ -29,7 +29,7 @@ import java.util.zip.InflaterInputStream;
 public class WzPngProperty extends WzImageProperty {
     private int width;
     private int height;
-    private int format;
+    private WzPngFormat format;
     private int scale;
     private int offset;
     @Getter(AccessLevel.NONE)
@@ -46,7 +46,7 @@ public class WzPngProperty extends WzImageProperty {
         this(name, parent, wzImage);
         this.width = width;
         this.height = height;
-        this.format = format;
+        this.format = WzPngFormat.getByValue(format);
         this.scale = scale;
 
         if (imageBytes != null && imageBytes.length > 0) {
@@ -65,7 +65,7 @@ public class WzPngProperty extends WzImageProperty {
     public void setData(BinaryReader reader) {
         width = reader.readCompressedInt();
         height = reader.readCompressedInt();
-        format = reader.readCompressedInt();
+        format = WzPngFormat.getByValue(reader.readCompressedInt());
         scale = reader.getByte();
         reader.skip(4); // 跳过4个字节
         offset = reader.getPosition();
@@ -84,14 +84,12 @@ public class WzPngProperty extends WzImageProperty {
             return;
         }
 
-        WzPngFormat pngFormat = WzPngFormat.getByValue(format + scale);
-
         byte[] argbByteArr;
         int[] argbIntArr;
-        int imageType = getImageType(pngFormat);
+        int imageType = getImageType(format);
         BufferedImage bmp = new BufferedImage(width, height, imageType);
 
-        switch (pngFormat) {
+        switch (format) {
             case WzPngFormat.Format1: // 16 bit argb4444
                 int b, g;
                 argbByteArr = new byte[width * height * 4];
@@ -218,6 +216,15 @@ public class WzPngProperty extends WzImageProperty {
         image = bmp;
     }
 
+    /**
+     * The actual width and height scale is pow(2, value).
+     *
+     * @return 2^scale
+     */
+    public int getActualScale() {
+        return scale > 0 ? (1 << scale) : 1;
+    }
+
     public byte[] getCompressedBytes(boolean saveInMem) {
         if (compressedBytes == null) {
             byte[] returnBytes = null;
@@ -236,7 +243,7 @@ public class WzPngProperty extends WzImageProperty {
                     compressedBytes = returnBytes;
                 }
             } else if (image != null) {
-                compressPng(getPngFormat());
+                compressPng(getFormat());
                 returnBytes = compressedBytes;
                 if (!saveInMem) {
                     compressedBytes = null;
@@ -284,8 +291,7 @@ public class WzPngProperty extends WzImageProperty {
     }
 
     private int getDecompressSize() {
-        WzPngFormat pngFormat = WzPngFormat.getByValue(format + scale);
-        return switch (pngFormat) {
+        return switch (format) {
             case WzPngFormat.Format1, Format257, Format513 -> width * height * 2;
             case Format2, Format3 -> width * height * 4;
             case Format517 -> width * height / 128;
@@ -568,11 +574,7 @@ public class WzPngProperty extends WzImageProperty {
         return null;
     }
 
-    public WzPngFormat getPngFormat() {
-        return WzPngFormat.getByValue(format + scale);
-    }
-
-    public void setFormat(int format, int scale) {
+    public void setFormat(WzPngFormat format, int scale) {
         this.format = format;
         this.scale = scale;
     }
@@ -592,7 +594,7 @@ public class WzPngProperty extends WzImageProperty {
         width = image.getWidth();
         height = image.getHeight();
 
-        compressedBytes = compress(image, WzPngFormat.getByValue(format + scale));
+        compressedBytes = compress(image, format);
         compressedBytes = zlibCompress(compressedBytes);
         if (listWzUsed) {
             BinaryWriter writer = new BinaryWriter(compressedBytes);
@@ -612,12 +614,12 @@ public class WzPngProperty extends WzImageProperty {
 
     public void compressPng(WzPngFormat pngFormat) {
         WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
-        format = pngFormat.getValue();
+        this.format = pngFormat;
         scale = 0;
         width = image.getWidth();
         height = image.getHeight();
 
-        compressedBytes = compress(image, WzPngFormat.getByValue(format + scale));
+        compressedBytes = compress(image, this.format);
         compressedBytes = zlibCompress(compressedBytes);
         if (listWzUsed) {
             BinaryWriter writer = new BinaryWriter(compressedBytes);
