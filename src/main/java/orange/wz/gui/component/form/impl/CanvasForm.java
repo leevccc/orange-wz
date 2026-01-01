@@ -21,6 +21,7 @@ public class CanvasForm extends AbstractValueForm {
     private JTextField widthField;
     private JTextField heightField;
     protected DisabledItemComboBox<WzPngFormat> formatField;
+    private JTextField scaleField;
     private ImagePanel imagePanel;
     private JSlider zoomSlider; // 缩放条
     private double zoomFactor = 1.0; // 当前缩放比例
@@ -140,20 +141,32 @@ public class CanvasForm extends AbstractValueForm {
         heightField.setEditable(false);
         topPanel.add(heightField, gbc);
 
-        // 压缩
+        // format
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        topPanel.add(new JLabel("压缩:"), gbc);
+        topPanel.add(new JLabel("格式:"), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         formatField = new DisabledItemComboBox<>(WzPngFormat.values());
-        formatField.disableItem(WzPngFormat.Format513);
-        formatField.disableItem(WzPngFormat.Format517);
         topPanel.add(formatField, gbc);
+
+        // scale
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        topPanel.add(new JLabel("缩放:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        scaleField = new JTextField(6);
+        scaleField.setEditable(false);
+        topPanel.add(scaleField, gbc);
 
         return panel;
     }
@@ -182,7 +195,7 @@ public class CanvasForm extends AbstractValueForm {
         return panel;
     }
 
-    public void setData(byte[] imageBytes) {
+    private void setData(byte[] imageBytes) {
         BufferedImage image;
         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
             image = ImageIO.read(bis);
@@ -199,12 +212,13 @@ public class CanvasForm extends AbstractValueForm {
         imagePanel.repaint();
     }
 
-    public void setData(String name, String type, BufferedImage image, int width, int height, WzPngFormat format, WzObject wzObject, EditPane editPane) {
+    public void setData(String name, String type, BufferedImage image, int width, int height, WzPngFormat format, int scale, WzObject wzObject, EditPane editPane) {
         super.setData(name, type, wzObject, editPane);
 
         widthField.setText(String.valueOf(width));
         heightField.setText(String.valueOf(height));
         formatField.setSelectedItem(format);
+        scaleField.setText(String.valueOf(scale));
 
         imagePanel.setImage(image);
         imagePanel.repaint();

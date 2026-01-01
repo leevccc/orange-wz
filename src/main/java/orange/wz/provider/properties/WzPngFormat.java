@@ -6,14 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public enum WzPngFormat {
-    Format1(1),
-    Format2(2),
-    Format3(3),
-    Format257(257),
-    Format513(513),
-    Format517(517),
-    Format1026(1026),
-    Format2050(2050);
+    ARGB4444(1),
+    ARGB8888(2),
+    // Format3(3), // 废弃 实际是 format 1 + scale 2 其实和后面的 DXT3 1026是一样的
+    ARGB1555(257),
+    RGB565(513),
+    // Format517(517), // 废弃 实际是 format 513 + scale 4
+    DXT3(1026),
+    DXT5(2050);
 
     private final int value;
 

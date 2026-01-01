@@ -197,8 +197,7 @@ public final class Outlink {
                     continue;
                 }
 
-                to.setFormat(from.getFormat(), from.getScale());
-                to.setPng(from.getPngImage(false));
+                to.setPng(from.getPngImage(false), from.getFormat(), from.getScale());
 
                 MainFrame.getInstance().updateProgress(++current, total);
             }

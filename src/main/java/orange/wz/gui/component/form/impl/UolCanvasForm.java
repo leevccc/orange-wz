@@ -27,6 +27,7 @@ public class UolCanvasForm extends CanvasForm {
         int width = 0;
         int height = 0;
         WzPngFormat format = null;
+        int scale = 0;
 
         if (canvas == null) {
             log.warn("canvas is null");
@@ -35,9 +36,10 @@ public class UolCanvasForm extends CanvasForm {
             width = canvas.getWidth();
             height = canvas.getHeight();
             format = canvas.getFormat();
+            scale = canvas.getScale();
         }
 
-        setData(name, type, image, width, height, format, wzObject, editPane);
+        setData(name, type, image, width, height, format, scale, wzObject, editPane);
     }
 
     public StringFormData getUolData() {

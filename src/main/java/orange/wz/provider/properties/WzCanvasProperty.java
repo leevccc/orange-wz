@@ -57,15 +57,11 @@ public class WzCanvasProperty extends WzExtended {
     }
 
     public void setPng(BufferedImage pngImage, WzPngFormat pngFormat) {
-        png.setImage(pngImage, pngFormat);
+        png.setImage(pngImage, pngFormat, 0);
     }
 
-    public void setPng(BufferedImage pngImage) {
-        png.setImage(pngImage);
-    }
-
-    public void setFormat(WzPngFormat format, int scale) {
-        png.setFormat(format, scale);
+    public void setPng(BufferedImage pngImage, WzPngFormat format, int scale) {
+        png.setImage(pngImage, format, scale);
     }
 
     // Override --------------------------------------------------------------------------------------------------------

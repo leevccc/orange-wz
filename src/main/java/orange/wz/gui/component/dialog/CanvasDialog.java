@@ -25,9 +25,7 @@ public class CanvasDialog extends NodeDialog {
 
         pathField.setEditable(false);
         formatField = new DisabledItemComboBox<>(WzPngFormat.values());
-        formatField.setSelectedItem(WzPngFormat.Format2);
-        formatField.disableItem(WzPngFormat.Format513);
-        formatField.disableItem(WzPngFormat.Format517);
+        formatField.setSelectedItem(WzPngFormat.ARGB8888);
         addRow("压缩", formatField);
 
         JButton selectBtn = new JButton("选择图片");
