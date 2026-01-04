@@ -95,7 +95,8 @@ public final class WzFolderMenu extends JPopupMenu {
                             MainFrame.getInstance().updateProgress(++count, total);
                         }
                     } else {
-                        String savePath = Path.of(folder.getAbsolutePath(), wzFolder.getName() + ".wz").toString();
+                        String savePath = Path.of(folder.getAbsolutePath(), wzFolder.getName()).toString();
+                        if (!savePath.endsWith(".wz")) savePath = savePath + ".wz";
                         packageFolder(finalFileVersion, wzFolder, savePath);
                     }
 
@@ -211,6 +212,12 @@ public final class WzFolderMenu extends JPopupMenu {
                     throw new RuntimeException();
                 }
                 parent.addChild(imageFile);
+            } else if (child instanceof WzXmlFile xmlFile) {
+                if (!xmlFile.parse()) {
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", xmlFile.getName(), xmlFile.getStatus().getMessage());
+                    throw new RuntimeException();
+                }
+                parent.addChild(xmlFile);
             }
         }
     }
