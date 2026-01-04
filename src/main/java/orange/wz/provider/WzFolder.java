@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class WzFolder extends WzObject {
+    @Getter
     private final String filePath;
     private final WzChildrenFolder children = new WzChildrenFolder();
     @Getter

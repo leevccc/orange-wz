@@ -6,6 +6,7 @@ import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
+import orange.wz.provider.tools.wzkey.WzKey;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -17,8 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static orange.wz.gui.Icons.AiOutlineCloseIcon;
-import static orange.wz.gui.Icons.FiPackage;
+import static orange.wz.gui.Icons.*;
 
 @Slf4j
 public final class WzFolderMenu extends JPopupMenu {
@@ -32,12 +32,15 @@ public final class WzFolderMenu extends JPopupMenu {
 
         JMenuItem packageBtn = new JMenuItem("打包", FiPackage);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
+        JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);
 
         packageBtnAction(packageBtn);
         unloadBtnAction(unloadBtn);
+        reloadBtnAction(reloadBtn);
 
         add(packageBtn);
         add(unloadBtn);
+        add(reloadBtn);
     }
 
     private void packageBtnAction(JMenuItem item) {
@@ -134,7 +137,39 @@ public final class WzFolderMenu extends JPopupMenu {
         });
     }
 
-    // 打包
+    private void reloadBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
+            if (key == null) {
+                MainFrame.getInstance().setStatusText("没有选择密钥?");
+                return;
+            }
+            for (TreePath treePath : selectedPaths) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
+                int index = pNode.getIndex(node);
+                WzFolder folderOld = (WzFolder) node.getUserObject();
+
+                editPane.removeNodeFromTree(node);
+
+                WzFolder folderNew = new WzFolder(folderOld.getFilePath(), key.getName(), key.getIv(), key.getUserKey());
+                editPane.insertNodeToTree(pNode, folderNew, true, index);
+
+                if (pNode.getUserObject() instanceof WzFolder pFolder) {
+                    pFolder.remove(folderOld);
+                    pFolder.add(folderNew);
+                }
+            }
+
+            editPane.resetValueForm();
+            System.gc();
+        });
+    }
+
+    // 打包 -------------------------------------------------------------------------------------------------------------
     private void packageBase(short fileVersion, WzFolder wzFolder, String savePath) {
         Set<String> directories = new HashSet<>();
         List<WzImageFile> imageFiles = new ArrayList<>();
