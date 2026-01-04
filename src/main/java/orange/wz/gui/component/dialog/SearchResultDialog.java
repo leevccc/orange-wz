@@ -75,13 +75,14 @@ public class SearchResultDialog extends JDialog {
                 setBackground(bg);
                 setForeground(fg);
 
+                String displayText = ellipsis(text, table, column);
                 if (!filterText.isEmpty()) {
                     String regex = "(?i)" + Pattern.quote(filterText);
-                    String highlighted = text.replaceAll(regex, "<span style='background:yellow;color:" +
-                            (isSelected ? "black" : "red") + "'>$0</span>");
-                    setText("<html>" + highlighted + "</html>");
+                    displayText = displayText.replaceAll(regex, "<span style='background:yellow;color:" +
+                                    (isSelected ? "black" : "red") + "'>$0</span>");
+                    setText("<html>" + displayText + "</html>");
                 } else {
-                    setText(text);
+                    setText(displayText);
                 }
 
                 return this;
@@ -149,5 +150,27 @@ public class SearchResultDialog extends JDialog {
                 searchField.selectAll();            // 可选：选中已有内容
             }
         });
+    }
+
+    private String ellipsis(String text, JTable table, int column) {
+        FontMetrics fm = table.getFontMetrics(table.getFont());
+        int colWidth = table.getColumnModel().getColumn(column).getWidth() - 6;
+
+        if (fm.stringWidth(text) <= colWidth) {
+            return text;
+        }
+
+        String ellipsis = "...";
+        int ellipsisWidth = fm.stringWidth(ellipsis);
+
+        int len = text.length();
+        while (len > 0) {
+            String s = text.substring(0, len);
+            if (fm.stringWidth(s) + ellipsisWidth <= colWidth) {
+                return s + ellipsis;
+            }
+            len--;
+        }
+        return ellipsis;
     }
 }
