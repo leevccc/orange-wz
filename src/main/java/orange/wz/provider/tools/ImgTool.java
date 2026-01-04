@@ -118,11 +118,11 @@ public final class ImgTool {
             int g = (argb32 >>> 8) & 0xFF;
             int b = argb32 & 0xFF;
 
-            // +8 = +00001000 相当于十进制的四舍五入
-            int a4 = (a + 8) >>> 4;
-            int r4 = (r + 8) >>> 4;
-            int g4 = (g + 8) >>> 4;
-            int b4 = (b + 8) >>> 4;
+            // + 127 用于舍入
+            int r4 = (r * 15 + 127) / 255;
+            int g4 = (g * 15 + 127) / 255;
+            int b4 = (b * 15 + 127) / 255;
+            int a4 = (a * 15 + 127) / 255;
 
             return (short) ((a4 << 12) | (r4 << 8) | (g4 << 4) | b4);
         }
