@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
-import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
@@ -19,8 +18,6 @@ import orange.wz.provider.properties.*;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-import java.io.File;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -250,50 +247,10 @@ public final class WzImageMenu extends JPopupMenu {
 
     private void addExportXmlBtnAction(JMenuItem item) {
         item.addActionListener(e -> {
-            Instant now =  Instant.now();
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
-            ExportXmlDialog dialog = new ExportXmlDialog(editPane);
-            ExportXmlData data = dialog.getData();
-            if (data == null) return;
-
-            List<WzImage> collector = new ArrayList<>();
-            for (TreePath treePath : selectedPaths) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                WzImage wzImage = (WzImage) node.getUserObject();
-
-                if (!wzImage.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
-                    throw new RuntimeException();
-                }
-                collector.add(wzImage);
-            }
-
-            int total = collector.size();
-            SwingWorker<Void, Void> worker = new SwingWorker<>() {
-                @Override
-                protected Void doInBackground() {
-                    int finish = 0;
-                    for (WzImage wzImage : collector) {
-                        wzImage.exportToXml(Path.of(data.getExportPath(), wzImage.getName() + ".xml"), data.getIndent(), data.getMeType());
-                        MainFrame.getInstance().updateProgress(++finish, total);
-                    }
-                    return null;
-                }
-
-                @Override
-                protected void done() {
-                    try {
-                        get();
-                        Instant end = Instant.now();
-                        MainFrame.getInstance().setStatusText("导出完成，耗时 %d 秒", Duration.between(now, end).toSeconds());
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            };
-            worker.execute();
+            editPane.exportXml(selectedPaths);
         });
     }
 

@@ -35,13 +35,16 @@ public final class WzFolderMenu extends JPopupMenu {
         JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);
         JMenu exportBtn = new JMenu("导出");
         JMenuItem exportImgBtn = new JMenuItem("Img");
+        JMenuItem exportXmlBtn = new JMenuItem("Xml");
         exportBtn.add(exportImgBtn);
+        exportBtn.add(exportXmlBtn);
 
         saveBtnAction(saveBtn);
         packageBtnAction(packageBtn);
         unloadBtnAction(unloadBtn);
         reloadBtnAction(reloadBtn);
         addExportImgBtnAction(exportImgBtn);
+        addExportXmlBtnAction(exportXmlBtn);
 
         add(saveBtn);
         add(packageBtn);
@@ -228,6 +231,15 @@ public final class WzFolderMenu extends JPopupMenu {
             if (selectedPaths == null) return;
 
             editPane.exportImg(selectedPaths);
+        });
+    }
+
+    private void addExportXmlBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            editPane.exportXml(selectedPaths);
         });
     }
 }

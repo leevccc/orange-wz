@@ -4,9 +4,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
+import orange.wz.gui.component.dialog.ExportXmlDialog;
 import orange.wz.gui.component.dialog.ListEditor;
 import orange.wz.gui.component.dialog.SearchDialog;
 import orange.wz.gui.component.dialog.SearchResultDialog;
+import orange.wz.gui.component.form.data.ExportXmlData;
 import orange.wz.gui.component.form.data.SearchFormData;
 import orange.wz.gui.component.form.data.SearchResult;
 import orange.wz.gui.component.form.impl.*;
@@ -1183,7 +1185,7 @@ public final class EditPane extends JSplitPane {
             byte[] key = wz.getKey();
 
             if (wz.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                log.info("未加载文件 {} 不需要保存, 跳过...", wz.getName());
+                log.info("未加载文件 {} 不需要另存为, 跳过...", wz.getName());
                 return;
             }
 
@@ -1265,6 +1267,80 @@ public final class EditPane extends JSplitPane {
                     WzImage wzImage = pair.getLeft();
                     Path path = pair.getRight();
                     wzImage.save(path);
+                    MainFrame.getInstance().updateProgress(++finish, total);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    Instant end = Instant.now();
+                    MainFrame.getInstance().setStatusText("导出完成，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }.execute();
+    }
+
+    private void collectExportXml(DefaultMutableTreeNode node, Path folder, List<Pair<WzImage, Path>> collector) {
+        WzObject wzObject = (WzObject) node.getUserObject();
+
+        if (wzObject instanceof WzFolder) {
+            folder = folder.resolve(wzObject.getName());
+
+            for (int i = 0; i < node.getChildCount(); i++) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+                collectExportXml(child, folder, collector);
+            }
+        } else if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
+            WzFile wzFile = wzDir.getWzFile();
+
+            if (!wzFile.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzFile.getName(), wzFile.getStatus().getMessage());
+                throw new RuntimeException();
+            }
+
+            wzFile.exportFileToXml(folder, collector);
+        } else if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
+                throw new RuntimeException();
+            }
+
+            String filename = wzImage.getName();
+            if (!filename.endsWith(".xml")) {
+                filename = filename + ".xml";
+            }
+
+            collector.add(new Pair<>(wzImage, folder.resolve(filename)));
+        }
+    }
+
+    public void exportXml(TreePath[] selectedPaths) {
+        ExportXmlDialog dialog = new ExportXmlDialog(this);
+        ExportXmlData data = dialog.getData();
+        if (data == null) return;
+
+        Instant now = Instant.now();
+
+        List<Pair<WzImage, Path>> collector = new ArrayList<>();
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            collectExportXml(node, Path.of(data.getExportPath()), collector);
+        }
+
+        int total = collector.size();
+        new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                int finish = 0;
+                for (Pair<WzImage, Path> pair : collector) {
+                    WzImage wzImage = pair.getLeft();
+                    Path path = pair.getRight();
+                    wzImage.exportToXml(path, data.getIndent(), data.getMeType());
                     MainFrame.getInstance().updateProgress(++finish, total);
                 }
                 return null;
