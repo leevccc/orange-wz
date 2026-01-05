@@ -8,7 +8,7 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%-30thread] %-5level %-25logger{1} - %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -16,18 +16,16 @@
     <!-- ================= 文件（启动即生成） ================= -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 
-        <!-- ❗关键：不要配置 <file> -->
-
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- 按月目录 + 启动时间戳 -->
             <fileNamePattern>
-                ${LOG_PATH}/%d{yyyy-MM}/app-%d{yyyy-MM-dd_HH-mm-ss}.log
+                ${LOG_PATH}/%d{yyyy-MM}/OrzRepacker-%d{yyyy-MM-dd_HH-mm-ss}.log
             </fileNamePattern>
         </rollingPolicy>
 
         <encoder>
             <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level - %msg%n
             </pattern>
         </encoder>
     </appender>
