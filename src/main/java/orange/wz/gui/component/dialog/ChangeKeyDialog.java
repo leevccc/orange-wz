@@ -16,7 +16,7 @@ public final class ChangeKeyDialog extends BaseDialog<KeyData> {
     private final KeyBox keyBox;
 
     public ChangeKeyDialog(EditPane editPane, boolean wzFile) {
-        super("修改密钥",editPane);
+        super("修改密钥", editPane);
 
         if (wzFile) {
             ((AbstractDocument) versionInput.getDocument()).setDocumentFilter(new IntegerFilter());
@@ -45,6 +45,6 @@ public final class ChangeKeyDialog extends BaseDialog<KeyData> {
         }
         WzKey wzKey = (WzKey) keyBox.getSelectedItem();
 
-        return new KeyData(version, wzKey.getIv(), wzKey.getUserKey());
+        return new KeyData(wzKey.getName(), version, wzKey.getIv(), wzKey.getUserKey());
     }
 }

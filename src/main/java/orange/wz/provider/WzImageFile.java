@@ -5,6 +5,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.WzFileStatus;
+import orange.wz.provider.tools.WzMutableKey;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -47,6 +48,19 @@ public class WzImageFile extends WzImage implements WzSavableFile {
         }
         super.setOffset(0);
         return super.parse(realParse);
+    }
+
+    public void changeKey(String keyBoxName, byte[] iv, byte[] key) {
+        // 先解析把原有内容解码出来缓存在内存里
+        if (!parse()) {
+            log.error("文件 {} 解析失败", name);
+            return;
+        }
+        this.keyBoxName = keyBoxName;
+        setIv(Arrays.copyOf(iv, iv.length));
+        setKey(Arrays.copyOf(key, key.length));
+        setChanged(true); // 确保保存的时候重新写入，而不是取原来的
+        getReader().setWzMutableKey(new WzMutableKey(iv, key));
     }
 
     @Override

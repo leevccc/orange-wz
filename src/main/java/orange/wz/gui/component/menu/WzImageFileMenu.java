@@ -279,14 +279,7 @@ public final class WzImageFileMenu extends JPopupMenu {
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
-            ChangeKeyDialog dialog = new ChangeKeyDialog(editPane, false);
-            KeyData keyData = dialog.getData();
-
-            for (TreePath treePath : selectedPaths) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
-                wzImageFile.changeKey(keyData.getIv(), keyData.getKey());
-            }
+            editPane.changeKey(selectedPaths);
         });
     }
 

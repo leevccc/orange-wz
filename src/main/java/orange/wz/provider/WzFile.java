@@ -244,11 +244,12 @@ public final class WzFile extends WzObject implements WzSavableFile {
         wzDirectory.exportToXml(basePath, collector);
     }
 
-    public void changeKey(short gameVersion, byte[] iv, byte[] key) {
+    public void changeKey(short gameVersion, String keyBoxName, byte[] iv, byte[] key) {
         // 先解析把原有内容解码出来缓存在内存里
         if (!parse()) return;
 
         wzDirectory.parseAllImages();
+        this.keyBoxName = keyBoxName;
         this.iv = Arrays.copyOf(iv, iv.length);
         this.key = Arrays.copyOf(key, key.length);
         reader.setWzMutableKey(new WzMutableKey(this.iv, this.key));

@@ -164,18 +164,6 @@ public class WzImage extends WzObject {
         checksum += Byte.toUnsignedInt(value);
     }
 
-    public void changeKey(byte[] iv, byte[] key) {
-        // 先解析把原有内容解码出来缓存在内存里
-        if (!parse()) {
-            log.error("文件 {} 解析失败", name);
-            return;
-        }
-        iv = Arrays.copyOf(iv, iv.length);
-        key = Arrays.copyOf(key, key.length);
-        changed = true; // 确保保存的时候重新写入，而不是取原来的
-        reader.setWzMutableKey(new WzMutableKey(iv, key));
-    }
-
     // DeepClone -------------------------------------------------------------------------------------------------------
     public WzImage deepClone(WzObject parent) {
         if (!parse()) {

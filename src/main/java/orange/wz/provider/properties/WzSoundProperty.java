@@ -121,7 +121,7 @@ public class WzSoundProperty extends WzExtended {
             wavFmt = bytesToWaveStruct(waveFormatBytes);
 
             if (WaveFormat.structSize + wavFmt.getExtraSize() != waveFormatBytes.length) {
-                log.error("解析音频头失败");
+                log.error("解析音频头失败 {}", getPath());
                 return;
             }
             headerEncrypted = true;
@@ -133,7 +133,7 @@ public class WzSoundProperty extends WzExtended {
         } else if (wavFmt.getWaveFormatTag() == WaveFormatEncoding.PCM) {
             waveFormat = wavFmt;
         } else {
-            log.error("未知的 wave 编码");
+            log.error("未知的 wave 编码 {}", getPath());
         }
     }
 

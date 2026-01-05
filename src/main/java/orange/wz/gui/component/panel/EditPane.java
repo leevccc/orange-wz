@@ -4,11 +4,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
-import orange.wz.gui.component.dialog.ExportXmlDialog;
-import orange.wz.gui.component.dialog.ListEditor;
-import orange.wz.gui.component.dialog.SearchDialog;
-import orange.wz.gui.component.dialog.SearchResultDialog;
+import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.ExportXmlData;
+import orange.wz.gui.component.form.data.KeyData;
 import orange.wz.gui.component.form.data.SearchFormData;
 import orange.wz.gui.component.form.data.SearchResult;
 import orange.wz.gui.component.form.impl.*;
@@ -868,8 +866,7 @@ public final class EditPane extends JSplitPane {
         } else if (oldObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
             WzFile oldWzFile = wzDir.getWzFile();
             String filePath = oldWzFile.getFilePath();
-            short version = oldWzFile.getHeader().getFileVersion();
-            WzFile newWzFile = new WzFile(filePath, version, key.getName(), key.getIv(), key.getUserKey());
+            WzFile newWzFile = new WzFile(filePath, (short) -1, key.getName(), key.getIv(), key.getUserKey());
             newObject = newWzFile.getWzDirectory();
         } else if (oldObject instanceof WzImageFile oldImg) {
             Path filePath = Path.of(oldImg.getFilePath());
@@ -1213,6 +1210,7 @@ public final class EditPane extends JSplitPane {
     private void collectExportImg(DefaultMutableTreeNode node, Path folder, List<Pair<WzImage, Path>> collector) {
         WzObject wzObject = (WzObject) node.getUserObject();
         if (wzObject instanceof WzFolder) {
+            expandTreeNode(node, false, false, false);
             folder = folder.resolve(wzObject.getName());
             for (int i = 0; i < node.getChildCount(); i++) {
                 DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
@@ -1289,6 +1287,7 @@ public final class EditPane extends JSplitPane {
         WzObject wzObject = (WzObject) node.getUserObject();
 
         if (wzObject instanceof WzFolder) {
+            expandTreeNode(node, false, false, false);
             folder = folder.resolve(wzObject.getName());
 
             for (int i = 0; i < node.getChildCount(); i++) {
@@ -1352,6 +1351,78 @@ public final class EditPane extends JSplitPane {
                     get();
                     Instant end = Instant.now();
                     MainFrame.getInstance().setStatusText("导出完成，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }.execute();
+    }
+
+    /**
+     * 收集可以修改密钥的文件
+     *
+     * @param node      目标节点
+     * @param collector 收集器
+     * @return 是否存在 wz 文件
+     */
+    private boolean collectChangeKey(DefaultMutableTreeNode node, List<WzObject> collector) {
+        WzObject wzObject = (WzObject) node.getUserObject();
+        if (wzObject instanceof WzFolder) {
+            expandTreeNode(node, false, false, false);
+            boolean hasWzFiles = false;
+            for (int i = 0; i < node.getChildCount(); i++) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+                if (collectChangeKey(child, collector)) hasWzFiles = true;
+            }
+            return hasWzFiles;
+        } else if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
+            collector.add(wzDir.getWzFile());
+            return true;
+        } else if (wzObject instanceof WzImageFile wzImg) {
+            collector.add(wzImg);
+        }
+        return false;
+    }
+
+    public void changeKey(TreePath[] selectedPaths) {
+        List<WzObject> collector = new ArrayList<>();
+        boolean hasWzFile = false;
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            if (collectChangeKey(node, collector)) hasWzFile = true;
+        }
+
+        ChangeKeyDialog dialog = new ChangeKeyDialog(this, hasWzFile);
+        KeyData keyData = dialog.getData();
+        if (keyData == null) return;
+
+        Instant now = Instant.now();
+        MainFrame.getInstance().setStatusText("密钥修改中...");
+        int total = collector.size();
+        new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                int finish = 0;
+                for (WzObject wzObject : collector) {
+                    if (wzObject instanceof WzFile wzFile) {
+                        wzFile.changeKey(keyData.getVersion(), keyData.getName(), keyData.getIv(), keyData.getKey());
+                        wzFile.getWzDirectory().setTempChanged(true);
+                    } else if (wzObject instanceof WzImageFile wzImg) {
+                        wzImg.changeKey(keyData.getName(), keyData.getIv(), keyData.getKey());
+                        wzImg.setTempChanged(true);
+                    }
+                    MainFrame.getInstance().updateProgress(++finish, total);
+                }
+                tree.updateUI();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    Instant end = Instant.now();
+                    MainFrame.getInstance().setStatusText("密钥修改完成，耗时 %d 秒，请自行保存文件以应用新的密钥。", Duration.between(now, end).toSeconds());
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }

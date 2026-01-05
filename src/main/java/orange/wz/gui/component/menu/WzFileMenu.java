@@ -5,11 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
-import orange.wz.gui.component.dialog.ChangeKeyDialog;
 import orange.wz.gui.component.dialog.NodeDialog;
 import orange.wz.gui.component.dialog.OverwriteChoice;
 import orange.wz.gui.component.dialog.OverwriteDialog;
-import orange.wz.gui.component.form.data.KeyData;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.ChineseUtil;
@@ -386,16 +384,7 @@ public final class WzFileMenu extends JPopupMenu {
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
-            ChangeKeyDialog dialog = new ChangeKeyDialog(editPane, true);
-            KeyData keyData = dialog.getData();
-            if (keyData == null) return;
-
-            for (TreePath treePath : selectedPaths) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                WzDirectory wzDirectory = (WzDirectory) node.getUserObject();
-                WzFile wzFile = wzDirectory.getWzFile();
-                wzFile.changeKey(keyData.getVersion(), keyData.getIv(), keyData.getKey());
-            }
+            editPane.changeKey(selectedPaths);
         });
     }
 
