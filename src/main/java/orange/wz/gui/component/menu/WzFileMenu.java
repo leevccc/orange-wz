@@ -463,6 +463,7 @@ public final class WzFileMenu extends JPopupMenu {
 
             ChangeKeyDialog dialog = new ChangeKeyDialog(editPane, true);
             KeyData keyData = dialog.getData();
+            if (keyData == null) return;
 
             for (TreePath treePath : selectedPaths) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
