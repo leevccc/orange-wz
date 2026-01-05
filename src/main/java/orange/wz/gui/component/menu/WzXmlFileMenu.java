@@ -14,20 +14,15 @@ import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
-import orange.wz.provider.tools.WzFileStatus;
-import orange.wz.provider.tools.wzkey.WzKey;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.io.File;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static orange.wz.gui.Icons.*;
 
@@ -123,69 +118,7 @@ public final class WzXmlFileMenu extends JPopupMenu {
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
-            if (selectedPaths.length == 1) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
-                DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
-                int index = pNode.getIndex(node);
-                WzXmlFile wzXmlFile = (WzXmlFile) node.getUserObject();
-                String keyBoxName = wzXmlFile.getKeyBoxName();
-                byte[] iv = wzXmlFile.getIv();
-                byte[] key = wzXmlFile.getKey();
-                if (wzXmlFile.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                    log.warn("未加载的文件 {} 无需保存", wzXmlFile.getName());
-                    return;
-                }
-
-                File oldFile = new File(wzXmlFile.getFilePath());
-                File newFile = new File(oldFile.getParent(), wzXmlFile.getName());
-
-                File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), "保存 " + wzXmlFile.getName(), newFile, new String[]{"xml"});
-                if (saveFile == null) {
-                    return;
-                }
-                Path filePath = Path.of(saveFile.getAbsolutePath());
-                wzXmlFile.exportToXml(filePath.toAbsolutePath(), wzXmlFile.getIndent(), wzXmlFile.getMeType());
-                editPane.removeNodeFromTree(node);
-                String filename = filePath.getFileName().toString();
-                wzXmlFile = new WzXmlFile(filename, filePath.toString(), keyBoxName, iv, key);
-                editPane.insertNodeToTree(pNode, wzXmlFile, true, index);
-            } else {
-                // 批量保存的时候判断文件名是否发生改变，如果发生改变，跳过并提示。
-                Set<String> failed = new HashSet<>();
-                for (TreePath treePath : selectedPaths) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                    DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
-                    int index = pNode.getIndex(node);
-                    WzXmlFile wzXmlFile = (WzXmlFile) node.getUserObject();
-                    String keyBoxName = wzXmlFile.getKeyBoxName();
-                    byte[] iv = wzXmlFile.getIv();
-                    byte[] key = wzXmlFile.getKey();
-                    if (wzXmlFile.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                        log.warn("未加载的文件 {} 无需保存", wzXmlFile.getName());
-                        continue;
-                    }
-
-                    Path filePath = Path.of(wzXmlFile.getFilePath());
-                    if (!filePath.getFileName().toString().equals(wzXmlFile.getName())) {
-                        failed.add(wzXmlFile.getName());
-                        log.error("批量保存无法用于文件改名 {} : {}", wzXmlFile.getName(), wzXmlFile.getFilePath());
-                        continue;
-                    }
-
-                    wzXmlFile.exportToXml(filePath.toAbsolutePath(), wzXmlFile.getIndent(), wzXmlFile.getMeType());
-                    String filename = filePath.getFileName().toString();
-                    editPane.removeNodeFromTree(node);
-                    wzXmlFile = new WzXmlFile(filename, filePath.toString(), keyBoxName, iv, key);
-                    editPane.insertNodeToTree(pNode, wzXmlFile, true, index);
-                }
-
-                if (!failed.isEmpty()) {
-                    JMessageUtil.warn("批量保存无法用于文件改名, 这些文件请手动保存: " + String.join(", ", failed));
-                }
-            }
-
-            editPane.resetValueForm();
-            System.gc();
+            editPane.saveFiles(selectedPaths);
         });
     }
 

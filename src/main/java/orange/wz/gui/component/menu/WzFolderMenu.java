@@ -6,7 +6,6 @@ import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
-import orange.wz.provider.tools.wzkey.WzKey;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -30,17 +29,29 @@ public final class WzFolderMenu extends JPopupMenu {
         this.editPane = editPane;
         this.tree = tree;
 
+        JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
         JMenuItem packageBtn = new JMenuItem("打包", FiPackage);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
         JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);
 
+        saveBtnAction(saveBtn);
         packageBtnAction(packageBtn);
         unloadBtnAction(unloadBtn);
         reloadBtnAction(reloadBtn);
 
+        add(saveBtn);
         add(packageBtn);
         add(unloadBtn);
         add(reloadBtn);
+    }
+
+    private void saveBtnAction(JMenuItem item) {
+        item.addActionListener(e -> {
+            TreePath[] selectedPaths = tree.getSelectionPaths();
+            if (selectedPaths == null) return;
+
+            editPane.saveFiles(selectedPaths);
+        });
     }
 
     private void packageBtnAction(JMenuItem item) {

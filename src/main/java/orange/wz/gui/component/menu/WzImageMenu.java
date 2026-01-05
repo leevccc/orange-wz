@@ -10,7 +10,6 @@ import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.*;
-import orange.wz.model.Pair;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;

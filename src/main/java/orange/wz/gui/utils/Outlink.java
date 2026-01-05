@@ -63,8 +63,8 @@ public final class Outlink {
 
         short version = wzFile.getHeader().getFileVersion();
         String keyBoxName = wzFile.getKeyBoxName();
-        byte[] iv = wzFile.getWzIv();
-        byte[] key = wzFile.getUserKey();
+        byte[] iv = wzFile.getIv();
+        byte[] key = wzFile.getKey();
 
         lastCanvasPath = canvasPath;
 

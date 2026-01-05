@@ -12,7 +12,7 @@ import java.util.Arrays;
 @Getter
 @Setter
 @Slf4j
-public class WzImageFile extends WzImage {
+public class WzImageFile extends WzImage implements WzSavableFile {
     private String filePath;
     private String keyBoxName;
     private byte[] iv;
@@ -47,5 +47,10 @@ public class WzImageFile extends WzImage {
         }
         super.setOffset(0);
         return super.parse(realParse);
+    }
+
+    @Override
+    public boolean save() {
+        return save(Path.of(filePath));
     }
 }

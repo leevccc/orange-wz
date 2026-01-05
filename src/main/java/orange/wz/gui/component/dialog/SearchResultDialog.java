@@ -101,7 +101,7 @@ public class SearchResultDialog extends JDialog {
                     if (row >= 0) {
                         int modelRow = table.convertRowIndexToModel(row);
                         SearchResult r = items.get(modelRow);
-                        editPane.selectTreeNodeByPath(r.path());
+                        editPane.focusNodeByPath(r.path());
                     }
                 }
             }

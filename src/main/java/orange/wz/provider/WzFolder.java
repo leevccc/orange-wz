@@ -2,16 +2,13 @@ package orange.wz.provider;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.WzChildrenFolder;
 import orange.wz.provider.tools.WzType;
-import orange.wz.provider.tools.XmlImport;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class WzFolder extends WzObject {

@@ -1,6 +1,7 @@
 package orange.wz.gui.component.panel;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.dialog.ListEditor;
 import orange.wz.gui.component.dialog.SearchDialog;
@@ -13,6 +14,8 @@ import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.SearchUtil;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
+import orange.wz.provider.tools.FileTool;
+import orange.wz.provider.tools.WzFileStatus;
 import orange.wz.provider.tools.WzType;
 import orange.wz.provider.tools.wzkey.WzKey;
 
@@ -31,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static orange.wz.gui.Icons.*;
 
 @Getter
+@Slf4j
 public final class EditPane extends JSplitPane {
     private JTree tree;
     private DefaultMutableTreeNode treeRoot;
@@ -827,6 +831,11 @@ public final class EditPane extends JSplitPane {
         });
     }
 
+    /**
+     * 使用菜单栏的密钥重新载入文件节点
+     *
+     * @param treePaths tree 选中的节点
+     */
     public void reloadFile(TreePath[] treePaths) {
         WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
         if (key == null) {
@@ -839,11 +848,10 @@ public final class EditPane extends JSplitPane {
             reloadFile(node, key);
         }
 
-        resetValueForm(); // 刷新视图
-        System.gc();
+        clear();
     }
 
-    public void reloadFile(DefaultMutableTreeNode node, WzKey key) {
+    private void reloadFile(DefaultMutableTreeNode node, WzKey key) {
         DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
         int index = pNode.getIndex(node);
         WzObject oldObject = (WzObject) node.getUserObject();
@@ -1036,7 +1044,12 @@ public final class EditPane extends JSplitPane {
         return null;
     }
 
-    public void selectTreeNodeByPath(List<String> paths) {
+    /**
+     * 跳转到 path 对应的节点
+     *
+     * @param paths 节点路径，不含 Root
+     */
+    public void focusNodeByPath(List<String> paths) {
         DefaultMutableTreeNode node = treeRoot;
         for (int i = 0; i < paths.size(); i++) {
             node = findTreeNodeByName(node, paths.get(i));
@@ -1069,5 +1082,82 @@ public final class EditPane extends JSplitPane {
         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
         model.reload(treeRoot);
         resetValueForm();
+    }
+
+    private void clear() {
+        resetValueForm();
+        System.gc();
+    }
+
+    /**
+     * 保存节点文件
+     *
+     * @param treePaths 选中的节点
+     */
+    public void saveFiles(TreePath[] treePaths) {
+        for (TreePath treePath : treePaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            if (node.getUserObject() instanceof WzFolder) {
+                saveWzFolder(node);
+            } else {
+                saveFile(node);
+            }
+        }
+
+        clear();
+    }
+
+    /**
+     * 保存文件夹
+     *
+     * @param node WzFolder 对应的节点
+     */
+    private void saveWzFolder(DefaultMutableTreeNode node) {
+        for (int i = 0; i < node.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
+            if (child.getUserObject() instanceof WzFolder) {
+                saveWzFolder(child);
+            } else {
+                saveFile(child);
+            }
+        }
+    }
+
+    /**
+     * 保存文件
+     *
+     * @param node WzFile / WzImageFile / WzXmlFile 对应的节点
+     */
+    private void saveFile(DefaultMutableTreeNode node) {
+        WzObject wzObject = (WzObject) node.getUserObject();
+        if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
+            wzObject = wzDir.getWzFile();
+        }
+
+        if (wzObject instanceof WzSavableFile wz) {
+            String keyBoxName = wz.getKeyBoxName();
+            byte[] iv = wz.getIv();
+            byte[] key = wz.getKey();
+
+            if (wz.getStatus() != WzFileStatus.PARSE_SUCCESS) {
+                log.info("未加载文件 {} 不需要保存, 跳过...", wz.getName());
+                return;
+            }
+
+            Path path = Path.of(wz.getFilePath());
+            String fileName = path.getFileName().toString();
+            boolean renamed = !fileName.equals(wz.getName());
+
+            if (renamed) {
+                Path newPath = path.resolveSibling(wz.getName());
+                wz.setFilePath(newPath.toString());
+            }
+
+            if (wz.save() && renamed) {
+                FileTool.deleteFile(path);
+            }
+
+            reloadFile(node, new WzKey(-1, keyBoxName, iv, key));
+        }
     }
 }

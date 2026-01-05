@@ -1,8 +1,7 @@
 package orange.wz.gui.component.canvas;
 
+import javax.swing.*;
 import java.awt.*;
-import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
 
 public final class WrapLayout extends FlowLayout {
 

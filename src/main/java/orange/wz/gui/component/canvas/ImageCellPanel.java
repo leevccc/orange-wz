@@ -6,12 +6,10 @@ import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.CanvasUtilData;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.TreeNodeUtil;
-import orange.wz.provider.WzObject;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -21,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -82,7 +79,7 @@ public final class ImageCellPanel extends JPanel {
                 }
             }
 
-            editPane.selectTreeNodeByPath(paths);
+            editPane.focusNodeByPath(paths);
         });
         saveBtn.addActionListener(e -> {
             String[] p = data.getPath().split("/");

@@ -91,29 +91,32 @@ public class WzImage extends WzObject {
         status = WzFileStatus.UNPARSE;
     }
 
-    public void save(Path path) {
-        if (path == null) return;
+    public boolean save(Path path) {
+        if (path == null) return false;
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(path.toString(), "rw")) {
             BinaryWriter writer = new BinaryWriter();
             writer.setWzMutableKey(reader.getWzMutableKey());
             save(writer);
 
             randomAccessFile.write(writer.output());
+            return true;
         } catch (IOException e) {
-            throw new IllegalArgumentException("无法保存文件", e);
+            log.error("无法保存文件 {}", e.getMessage());
+            return false;
         }
     }
 
-    public void exportToXml(Path path, int indent, MediaExportType mediaExportType) {
+    public boolean exportToXml(Path path, int indent, MediaExportType mediaExportType) {
         boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
         if (!parseStatus) {
             if (!parse()) {
                 log.error("解析文件失败");
-                return;
+                return false;
             }
         }
         XmlExport.export(this, path, indent, mediaExportType);
         if (!parseStatus) unparse();
+        return true;
     }
 
     public void save(BinaryWriter writer) {

@@ -361,8 +361,8 @@ public final class WzDirectoryMenu extends JPopupMenu {
                     WzDirectory target = (WzDirectory) node.getUserObject();
                     WzFile wzFile = target.getWzFile();
                     String keyBoxName = wzFile.getKeyBoxName();
-                    byte[] iv = wzFile.getWzIv();
-                    byte[] key = wzFile.getUserKey();
+                    byte[] iv = wzFile.getIv();
+                    byte[] key = wzFile.getKey();
                     int total = imgFiles.size();
                     OverwriteChoice choice = null;
                     int index = 0;
@@ -434,8 +434,8 @@ public final class WzDirectoryMenu extends JPopupMenu {
                     WzDirectory target = (WzDirectory) node.getUserObject();
                     WzFile wzFile = target.getWzFile();
                     String keyBoxName = wzFile.getKeyBoxName();
-                    byte[] iv = wzFile.getWzIv();
-                    byte[] key = wzFile.getUserKey();
+                    byte[] iv = wzFile.getIv();
+                    byte[] key = wzFile.getKey();
                     int total = xmlFiles.size();
                     OverwriteChoice choice = null;
                     int index = 0;

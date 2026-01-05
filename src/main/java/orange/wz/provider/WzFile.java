@@ -1,6 +1,7 @@
 package orange.wz.provider;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.model.Pair;
 import orange.wz.provider.tools.*;
@@ -16,13 +17,14 @@ import java.util.Map;
 
 @Getter
 @Slf4j
-public class WzFile extends WzObject {
-    private final String filePath;
+public final class WzFile extends WzObject implements WzSavableFile {
+    @Setter
+    private String filePath;
     private final WzDirectory wzDirectory;
     private WzHeader header;
     private String keyBoxName;
-    private byte[] wzIv;
-    private byte[] userKey;
+    private byte[] iv;
+    private byte[] key;
     private BinaryReader reader;
     private WzFileStatus status = WzFileStatus.UNPARSE;
 
@@ -33,10 +35,10 @@ public class WzFile extends WzObject {
     public WzFile(String filePath, short fileVersion, byte[] iv, byte[] key) {
         super(Path.of(filePath).getFileName().toString(), WzType.WZ_FILE, null);
         this.filePath = filePath;
-        header = new WzHeader(fileVersion);
-        wzIv = Arrays.copyOf(iv, iv.length);
-        userKey = Arrays.copyOf(key, key.length);
-        wzDirectory = new WzDirectory(name, this, this);
+        this.header = new WzHeader(fileVersion);
+        this.iv = Arrays.copyOf(iv, iv.length);
+        this.key = Arrays.copyOf(key, key.length);
+        this.wzDirectory = new WzDirectory(name, this, this);
     }
 
     public WzFile(String filePath, short fileVersion, String keyBoxName, byte[] iv, byte[] key) {
@@ -91,7 +93,7 @@ public class WzFile extends WzObject {
             return false;
         }
 
-        reader = new BinaryReader(wzPath.toString(), wzIv, userKey);
+        reader = new BinaryReader(wzPath.toString(), iv, key);
         header.setSignature(reader.readString(4));
         if (!header.getSignature().equals("PKG1") && !header.getSignature().equals("PKG2")) {
             log.error("{} 错误的包头 {}", name, header.getSignature());
@@ -178,12 +180,13 @@ public class WzFile extends WzObject {
         return withEncVerHeader;
     }
 
-    public void save() {
-        save(filePath);
+    @Override
+    public boolean save() {
+        return save(filePath);
     }
 
-    public void save(String path) {
-        if (status != WzFileStatus.PARSE_SUCCESS) return;
+    private boolean save(String path) {
+        if (status != WzFileStatus.PARSE_SUCCESS) return false;
         log.info("保存 {} 开始", getName());
         String saveFile = Path.of(path).toString();
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(saveFile, "rw")) {
@@ -214,14 +217,17 @@ public class WzFile extends WzObject {
             log.info("保存 {} Wz 写入文件 4/4", getName());
             randomAccessFile.write(writer.output());
             log.info("保存 {} Wz 完成", getName());
+            return true;
         } catch (IOException e) {
-            throw new IllegalArgumentException("无法保存文件", e);
+            log.error("无法保存文件 {}", e.getMessage());
+            return false;
         }
     }
 
     /**
      * 导出Img
-     * @param basePath 上级路径
+     *
+     * @param basePath  上级路径
      * @param collector 只收集需要导出的WzImage 存入 collector
      */
     public void exportFileToImg(Path basePath, List<Pair<WzImage, Path>> collector) {
@@ -230,7 +236,8 @@ public class WzFile extends WzObject {
 
     /**
      * 导出XML
-     * @param basePath 上级路径
+     *
+     * @param basePath  上级路径
      * @param collector 只收集需要导出的WzImage 存入 collector
      */
     public void exportFileToXml(Path basePath, List<Pair<WzImage, Path>> collector) {
@@ -242,9 +249,9 @@ public class WzFile extends WzObject {
         if (!parse()) return;
 
         wzDirectory.parseAllImages();
-        wzIv = Arrays.copyOf(iv, iv.length);
-        userKey = Arrays.copyOf(key, key.length);
-        reader.setWzMutableKey(new WzMutableKey(wzIv, userKey));
+        this.iv = Arrays.copyOf(iv, iv.length);
+        this.key = Arrays.copyOf(key, key.length);
+        reader.setWzMutableKey(new WzMutableKey(this.iv, this.key));
         header.setFileVersion(gameVersion);
     }
 

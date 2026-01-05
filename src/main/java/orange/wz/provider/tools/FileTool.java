@@ -62,6 +62,16 @@ public final class FileTool {
         }
     }
 
+    public static boolean deleteFile(Path path) {
+        try {
+            Files.deleteIfExists(path);
+            return true;
+        } catch (IOException e) {
+            log.error("删除旧文件失败: {}", path, e);
+            return false;
+        }
+    }
+
     public static String safeFileName(String name) {
         if (name == null || name.isEmpty()) {
             return "unnamed";

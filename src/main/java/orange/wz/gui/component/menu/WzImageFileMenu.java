@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
-import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
@@ -15,20 +14,15 @@ import orange.wz.gui.utils.ChineseUtil;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
-import orange.wz.provider.tools.WzFileStatus;
-import orange.wz.provider.tools.wzkey.WzKey;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
-import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static orange.wz.gui.Icons.*;
 
@@ -130,69 +124,7 @@ public final class WzImageFileMenu extends JPopupMenu {
             TreePath[] selectedPaths = tree.getSelectionPaths();
             if (selectedPaths == null) return;
 
-            if (selectedPaths.length == 1) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
-                DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
-                int index = pNode.getIndex(node);
-                WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
-                String keyBoxName = wzImageFile.getKeyBoxName();
-                byte[] iv = wzImageFile.getIv();
-                byte[] key = wzImageFile.getKey();
-                if (wzImageFile.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                    log.warn("未加载的文件 {} 无需保存", wzImageFile.getName());
-                    return;
-                }
-
-                File oldFile = new File(wzImageFile.getFilePath());
-                File newFile = new File(oldFile.getParent(), wzImageFile.getName());
-
-                File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), "保存 " + wzImageFile.getName(), newFile, new String[]{"img"});
-                if (saveFile == null) {
-                    return;
-                }
-                Path filePath = Path.of(saveFile.getAbsolutePath());
-                wzImageFile.save(filePath);
-                editPane.removeNodeFromTree(node);
-                String filename = filePath.getFileName().toString();
-                wzImageFile = new WzImageFile(filename, filePath.toString(), keyBoxName, iv, key);
-                editPane.insertNodeToTree(pNode, wzImageFile, true, index);
-            } else {
-                // 批量保存的时候判断文件名是否发生改变，如果发生改变，跳过并提示。
-                Set<String> failed = new HashSet<>();
-                for (TreePath treePath : selectedPaths) {
-                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                    DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
-                    int index = pNode.getIndex(node);
-                    WzImageFile wzImageFile = (WzImageFile) node.getUserObject();
-                    String keyBoxName = wzImageFile.getKeyBoxName();
-                    byte[] iv = wzImageFile.getIv();
-                    byte[] key = wzImageFile.getKey();
-                    if (wzImageFile.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                        log.warn("未加载的文件 {} 无需保存", wzImageFile.getName());
-                        continue;
-                    }
-
-                    Path filePath = Path.of(wzImageFile.getFilePath());
-                    if (!filePath.getFileName().toString().equals(wzImageFile.getName())) {
-                        failed.add(wzImageFile.getName());
-                        log.error("批量保存无法用于文件改名 {} : {}", wzImageFile.getName(), wzImageFile.getFilePath());
-                        continue;
-                    }
-
-                    wzImageFile.save(filePath);
-                    String filename = filePath.getFileName().toString();
-                    editPane.removeNodeFromTree(node);
-                    wzImageFile = new WzImageFile(filename, filePath.toString(), keyBoxName, iv, key);
-                    editPane.insertNodeToTree(pNode, wzImageFile, true, index);
-                }
-
-                if (!failed.isEmpty()) {
-                    JMessageUtil.warn("批量保存无法用于文件改名, 这些文件请手动保存: " + String.join(", ", failed));
-                }
-            }
-
-            editPane.resetValueForm();
-            System.gc();
+            editPane.saveFiles(selectedPaths);
         });
     }
 

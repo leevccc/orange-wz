@@ -14,7 +14,7 @@ import java.util.Arrays;
 @Getter
 @Setter
 @Slf4j
-public class WzXmlFile extends WzImage {
+public class WzXmlFile extends WzImage implements WzSavableFile {
     private String filePath;
     private String keyBoxName;
     private byte[] iv;
@@ -46,5 +46,10 @@ public class WzXmlFile extends WzImage {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean save() {
+        return exportToXml(Path.of(filePath), indent, meType);
     }
 }
