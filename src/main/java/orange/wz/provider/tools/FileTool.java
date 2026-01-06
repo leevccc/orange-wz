@@ -47,6 +47,27 @@ public final class FileTool {
         }
     }
 
+    public static boolean ensureFileExists(Path path) {
+        // 如果文件已经存在，直接返回 true
+        if (Files.exists(path)) {
+            return true;
+        }
+
+        try {
+            // 确保父目录存在
+            if (path.getParent() != null) {
+                createDirectory(path.getParent());
+            }
+
+            // 创建空白文件
+            Files.createFile(path);
+            return true;
+        } catch (IOException e) {
+            log.error("创建文件失败 {}", e.getMessage());
+            return false;
+        }
+    }
+
     public static boolean saveFile(Path path, byte[] bytes) {
         try (FileOutputStream fos = new FileOutputStream(path.toFile())) {
             fos.write(bytes);

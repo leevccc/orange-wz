@@ -93,6 +93,7 @@ public class WzImage extends WzObject {
 
     public boolean save(Path path) {
         if (path == null) return false;
+        if(!FileTool.ensureFileExists(path)) return false;
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(path.toString(), "rw")) {
             BinaryWriter writer = new BinaryWriter();
             writer.setWzMutableKey(reader.getWzMutableKey());
