@@ -93,6 +93,14 @@ public class WzImage extends WzObject {
 
     public boolean save(Path path) {
         if (path == null) return false;
+        boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
+        if (!parseStatus) {
+            if (!parse()) {
+                log.error("解析文件失败");
+                return false;
+            }
+        }
+
         if(!FileTool.ensureFileExists(path)) return false;
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(path.toString(), "rw")) {
             BinaryWriter writer = new BinaryWriter();
@@ -100,11 +108,13 @@ public class WzImage extends WzObject {
             save(writer);
 
             randomAccessFile.write(writer.output());
-            return true;
         } catch (IOException e) {
             log.error("无法保存文件 {}", e.getMessage());
             return false;
         }
+
+        if (!parseStatus) unparse();
+        return true;
     }
 
     public boolean exportToXml(Path path, int indent, MediaExportType mediaExportType) {

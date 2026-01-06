@@ -1231,11 +1231,6 @@ public final class EditPane extends JSplitPane {
             }
             wzFile.exportFileToImg(folder, collector);
         } else if (wzObject instanceof WzImage wzImage) {
-            if (!wzImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
-                throw new RuntimeException();
-            }
-
             Path p;
             if (wzImage instanceof WzXmlFile wzXmlFile) {
                 p = folder.resolve(wzXmlFile.getImgName());
@@ -1317,11 +1312,6 @@ public final class EditPane extends JSplitPane {
 
             wzFile.exportFileToXml(folder, collector);
         } else if (wzObject instanceof WzImage wzImage) {
-            if (!wzImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImage.getName(), wzImage.getStatus().getMessage());
-                throw new RuntimeException();
-            }
-
             String filename = wzImage.getName();
             if (!filename.endsWith(".xml")) {
                 filename = filename + ".xml";
