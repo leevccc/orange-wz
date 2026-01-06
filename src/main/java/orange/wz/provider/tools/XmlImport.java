@@ -171,7 +171,7 @@ public final class XmlImport {
                         length = Integer.parseInt(e.getAttribute("length"));
                         header = Base64Tool.coverBase64ToBytes(e.getAttribute("basehead"));
 
-                        Path mediaPath = Path.of(image.getFilePath()).getParent().resolve("media").resolve(image.getImgName()).resolve(FileTool.safeFileName(mediaFileName + name + ".png"));
+                        Path mediaPath = Path.of(image.getFilePath()).getParent().resolve("media").resolve(image.getImgName()).resolve(FileTool.safeFileName(mediaFileName + name + ".mp3"));
                         mp3 = FileTool.readFile(mediaPath);
                     }
                 } catch (Exception ex) {
