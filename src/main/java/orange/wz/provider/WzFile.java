@@ -188,8 +188,8 @@ public final class WzFile extends WzObject implements WzSavableFile {
     private boolean save(String path) {
         if (status != WzFileStatus.PARSE_SUCCESS) return false;
         log.info("保存 {} 开始", getName());
-        String saveFile = Path.of(path).toString();
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(saveFile, "rw")) {
+        if (!FileTool.ensureFileExists(Path.of(path))) return false;
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw")) {
             Map<String, Integer> tempStringCache = new HashMap<>();
             BinaryWriter tempWriter = new BinaryWriter();
             log.info("保存 {} Generate Data File 1/4", getName());
