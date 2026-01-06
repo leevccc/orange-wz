@@ -1161,6 +1161,8 @@ public final class EditPane extends JSplitPane {
                 if (renamed) {
                     FileTool.deleteFile(oldPath);
                 }
+            } else {
+                JMessageUtil.error("保存失败，请查看日志文件");
             }
         }
     }
@@ -1203,6 +1205,8 @@ public final class EditPane extends JSplitPane {
             wz.setFilePath(saveFile.getAbsolutePath());
             if (wz.save()) {
                 reloadFile(node, new WzKey(-1, keyBoxName, iv, key));
+            } else {
+                JMessageUtil.error("保存失败，请查看日志文件");
             }
         }
     }
@@ -1339,8 +1343,11 @@ public final class EditPane extends JSplitPane {
                 for (Pair<WzImage, Path> pair : collector) {
                     WzImage wzImage = pair.getLeft();
                     Path path = pair.getRight();
-                    wzImage.exportToXml(path, data.getIndent(), data.getMeType());
-                    MainFrame.getInstance().updateProgress(++finish, total);
+                    if (wzImage.exportToXml(path, data.getIndent(), data.getMeType())) {
+                        MainFrame.getInstance().updateProgress(++finish, total);
+                    } else {
+                        MainFrame.getInstance().setStatusText("%s 导出失败，请查看日志文件", wzImage.getName());
+                    }
                 }
                 return null;
             }

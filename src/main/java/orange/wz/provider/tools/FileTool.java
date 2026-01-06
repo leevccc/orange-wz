@@ -1,12 +1,16 @@
 package orange.wz.provider.tools;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -70,6 +74,27 @@ public final class FileTool {
             log.error("删除旧文件失败: {}", path, e);
             return false;
         }
+    }
+
+    public static void deleteDirectory(Path dir) throws IOException {
+        if (!Files.exists(dir)) return;
+
+        Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+
+            @Override
+            @NonNull
+            public FileVisitResult visitFile(@NonNull Path file, @NonNull BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            @NonNull
+            public FileVisitResult postVisitDirectory(@NonNull Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     public static String safeFileName(String name) {

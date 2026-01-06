@@ -1,8 +1,10 @@
 package orange.wz.provider.tools;
 
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
+import orange.wz.provider.WzXmlFile;
 import orange.wz.provider.properties.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -52,7 +54,7 @@ public final class XmlExport {
         return sb.toString();
     }
 
-    public static void export(WzImage image, Path filePath, int indent, MediaExportType meType) {
+    public static boolean export(WzImage image, Path filePath, int indent, MediaExportType meType) {
         try {
             // 创建 Document
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -68,13 +70,18 @@ public final class XmlExport {
             }
             root.setAttribute("media", meType.name());
 
-            Path mediaFolder = filePath.getParent().resolve("media").resolve(image.getName());
+            String imgName = image.getName();
+            if (image instanceof WzXmlFile xml) {
+                imgName = xml.getImgName();
+            }
+            Path mediaFolder = filePath.getParent().resolve("media").resolve(imgName);
             if (meType == MediaExportType.FILE) {
                 try {
+                    FileTool.deleteDirectory(mediaFolder);
                     FileTool.createDirectory(mediaFolder);
                 } catch (Exception e) {
-                    log.error("无法创建 media 目录: {} {}", mediaFolder, e.getMessage());
-                    return;
+                    log.error("media 目录被占用: {} {}", mediaFolder, e.getMessage());
+                    return false;
                 }
             }
 
@@ -98,6 +105,8 @@ public final class XmlExport {
         } catch (ParserConfigurationException | TransformerException e) {
             throw new RuntimeException(e);
         }
+
+        return true;
     }
 
     private static void writeProperties(Document doc, Element parent, WzImageProperty property, MediaExportType meType, String mediaFileName, Path mediaPath) {

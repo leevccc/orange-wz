@@ -114,7 +114,9 @@ public class WzImage extends WzObject {
                 return false;
             }
         }
-        XmlExport.export(this, path, indent, mediaExportType);
+        if (!XmlExport.export(this, path, indent, mediaExportType)) {
+            return false;
+        }
         if (!parseStatus) unparse();
         return true;
     }
