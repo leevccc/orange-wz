@@ -1213,7 +1213,8 @@ public final class EditPane extends JSplitPane {
         WzObject wzObject = (WzObject) node.getUserObject();
         if (wzObject instanceof WzFolder) {
             expandTreeNode(node, false, false, false);
-            folder = folder.resolve(wzObject.getName());
+            String name = wzObject.getName().replaceAll("(?i)\\.wz$", "");
+            folder = folder.resolve(name);
             int total = node.getChildCount();
             int current = 0;
             for (int i = 0; i < node.getChildCount(); i++) {
