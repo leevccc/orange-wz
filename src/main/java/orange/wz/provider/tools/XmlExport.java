@@ -61,19 +61,19 @@ public final class XmlExport {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.newDocument();
 
-            // 插入数据
-            Element root = doc.createElement("imgdir");
-            doc.setXmlStandalone(true);
-            root.setAttribute("name", image.getName());
-            if (indent > 0) {
-                root.setAttribute("indent", String.valueOf(indent));
-            }
-            root.setAttribute("media", meType.name());
-
             String imgName = image.getName();
             if (image instanceof WzXmlFile xml) {
                 imgName = xml.getImgName();
             }
+
+            // 插入数据
+            Element root = doc.createElement("imgdir");
+            doc.setXmlStandalone(true);
+            root.setAttribute("name", imgName);
+            if (indent > 0) {
+                root.setAttribute("indent", String.valueOf(indent));
+            }
+            root.setAttribute("media", meType.name());
             Path mediaFolder = filePath.getParent().resolve("media").resolve(imgName);
             if (meType == MediaExportType.FILE) {
                 try {
