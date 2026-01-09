@@ -143,7 +143,7 @@ public final class KeyManager extends JDialog {
         btnReset.addActionListener(e -> {
             for (int r = 0; r < 8; r++) {
                 for (int c = 0; c < 4; c++) {
-                    userKeyFields[r][c].setText(toHex(DEFAULT_KEY[r * 8 + c * 4]));
+                    userKeyFields[r][c].setText(toHex(DEFAULT_KEY[r * 16 + c * 4]));
                 }
             }
         });
@@ -211,7 +211,7 @@ public final class KeyManager extends JDialog {
         byte[] userKey = wzKey.getUserKey();
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 4; c++) {
-                userKeyFields[r][c].setText(toHex(userKey[r * 8 + c * 4]));
+                userKeyFields[r][c].setText(toHex(userKey[r * 16 + c * 4]));
                 userKeyFields[r][c].setEditable(editable);
             }
         }
@@ -292,7 +292,7 @@ public final class KeyManager extends JDialog {
 
         for (int r = 0; r < 8; r++) {
             for (int c = 0; c < 4; c++) {
-                userKey[r * 8 + c * 4] = fromHex(userKeyFields[r][c].getText());
+                userKey[r * 16 + c * 4] = fromHex(userKeyFields[r][c].getText());
             }
         }
 
