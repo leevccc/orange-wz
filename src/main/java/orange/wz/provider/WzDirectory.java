@@ -261,13 +261,14 @@ public class WzDirectory extends WzObject {
         children.getImages().forEach(image -> collector.add(new Pair<>(image, p.resolve(image.getName() + ".xml"))));
     }
 
-    public void parseAllImages() {
-        children.getDirectories().forEach(WzDirectory::parseAllImages);
+    public void parseAllImagesForChangeKey(WzMutableKey wzMutableKey) {
+        children.getDirectories().forEach(wzDir -> wzDir.parseAllImagesForChangeKey(wzMutableKey));
         children.getImages().forEach(image -> {
             if (!image.parse()) {
                 log.error("文件 {} 解析失败", name);
                 throw new RuntimeException();
             }
+            image.rebuildCompressedForPngBelongListWz(image.getChildren(), wzMutableKey);
             image.setChanged(true); // 确保保存的时候重新写入，而不是取原来的
         });
     }

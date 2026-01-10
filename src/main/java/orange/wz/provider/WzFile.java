@@ -7,8 +7,6 @@ import orange.wz.manager.ServerManager;
 import orange.wz.model.Pair;
 import orange.wz.provider.tools.*;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -215,6 +213,7 @@ public final class WzFile extends WzObject implements WzSavableFile {
         writer.getStringCache().clear();
         log.info("保存 {} Wz 写入文件 4/4", getName());
         byte[] context = writer.output();
+        reader = null;
         ServerManager.getBean(FileWriteQueue.class).addToQueue(Path.of(path), context);
         log.info("保存 {} Wz 的任务已提交", getName());
         return true;
@@ -244,11 +243,16 @@ public final class WzFile extends WzObject implements WzSavableFile {
         // 先解析把原有内容解码出来缓存在内存里
         if (!parse()) return;
 
-        wzDirectory.parseAllImages();
+        iv = Arrays.copyOf(iv, iv.length);
+        key = Arrays.copyOf(key, key.length);
+        WzMutableKey wzMutableKey = new WzMutableKey(iv, key);
+
+        wzDirectory.parseAllImagesForChangeKey(wzMutableKey);
+
         this.keyBoxName = keyBoxName;
-        this.iv = Arrays.copyOf(iv, iv.length);
-        this.key = Arrays.copyOf(key, key.length);
-        reader.setWzMutableKey(new WzMutableKey(this.iv, this.key));
+        this.iv = iv;
+        this.key = key;
+        reader.setWzMutableKey(wzMutableKey);
         header.setFileVersion(gameVersion);
     }
 

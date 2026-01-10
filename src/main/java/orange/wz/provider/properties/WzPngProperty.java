@@ -242,6 +242,7 @@ public class WzPngProperty extends WzImageProperty {
 
             return rawBytes;
         } catch (Exception e) {
+            log.error(getPath());
             throw new RuntimeException(e);
         }
     }
@@ -325,6 +326,11 @@ public class WzPngProperty extends WzImageProperty {
         height = image.getHeight();
 
         byte[] rawBytes = getRawBytes(image, format);
+        compressBytes(rawBytes, wzMutableKey);
+
+    }
+
+    private void compressBytes(byte[] rawBytes, WzMutableKey wzMutableKey) {
         compressedBytes = zlibCompress(rawBytes);
         if (listWzUsed) {
             BinaryWriter writer = new BinaryWriter(compressedBytes);
@@ -367,6 +373,13 @@ public class WzPngProperty extends WzImageProperty {
             return returnBytes;
         }
         return compressedBytes;
+    }
+
+    public void rebuildCompressedBytesUseNewWzKey(WzMutableKey wzMutableKey) {
+        // 该方法在处理CMS079的Map.wz时要额外花费123秒，只是为了List.wz的图片
+        byte[] compressedBytes = getCompressedBytes(false);
+        byte[] rawBytes = decompress(compressedBytes);
+        compressBytes(rawBytes, wzMutableKey);
     }
 
     private static BufferedImage deepClone(BufferedImage src) {

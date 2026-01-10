@@ -5,6 +5,7 @@ import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.tools.BinaryReader;
 import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzMutableKey;
 import orange.wz.provider.tools.WzType;
 
 import java.awt.image.BufferedImage;
@@ -62,6 +63,10 @@ public class WzCanvasProperty extends WzExtended {
 
     public void setPng(BufferedImage pngImage, WzPngFormat format, int scale) {
         png.setImage(pngImage, format, scale);
+    }
+
+    public void rebuildCompressedBytesUseNewWzKey(WzMutableKey wzMutableKey) {
+        png.rebuildCompressedBytesUseNewWzKey(wzMutableKey);
     }
 
     // Override --------------------------------------------------------------------------------------------------------

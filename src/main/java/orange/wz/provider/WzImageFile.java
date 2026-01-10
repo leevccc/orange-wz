@@ -56,11 +56,18 @@ public class WzImageFile extends WzImage implements WzSavableFile {
             log.error("文件 {} 解析失败", name);
             return;
         }
+        iv = Arrays.copyOf(iv, iv.length);
+        key = Arrays.copyOf(key, key.length);
+        WzMutableKey wzMutableKey = new WzMutableKey(iv, key);
+
+        // 如果图片被List.wz索引，需要用userKey重建
+        rebuildCompressedForPngBelongListWz(getChildren(), wzMutableKey);
+
         this.keyBoxName = keyBoxName;
-        setIv(Arrays.copyOf(iv, iv.length));
-        setKey(Arrays.copyOf(key, key.length));
+        setIv(iv);
+        setKey(key);
         setChanged(true); // 确保保存的时候重新写入，而不是取原来的
-        getReader().setWzMutableKey(new WzMutableKey(iv, key));
+        getReader().setWzMutableKey(wzMutableKey);
     }
 
     @Override

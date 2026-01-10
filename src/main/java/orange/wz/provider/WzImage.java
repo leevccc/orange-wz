@@ -4,12 +4,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.manager.ServerManager;
+import orange.wz.provider.properties.WzCanvasProperty;
 import orange.wz.provider.properties.WzExtended;
 import orange.wz.provider.properties.WzListProperty;
 import orange.wz.provider.tools.*;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -106,6 +105,7 @@ public class WzImage extends WzObject {
         save(writer);
 
         byte[] context = writer.output();
+        reader = null;
         ServerManager.getBean(FileWriteQueue.class).addToQueue(path, context);
         log.info("保存 {} IMG 的任务已提交", getName());
 
@@ -209,5 +209,17 @@ public class WzImage extends WzObject {
 
     public boolean existChild(String name) {
         return children.existChild(name);
+    }
+
+    // ChangeKey -------------------------------------------------------------------------------------------------------
+    public void rebuildCompressedForPngBelongListWz(List<WzImageProperty> propertyList, WzMutableKey wzMutableKey) {
+        for (WzImageProperty property : propertyList) {
+            if (property.isListProperty()) {
+                rebuildCompressedForPngBelongListWz(property.getChildren(), wzMutableKey);
+            }
+            if (property instanceof WzCanvasProperty canvas) {
+                canvas.rebuildCompressedBytesUseNewWzKey(wzMutableKey);
+            }
+        }
     }
 }
