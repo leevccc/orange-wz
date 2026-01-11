@@ -83,7 +83,7 @@ public class FileWriteQueue {
                 // 写入失败，重新入队
                 writeQueue.add(pair);
                 writingTotal.decrementAndGet();
-                log.error("无法保存文件 {}", e.getMessage());
+                log.error("无法保存文件 {} 已将任务重新提交", e.getMessage());
             }
         }
     }
