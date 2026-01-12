@@ -33,6 +33,7 @@ public class WzListProperty extends WzExtended {
                 if (!name.equals(newName)) {
                     property.setName(newName);
                     property.setTempChanged(true);
+                    property.getWzImage().setChanged(true);
                     changed = true;
                 }
                 i++;
