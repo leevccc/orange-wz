@@ -60,11 +60,6 @@ public abstract class WzImageProperty extends WzObject {
     public void addChildren(List<WzImageProperty> children) {
         if (children == null) return;
         this.children.add(children);
-        setTempChanged(true);
-        if (wzImage != null) {
-            wzImage.setTempChanged(true);
-            wzImage.setChanged(true);
-        }
     }
 
     public boolean removeChild(String name) {

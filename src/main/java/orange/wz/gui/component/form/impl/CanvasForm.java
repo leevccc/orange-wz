@@ -2,17 +2,20 @@ package orange.wz.gui.component.form.impl;
 
 import com.formdev.flatlaf.util.SystemFileChooser;
 import lombok.Setter;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.base.DisabledItemComboBox;
 import orange.wz.gui.component.form.data.CanvasFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
+import orange.wz.model.TransferableImage;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.WzPngFormat;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
@@ -38,6 +41,7 @@ public class CanvasForm extends AbstractValueForm {
 
         JButton downloadBtn = new JButton("下载");
         JButton uploadBtn = new JButton("上传");
+        JButton copyBtn = new JButton("复制");
 
         downloadBtn.addActionListener(e -> {
             byte[] imageBytes;
@@ -99,8 +103,16 @@ public class CanvasForm extends AbstractValueForm {
             }
         });
 
+        copyBtn.addActionListener(e -> {
+            TransferableImage trans = new TransferableImage(imagePanel.image);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(trans, null);
+            MainFrame.getInstance().setStatusText("图片已经复制到系统剪贴板");
+        });
+
         addButton(downloadBtn);
         addButton(uploadBtn);
+        addButton(copyBtn);
     }
 
     private JPanel createValuePanel() {
