@@ -44,14 +44,15 @@ public class FormSaveHandler {
 
         if (directory.isWzFile()) {
             if (newName.endsWith(".wz")) {
-                directory.setName(newName);
-                directory.getWzFile().setName(newName);
+                directory.setNameAnyway(newName);
+                directory.getWzFile().setNameAnyway(newName);
             } else {
                 JMessageUtil.error("不是 .wz 结尾");
                 return false;
             }
-        } else {
-            directory.setName(newName);
+        } else if (!directory.setName(newName)) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
         }
         directory.setTempChanged(true);
         return true;
@@ -61,10 +62,11 @@ public class FormSaveHandler {
         String newName = editPane.getNodeForm().getData().getName();
         if (newName.equals(image.getName())) return false;
 
-        if (newName.endsWith(".img")) {
-            image.setName(newName);
-        } else {
+        if (!newName.endsWith(".img")) {
             JMessageUtil.error("不是 .img 结尾");
+            return false;
+        } else if (!image.setName(newName)) {
+            JMessageUtil.error("存在同名节点，保存失败");
             return false;
         }
 
@@ -75,7 +77,11 @@ public class FormSaveHandler {
     private static boolean changeCanvas(WzCanvasProperty property, EditPane editPane) {
         CanvasFormData data = editPane.getCanvasForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
+
         property.setPng(data.getValue(), data.getFormat());
 
         property.getWzImage().setChanged(true);
@@ -87,7 +93,10 @@ public class FormSaveHandler {
         String newName = editPane.getNodeForm().getData().getName();
         if (newName.equals(property.getName())) return false;
 
-        property.setName(newName);
+        if (!property.setName(newName)) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
 
         property.getWzImage().setChanged(true);
         property.setTempChanged(true);
@@ -97,7 +106,10 @@ public class FormSaveHandler {
     private static boolean changeDouble(WzDoubleProperty property, EditPane editPane) {
         DoubleFormData data = editPane.getDoubleForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -108,7 +120,10 @@ public class FormSaveHandler {
     private static boolean changeFloat(WzFloatProperty property, EditPane editPane) {
         FloatFormData data = editPane.getFloatForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -119,7 +134,10 @@ public class FormSaveHandler {
     private static boolean changeInt(WzIntProperty property, EditPane editPane) {
         IntFormData data = editPane.getIntForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -130,7 +148,10 @@ public class FormSaveHandler {
     private static boolean changeList(WzListProperty property, EditPane editPane) {
         String newName = editPane.getNodeForm().getData().getName();
 
-        property.setName(newName);
+        if (!property.getName().equals(newName) && !property.setName(newName)) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
 
         property.getWzImage().setChanged(true);
         property.setTempChanged(true);
@@ -140,7 +161,10 @@ public class FormSaveHandler {
     private static boolean changeLong(WzLongProperty property, EditPane editPane) {
         LongFormData data = editPane.getLongForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -152,7 +176,10 @@ public class FormSaveHandler {
         String newName = editPane.getNodeForm().getData().getName();
         if (property.getName().equals(newName)) return false;
 
-        property.setName(newName);
+        if (!property.setName(newName)) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
 
         property.getWzImage().setChanged(true);
         property.setTempChanged(true);
@@ -162,7 +189,10 @@ public class FormSaveHandler {
     private static boolean changeShort(WzShortProperty property, EditPane editPane) {
         ShortFormData data = editPane.getShortForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -173,7 +203,10 @@ public class FormSaveHandler {
     private static boolean changeSound(WzSoundProperty property, EditPane editPane) {
         SoundFormData data = editPane.getSoundForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setSound(data.getSoundBytes());
 
         property.getWzImage().setChanged(true);
@@ -184,7 +217,10 @@ public class FormSaveHandler {
     private static boolean changeString(WzStringProperty property, EditPane editPane) {
         StringFormData data = editPane.getStringForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -204,7 +240,10 @@ public class FormSaveHandler {
 
         if (data == null) return false;
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setValue(data.getValue());
 
         property.getWzImage().setChanged(true);
@@ -215,7 +254,10 @@ public class FormSaveHandler {
     private static boolean changeVector(WzVectorProperty property, EditPane editPane) {
         VectorFormData data = editPane.getVectorForm().getData();
 
-        property.setName(data.getName());
+        if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
+            JMessageUtil.error("存在同名节点，保存失败");
+            return false;
+        }
         property.setX(data.getX());
         property.setY(data.getY());
 

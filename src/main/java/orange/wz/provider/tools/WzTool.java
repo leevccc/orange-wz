@@ -122,7 +122,7 @@ public class WzTool {
             String newName = String.valueOf(i);
             if (StringTool.isInteger(name)) {
                 if (!name.equals(newName)) {
-                    property.setName(newName);
+                    property.setNameAnyway(newName);
                     property.setTempChanged(true);
                     property.getWzImage().setChanged(true);
                     renamed = true;
