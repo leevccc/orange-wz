@@ -71,7 +71,7 @@ public final class WzFileMenu extends JPopupMenu {
         unloadBtnAction(unloadBtn);
         reloadBtnAction(reloadBtn);
         moveBtnAction(moveBtn);
-        addPasteBtnAction(pasteBtn);
+        pasteBtn.addActionListener(e -> editPane.doPaste());
         addKeyBtnAction(keyBtn);
         addExportImgBtnAction(exportImgBtn);
         addExportXmlBtnAction(exportXmlBtn);
@@ -166,125 +166,6 @@ public final class WzFileMenu extends JPopupMenu {
             }
             editPane.resetValueForm();
         });
-    }
-
-    private void addPasteBtnAction(JMenuItem item) {
-        item.addActionListener(e -> {
-            TreePath[] selectedPaths = tree.getSelectionPaths();
-            if (selectedPaths == null) return;
-
-            if (selectedPaths.length != 1) {
-                JMessageUtil.error("不要多选");
-                return;
-            }
-
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
-            WzDirectory target = (WzDirectory) node.getUserObject();
-
-            Clipboard clipboard = MainFrame.getInstance().getClipboard();
-            clipboard.lock();
-
-            if (clipboard.canPaste(target)) {
-                List<WzObject> objects = clipboard.getItems();
-                setPasteParent(objects, target);
-                setPasteWzFile(objects, target.getWzFile());
-                setPasteImgReader(objects, target.getWzFile()); // 重设为新文件的reader主要是key的传递，不得再做读取
-
-                OverwriteChoice choice = null;
-                for (WzObject obj : objects) {
-                    obj.setTempChanged(true);
-                    int index = 0;
-                    if (obj instanceof WzDirectory dir) {
-                        if (target.existDirectory(dir.getName())) { // 发现重名
-                            if (choice == OverwriteChoice.SKIP_ALL) continue;
-                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
-                                target.removeDirectoryChild(dir.getName());
-                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, dir.getName());
-                                index = node.getIndex(childNode);
-                                editPane.removeNodeFromTree(childNode);
-                            } else {
-                                choice = OverwriteDialog.show(editPane, dir.getName());
-                                switch (choice) {
-                                    case OVERWRITE, OVERWRITE_ALL -> {
-                                        target.removeDirectoryChild(dir.getName());
-                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, dir.getName());
-                                        index = node.getIndex(childNode);
-                                        editPane.removeNodeFromTree(childNode);
-                                    }
-                                    case SKIP, SKIP_ALL, CANCEL -> {
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                        target.addChild(dir);
-                    } else if (obj instanceof WzImage img) {
-                        if (target.existImage(img.getName())) { // 发现重名
-                            if (choice == OverwriteChoice.SKIP_ALL) continue;
-                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
-                                target.removeImageChild(img.getName());
-                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, img.getName());
-                                index = node.getIndex(childNode);
-                                editPane.removeNodeFromTree(childNode);
-                            } else {
-                                choice = OverwriteDialog.show(editPane, img.getName());
-                                switch (choice) {
-                                    case OVERWRITE, OVERWRITE_ALL -> {
-                                        target.removeImageChild(img.getName());
-                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, img.getName());
-                                        index = node.getIndex(childNode);
-                                        editPane.removeNodeFromTree(childNode);
-                                    }
-                                    case SKIP, SKIP_ALL, CANCEL -> {
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                        target.addChild(img);
-                    }
-                    editPane.insertNodeToTree(node, obj, true, index);
-                }
-            } else {
-                JMessageUtil.error("WzFile 只能粘贴 Directory 或者 Image");
-            }
-
-            editPane.resetValueForm();
-            clipboard.clear();
-            clipboard.unlock();
-        });
-    }
-
-    private void setPasteParent(List<? extends WzObject> objects, WzObject parent) {
-        for (WzObject obj : objects) {
-            obj.setParent(parent);
-            if (obj instanceof WzDirectory directory) {
-                setPasteParent(directory.getChildren(), directory);
-            } else if (obj instanceof WzImage image) {
-                setPasteParent(image.getChildren(), image);
-            } else if (obj instanceof WzImageProperty prop && prop.isListProperty()) {
-                setPasteParent(prop.getChildren(), prop);
-            }
-        }
-    }
-
-    private void setPasteWzFile(List<WzObject> objects, WzFile wzFile) {
-        for (WzObject obj : objects) {
-            if (obj instanceof WzDirectory dir) {
-                dir.setWzFile(wzFile);
-                setPasteWzFile(dir.getChildren(), wzFile);
-            }
-        }
-    }
-
-    private void setPasteImgReader(List<WzObject> objects, WzFile wzFile) {
-        for (WzObject obj : objects) {
-            if (obj instanceof WzDirectory dir) {
-                setPasteImgReader(dir.getChildren(), wzFile);
-            } else if (obj instanceof WzImage img) {
-                img.setReader(wzFile.getReader());
-            }
-        }
     }
 
     private void addDirBtnAction(JMenuItem item) {

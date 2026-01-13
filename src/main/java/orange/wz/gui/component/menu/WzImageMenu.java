@@ -2,7 +2,6 @@ package orange.wz.gui.component.menu;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
@@ -11,7 +10,6 @@ import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.*;
 import orange.wz.provider.WzDirectory;
 import orange.wz.provider.WzImage;
-import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.*;
 
@@ -96,8 +94,8 @@ public final class WzImageMenu extends JPopupMenu {
         addStringBtnItem(addStringBtn);
         addUOLBtnItem(addUOLBtn);
         addVectorBtnItem(addVectorBtn);
-        addCopyBtnAction(copyBtn);
-        addPasteBtnAction(pasteBtn);
+        copyBtn.addActionListener(e -> editPane.doCopy());
+        pasteBtn.addActionListener(e -> editPane.doPaste());
         deleteBtnAction(deleteBtn);
         addExportImgBtnAction(exportImgBtn);
         addExportXmlBtnAction(exportXmlBtn);
@@ -117,109 +115,6 @@ public final class WzImageMenu extends JPopupMenu {
         add(sicBtn);
     }
 
-    private void addCopyBtnAction(JMenuItem item) {
-        item.addActionListener(e -> {
-            TreePath[] selectedPaths = tree.getSelectionPaths();
-            if (selectedPaths == null) return;
-
-            Clipboard clipboard = MainFrame.getInstance().getClipboard();
-            clipboard.lock();
-            clipboard.clear();
-            for (TreePath treePath : selectedPaths) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                WzImage wzObject = (WzImage) node.getUserObject();
-                clipboard.add(wzObject.deepClone(null));
-            }
-            clipboard.unlock();
-        });
-    }
-
-    private void addPasteBtnAction(JMenuItem item) {
-        item.addActionListener(e -> {
-            TreePath[] selectedPaths = tree.getSelectionPaths();
-            if (selectedPaths == null) return;
-
-            if (selectedPaths.length != 1) {
-                JMessageUtil.error("不要多选");
-                return;
-            }
-
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
-            WzImage target = (WzImage) node.getUserObject();
-
-            Clipboard clipboard = MainFrame.getInstance().getClipboard();
-            clipboard.lock();
-
-            if (clipboard.canPaste(target)) {
-                List<WzObject> objects = clipboard.getItems();
-                setPasteParent(objects, target);
-                setPasteWzImage(objects, target);
-
-                OverwriteChoice choice = null;
-                for (WzObject obj : objects) {
-                    obj.setTempChanged(true);
-                    int index = 0;
-                    if (obj instanceof WzImageProperty prop) {
-                        if (target.existChild(prop.getName())) { // 发现重名
-                            if (choice == OverwriteChoice.SKIP_ALL) continue;
-                            else if (choice == OverwriteChoice.OVERWRITE_ALL) {
-                                target.removeChild(prop.getName());
-                                DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, prop.getName());
-                                index = node.getIndex(childNode);
-                                editPane.removeNodeFromTree(childNode);
-                            } else {
-                                choice = OverwriteDialog.show(editPane, prop.getName());
-                                switch (choice) {
-                                    case OVERWRITE, OVERWRITE_ALL -> {
-                                        target.removeChild(prop.getName());
-                                        DefaultMutableTreeNode childNode = editPane.findTreeNodeByName(node, prop.getName());
-                                        index = node.getIndex(childNode);
-                                        editPane.removeNodeFromTree(childNode);
-                                    }
-                                    case SKIP, SKIP_ALL, CANCEL -> {
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                        target.addChild(prop);
-                        target.setChanged(true);
-                    }
-                    editPane.insertNodeToTree(node, obj, true, index);
-                }
-            } else {
-                JMessageUtil.error("Image 只能粘贴 Property");
-            }
-
-            editPane.resetValueForm();
-            clipboard.clear();
-            clipboard.unlock();
-        });
-    }
-
-    private void setPasteParent(List<? extends WzObject> objects, WzObject parent) {
-        for (WzObject obj : objects) {
-            obj.setParent(parent);
-            if (obj instanceof WzDirectory directory) {
-                setPasteParent(directory.getChildren(), directory);
-            } else if (obj instanceof WzImage image) {
-                setPasteParent(image.getChildren(), image);
-            } else if (obj instanceof WzImageProperty prop && prop.isListProperty()) {
-                setPasteParent(prop.getChildren(), prop);
-            }
-        }
-    }
-
-    private void setPasteWzImage(List<? extends WzObject> objects, WzImage wzImage) {
-        if (objects == null) return;
-        for (WzObject obj : objects) {
-            if (obj instanceof WzImageProperty property) {
-                property.setWzImage(wzImage);
-                setPasteWzImage(property.getChildren(), wzImage);
-            }
-        }
-    }
-
     private void deleteBtnAction(JMenuItem item) {
         item.addActionListener(e -> {
             TreePath[] selectedPaths = tree.getSelectionPaths();
@@ -233,7 +128,7 @@ public final class WzImageMenu extends JPopupMenu {
                 if (pWzObject instanceof WzDirectory directory && directory.removeImageChild(wzObject.getName())) {
                     editPane.removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
                 } else {
-                    log.error("无法删除节点, 父节点类型: {}", pWzObject.getClass().getName());
+                    log.error("无法删除节点, 父节点类型: {}", pWzObject.getClass().getSimpleName());
                 }
             }
             editPane.resetValueForm();

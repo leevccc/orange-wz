@@ -323,4 +323,10 @@ public final class WzFile extends WzObject implements WzSavableFile {
         reader.setPosition(originalPosition);
         return false;
     }
+
+    @Override
+    public WzFile deepClone(WzObject parent) {
+        log.error("WzFolder 暂不支持 DeepCone 方法");
+        throw new UnsupportedOperationException();
+    }
 }

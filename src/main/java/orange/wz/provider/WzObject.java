@@ -42,4 +42,6 @@ public abstract class WzObject {
             this.path = parent.getPath() + "/" + name;
         }
     }
+
+    public abstract WzObject deepClone(WzObject parent);
 }

@@ -2,7 +2,6 @@ package orange.wz.gui.component.menu;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.ChineseUtil;
@@ -37,30 +36,13 @@ public final class WzValuePropertyMenu extends JPopupMenu {
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
         JMenuItem chineseBtn = new JMenuItem("汉化");
 
-        addCopyBtnAction(copyBtn);
+        copyBtn.addActionListener(e -> editPane.doCopy());
         deleteBtnAction(deleteBtn);
         addChineseBtnAction(chineseBtn);
 
         add(copyBtn);
         add(deleteBtn);
         add(chineseBtn);
-    }
-
-    private void addCopyBtnAction(JMenuItem item) {
-        item.addActionListener(e -> {
-            TreePath[] selectedPaths = tree.getSelectionPaths();
-            if (selectedPaths == null) return;
-
-            Clipboard clipboard = MainFrame.getInstance().getClipboard();
-            clipboard.lock();
-            clipboard.clear();
-            for (TreePath treePath : selectedPaths) {
-                DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                WzImageProperty wzObject = (WzImageProperty) node.getUserObject();
-                clipboard.add(wzObject.deepClone(null));
-            }
-            clipboard.unlock();
-        });
     }
 
     private void deleteBtnAction(JMenuItem item) {
@@ -78,7 +60,7 @@ public final class WzValuePropertyMenu extends JPopupMenu {
                 } else if (pWzObject instanceof WzImageProperty property && property.removeChild(wzObject.getName())) {
                     editPane.removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
                 } else {
-                    log.error("无法删除节点, 父节点类型: {}", pWzObject.getClass().getName());
+                    log.error("无法删除节点, 父节点类型: {}", pWzObject.getClass().getSimpleName());
                 }
             }
             editPane.resetValueForm();

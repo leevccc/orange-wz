@@ -2,6 +2,7 @@ package orange.wz.gui.component.panel;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.dialog.*;
@@ -30,7 +31,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -1608,6 +1608,9 @@ public final class EditPane extends JSplitPane {
         }.execute();
     }
 
+    /**
+     * 对子列表进行排序，并将数值类型的名称按从0开始的自然序数进行改名，使其连续
+     */
     public void sortAndReindexChildren() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
@@ -1620,7 +1623,7 @@ public final class EditPane extends JSplitPane {
             success = listProperty.sortAndReindexChildren();
         } else if (wzObject instanceof WzImage image) {
             success = image.sortAndReindexChildren();
-        }else{
+        } else {
             MainFrame.getInstance().setStatusText("该功能仅支持 image 或者 list 节点");
             return;
         }
@@ -1635,5 +1638,164 @@ public final class EditPane extends JSplitPane {
         removeNodeFromTree(node);
         MainFrame.getInstance().setStatusText("有名称发生了变化");
         insertNodeToTree(pNode, wzObject, true, index);
+    }
+
+    public void doCopy() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        Clipboard clipboard = MainFrame.getInstance().getClipboard();
+        clipboard.lock();
+        clipboard.clear();
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject wzObject = (WzObject) node.getUserObject();
+            clipboard.add(wzObject.deepClone(null));
+        }
+        clipboard.unlock();
+    }
+
+    private void setPasteWzFileAndReader(List<WzObject> items, WzFile wzFile) {
+        for (WzObject item : items) {
+            if (item instanceof WzDirectory dir) {
+                dir.setWzFile(wzFile);
+                setPasteWzFileAndReader(dir.getChildren(), wzFile);
+            } else if (item instanceof WzImage img) {
+                img.setReader(wzFile.getReader());
+            } else {
+                MainFrame.getInstance().getClipboard().unlock();
+                throw new RuntimeException("无法给类型 " + item.getClass().getSimpleName() + " 设置 WzFile");
+            }
+        }
+    }
+
+    private void setPasteWzImage(List<WzObject> items, WzImage image) {
+        for (WzObject item : items) {
+            if (item instanceof WzImageProperty prop) {
+                prop.setWzImage(image);
+                prop.setChildrenWzImage(image);
+            } else {
+                MainFrame.getInstance().getClipboard().unlock();
+                throw new RuntimeException("无法给类型 " + item.getClass().getSimpleName() + " 设置 WzImage");
+            }
+        }
+    }
+
+    private boolean isWzObjExistChild(WzObject parent, WzObject child) {
+        switch (parent) {
+            case WzDirectory pDir when child instanceof WzDirectory -> {
+                return pDir.existDirectory(child.getName());
+            }
+            case WzDirectory pDir when child instanceof WzImage -> {
+                return pDir.existImage(child.getName());
+            }
+            case WzImage image -> {
+                return image.existChild(child.getName());
+            }
+            case WzImageProperty property when property.isListProperty() -> {
+                return property.existChild(child.getName());
+            }
+            default -> {
+                MainFrame.getInstance().getClipboard().unlock();
+                throw new RuntimeException("isExistChild 未支持的类型" + parent.getClass().getSimpleName());
+            }
+        }
+    }
+
+    private void removeWzObjChild(WzObject parent, WzObject child) {
+        switch (parent) {
+            case WzDirectory pDir when child instanceof WzDirectory -> pDir.removeDirectoryChild(child.getName());
+            case WzDirectory pDir when child instanceof WzImage -> pDir.removeImageChild(child.getName());
+            case WzImage image -> image.removeChild(child.getName());
+            case WzImageProperty property when property.isListProperty() -> property.removeChild(child.getName());
+            default -> {
+                MainFrame.getInstance().getClipboard().unlock();
+                throw new RuntimeException("removeWzObjChild 未支持的类型" + parent.getClass().getSimpleName());
+            }
+        }
+    }
+
+    private void addWzObjChild(WzObject parent, WzObject child) {
+        switch (parent) {
+            case WzDirectory pDir when child instanceof WzDirectory cDir -> pDir.addChild(cDir);
+            case WzDirectory pDir when child instanceof WzImage cImg -> pDir.addChild(cImg);
+            case WzImage image when child instanceof WzImageProperty property -> image.addChild(property);
+            case WzImageProperty pProp when pProp.isListProperty() && child instanceof WzImageProperty cProp ->
+                    pProp.addChild(cProp);
+            default -> {
+                MainFrame.getInstance().getClipboard().unlock();
+                throw new RuntimeException("addWzObjChild 未支持的组合 " + parent.getClass().getSimpleName() + " 和 " + child.getClass().getSimpleName());
+            }
+        }
+    }
+
+    public void doPaste() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+        WzObject to = (WzObject) node.getUserObject();
+
+        Clipboard clipboard = MainFrame.getInstance().getClipboard();
+        clipboard.lock();
+
+        if (clipboard.isEmpty()) {
+            JMessageUtil.error("剪贴板是空的");
+            clipboard.unlock();
+            return;
+        }
+
+        if (clipboard.canPaste(to)) {
+            List<WzObject> cpItems = clipboard.getItems();
+            cpItems.forEach(cpItem -> cpItem.setParent(to)); // 复制的时候顶级对象没有 parent
+
+            // 这里的对象类型和canPaste保持一致
+            if (to instanceof WzDirectory wzDirectory) {
+                setPasteWzFileAndReader(cpItems, wzDirectory.getWzFile());
+            } else if (to instanceof WzImage wzImg) {
+                setPasteWzImage(cpItems, wzImg);
+            } else if (to instanceof WzImageProperty wzProp && wzProp.isListProperty()) {
+                setPasteWzImage(cpItems, wzProp.getWzImage());
+            }
+
+            OverwriteChoice choice = null;
+            for (WzObject item : cpItems) {
+                item.setTempChanged(true);
+                int index = 0;
+                if (isWzObjExistChild(to, item)) { // 发现重名
+                    if (choice == OverwriteChoice.SKIP_ALL) continue;
+                    else if (choice == OverwriteChoice.OVERWRITE_ALL) {
+                        removeWzObjChild(to, item);
+                        DefaultMutableTreeNode childNode = findTreeNodeByName(node, item.getName());
+                        index = node.getIndex(childNode);
+                        removeNodeFromTree(childNode);
+                    } else {
+                        choice = OverwriteDialog.show(this, item.getName());
+                        switch (choice) {
+                            case OVERWRITE, OVERWRITE_ALL -> {
+                                removeWzObjChild(to, item);
+                                DefaultMutableTreeNode childNode = findTreeNodeByName(node, item.getName());
+                                index = node.getIndex(childNode);
+                                removeNodeFromTree(childNode);
+                            }
+                            case SKIP, SKIP_ALL, CANCEL -> {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                addWzObjChild(to, item); // 已经设置 changed 了
+
+                insertNodeToTree(node, item, true, index);
+            }
+        } else {
+            JMessageUtil.error("复制的东西不能粘贴到 " + to.getClass().getSimpleName());
+            clipboard.unlock();
+            return;
+        }
+
+        resetValueForm();
+        clipboard.clear();
+        clipboard.unlock();
     }
 }

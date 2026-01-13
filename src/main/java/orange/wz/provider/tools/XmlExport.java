@@ -1,7 +1,6 @@
 package orange.wz.provider.tools;
 
 import lombok.extern.slf4j.Slf4j;
-import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzXmlFile;

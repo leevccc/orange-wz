@@ -110,4 +110,10 @@ public class WzFolder extends WzObject {
             throw new RuntimeException();
         }
     }
+
+    @Override
+    public WzFolder deepClone(WzObject parent) {
+        log.error("WzFolder 暂不支持 DeepCone 方法");
+        throw new UnsupportedOperationException();
+    }
 }

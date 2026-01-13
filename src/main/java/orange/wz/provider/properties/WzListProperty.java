@@ -4,7 +4,9 @@ import lombok.Getter;
 import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
-import orange.wz.provider.tools.*;
+import orange.wz.provider.tools.BinaryWriter;
+import orange.wz.provider.tools.WzTool;
+import orange.wz.provider.tools.WzType;
 
 import java.util.List;
 

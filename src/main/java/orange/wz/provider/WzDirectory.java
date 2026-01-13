@@ -276,6 +276,7 @@ public class WzDirectory extends WzObject {
     }
 
     // DeepClone -------------------------------------------------------------------------------------------------------
+    @Override
     public WzDirectory deepClone(WzObject parent) {
         WzDirectory clone = new WzDirectory(getName(), parent, null);
         for (WzDirectory wzDirectory : children.getDirectories()) {

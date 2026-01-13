@@ -31,6 +31,10 @@ public final class Clipboard {
         items.add(item);
     }
 
+    public boolean isEmpty() {
+        return items.isEmpty();
+    }
+
     public boolean canPaste(WzObject target) {
         WzObject child = items.getFirst();
         return switch (child) {
