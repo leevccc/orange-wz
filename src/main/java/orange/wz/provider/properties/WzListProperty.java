@@ -22,31 +22,13 @@ public class WzListProperty extends WzExtended {
     public boolean sortAndReindexChildren() {
         List<WzImageProperty> list = children.get();
 
-        WzTool.sortWzObjects(list);
+        boolean renamed = WzTool.sortAndReindexChildren(list);
 
-        int i = 0;
-        boolean changed = false;
-        for (WzImageProperty property : list) {
-            String name = property.getName();
-            String newName = String.valueOf(i);
-            if (StringTool.isInteger(name)) {
-                if (!name.equals(newName)) {
-                    property.setName(newName);
-                    property.setTempChanged(true);
-                    property.getWzImage().setChanged(true);
-                    changed = true;
-                }
-                i++;
-            }
-        }
-
-        children = new WzChildrenProperty();
+        children.clear();
         children.add(list);
-        if (changed) {
-            setTempChanged(true);
-            return true;
-        }
-        return false;
+        wzImage.setChanged(true);
+        setTempChanged(true);
+        return renamed;
     }
 
     @Override

@@ -81,6 +81,7 @@ public final class WzImageMenu extends JPopupMenu {
         JMenuItem chineseBtn = new JMenuItem("汉化");
         JMenuItem imageBtn = new JMenuItem("图片嗅探");
         JMenuItem outlinkBtn = new JMenuItem("Outlink");
+        JMenuItem sicBtn = new JMenuItem("排序并改名");
 
         addCanvasBtnItem(addCanvasBtn);
         addConvexBtnItem(addConvexBtn);
@@ -103,6 +104,7 @@ public final class WzImageMenu extends JPopupMenu {
         addChineseBtnAction(chineseBtn);
         addImageBtnAction(imageBtn);
         addOutlinkBtnAction(outlinkBtn);
+        sicBtn.addActionListener(e -> editPane.sortAndReindexChildren());
 
         add(addBtn);
         add(copyBtn);
@@ -112,6 +114,7 @@ public final class WzImageMenu extends JPopupMenu {
         add(chineseBtn);
         add(imageBtn);
         add(outlinkBtn);
+        add(sicBtn);
     }
 
     private void addCopyBtnAction(JMenuItem item) {

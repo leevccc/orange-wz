@@ -1,5 +1,6 @@
 package orange.wz.provider.tools;
 
+import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 
 import java.util.Comparator;
@@ -104,5 +105,32 @@ public class WzTool {
 
                     return aLength - bLength;
                 }));
+    }
+
+    /**
+     * 对 List 按名称进行排序后，将整数类型的名称从0开的顺序重新命名
+     * @param list 要处理的列表
+     * @return 是否有修改过名称
+     */
+    public static boolean sortAndReindexChildren(List<WzImageProperty> list) {
+        WzTool.sortWzObjects(list);
+
+        int i = 0;
+        boolean renamed = false;
+        for (WzImageProperty property : list) {
+            String name = property.getName();
+            String newName = String.valueOf(i);
+            if (StringTool.isInteger(name)) {
+                if (!name.equals(newName)) {
+                    property.setName(newName);
+                    property.setTempChanged(true);
+                    property.getWzImage().setChanged(true);
+                    renamed = true;
+                }
+                i++;
+            }
+        }
+
+        return renamed;
     }
 }

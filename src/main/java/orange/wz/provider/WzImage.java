@@ -240,4 +240,17 @@ public class WzImage extends WzObject {
             }
         }
     }
+
+    // 工具方法 ---------------------------------------------------------------------------------------------------------
+    public boolean sortAndReindexChildren() {
+        List<WzImageProperty> list = children.get();
+
+        boolean renamed = WzTool.sortAndReindexChildren(list);
+
+        children.clear();
+        children.add(list);
+        setChanged(true);
+        setTempChanged(true);
+        return renamed;
+    }
 }

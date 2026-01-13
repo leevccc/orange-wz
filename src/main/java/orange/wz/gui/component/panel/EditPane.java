@@ -13,6 +13,7 @@ import orange.wz.gui.component.form.impl.*;
 import orange.wz.gui.component.menu.*;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.gui.utils.SearchUtil;
+import orange.wz.gui.utils.TreePathUtil;
 import orange.wz.manager.ServerManager;
 import orange.wz.model.Pair;
 import orange.wz.provider.*;
@@ -1605,5 +1606,34 @@ public final class EditPane extends JSplitPane {
                 }
             }
         }.execute();
+    }
+
+    public void sortAndReindexChildren() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+        WzObject wzObject = (WzObject) node.getUserObject();
+
+        boolean success;
+        if (wzObject instanceof WzListProperty listProperty) {
+            success = listProperty.sortAndReindexChildren();
+        } else if (wzObject instanceof WzImage image) {
+            success = image.sortAndReindexChildren();
+        }else{
+            MainFrame.getInstance().setStatusText("该功能仅支持 image 或者 list 节点");
+            return;
+        }
+
+        if (!success) {
+            MainFrame.getInstance().setStatusText("节点已经是从0开始的序数了，已经为你按顺序排列，但是名称没有发生变化。");
+            return;
+        }
+
+        DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
+        int index = pNode.getIndex(node);
+        removeNodeFromTree(node);
+        MainFrame.getInstance().setStatusText("有名称发生了变化");
+        insertNodeToTree(pNode, wzObject, true, index);
     }
 }
