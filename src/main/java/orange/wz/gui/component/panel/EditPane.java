@@ -25,6 +25,7 @@ import orange.wz.provider.tools.wzkey.WzKey;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.File;
 import java.nio.file.Path;
@@ -1647,12 +1648,19 @@ public final class EditPane extends JSplitPane {
         Clipboard clipboard = MainFrame.getInstance().getClipboard();
         clipboard.lock();
         clipboard.clear();
+        List<String> names = new ArrayList<>();
         for (TreePath treePath : selectedPaths) {
             DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
             WzObject wzObject = (WzObject) node.getUserObject();
             clipboard.add(wzObject.deepClone(null));
+            names.add(wzObject.getName());
         }
         clipboard.unlock();
+
+        // 将复制的节点名称写入到系统剪贴板，以触发一些工具复制音效
+        StringSelection selection = new StringSelection(String.join(",", names));
+        java.awt.datatransfer.Clipboard systemClipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        systemClipboard.setContents(selection, null);
     }
 
     private void setPasteWzFileAndReader(List<WzObject> items, WzFile wzFile) {

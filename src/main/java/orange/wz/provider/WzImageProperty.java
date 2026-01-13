@@ -45,8 +45,10 @@ public abstract class WzImageProperty extends WzObject {
     public boolean addChild(WzImageProperty child) {
         if (children == null) return false;
         if (children.add(child)) {
-            wzImage.setChanged(true);
-            wzImage.setTempChanged(true);
+            if (wzImage != null) { // deepClone 时wzImage为null
+                wzImage.setChanged(true);
+                wzImage.setTempChanged(true);
+            }
             return true;
         }
         return false;
