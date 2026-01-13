@@ -293,7 +293,7 @@ public final class EditPane extends JSplitPane {
                         } else {
                             // 非叶子节点：手动切换展开状态
                             if (tree.isExpanded(path)) {
-                                tree.collapsePath(path);
+                                collapseAll(path);
                                 finalAction = EditPaneAction.COLLAPSE;
                             } else {
                                 tree.expandPath(path);
@@ -316,6 +316,20 @@ public final class EditPane extends JSplitPane {
         addKeyEvent();
 
         return new JScrollPane(tree);
+    }
+
+    private void collapseAll(TreePath parent) {
+        Object node = parent.getLastPathComponent();
+        TreeModel model = treeModel;
+
+        int childCount = model.getChildCount(node);
+        for (int i = 0; i < childCount; i++) {
+            Object child = model.getChild(node, i);
+            TreePath childPath = parent.pathByAddingChild(child);
+            collapseAll(childPath);
+        }
+
+        tree.collapsePath(parent);
     }
 
     private JPanel createValuePane() {
@@ -934,7 +948,7 @@ public final class EditPane extends JSplitPane {
                 if (finalAction == EditPaneAction.ACTION) {
                     handleTreeDoubleClick(node);
                 } else if (finalAction == EditPaneAction.COLLAPSE) {
-                    tree.collapsePath(new TreePath(node.getPath()));
+                    collapseAll(new TreePath(node.getPath()));
                 } else if (finalAction == EditPaneAction.EXPAND) {
                     tree.expandPath(new TreePath(node.getPath()));
                 }
