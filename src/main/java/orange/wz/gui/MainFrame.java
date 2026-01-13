@@ -75,16 +75,16 @@ public class MainFrame extends JFrame {
         // 文件
         JMenu fileMenu = new JMenu("文件");
 
-        JMenu load = new JMenu("加载");
-        load.setIcon(FcFolderIcon);
-        JMenuItem openFiles = new JMenuItem("文件 wz/img/xml", FcFileIcon);
-        JMenuItem openFolders = new JMenuItem("文件夹...", FcFolderIcon);
-        load.add(openFiles);
-        load.add(openFolders);
-
+        JMenuItem openFiles = new JMenuItem("加载文件 wz/img/xml", FcFileIcon);
+        JMenuItem openFolders = new JMenuItem("加载文件夹...", FcFolderIcon);
+        JMenuItem newWz = new JMenuItem("新建 Wz", AiOutlineFileWordIcon);
+        JMenuItem newImg = new JMenuItem("新建 Img", AiOutlineFileMarkdownIcon);
         JMenuItem unloadAll = new JMenuItem("卸载全部", AiOutlineCloseIcon);
 
-        fileMenu.add(load);
+        fileMenu.add(openFiles);
+        fileMenu.add(openFolders);
+        fileMenu.add(newWz);
+        fileMenu.add(newImg);
         fileMenu.add(unloadAll);
 
         // 工具
@@ -175,6 +175,8 @@ public class MainFrame extends JFrame {
         });
         clearCB.addActionListener(e -> clearClipboard());
         gc.addActionListener(e -> gc());
+        newWz.addActionListener(e -> centerPane.getLeftEditPane().createWz());
+        newImg.addActionListener(e -> centerPane.getLeftEditPane().createImg());
 
         return menuBar;
     }

@@ -5,13 +5,19 @@ import orange.wz.gui.component.panel.EditPane;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 @Slf4j
-public abstract class BaseDialog<T> extends JOptionPane {
+public abstract class BaseDialog<T> {
     protected final EditPane editPane;
     protected final JPanel panel = new JPanel(new GridBagLayout());
     protected final String title;
     private int topPanelRow = 0;
+
+    private JDialog dialog;
+    private JOptionPane optionPane;
 
     public BaseDialog(String title, EditPane editPane) {
         this.title = title;
@@ -46,6 +52,19 @@ public abstract class BaseDialog<T> extends JOptionPane {
         topPanelRow++;
     }
 
+    /**
+     * 布局完成后才能执行，否则窗口无法自适应扩大
+     */
+    private void initDialog() {
+        optionPane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+        dialog = optionPane.createDialog(editPane, title);
+    }
+
+    protected void addWindowListener(WindowListener l) {
+        if (dialog == null) initDialog();
+        dialog.addWindowListener(l);
+    }
+
     private GridBagConstraints baseGbc() {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
@@ -53,13 +72,12 @@ public abstract class BaseDialog<T> extends JOptionPane {
     }
 
     protected int showDialog() {
-        return showConfirmDialog(
-                editPane,
-                panel,
-                title,
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
+        if (dialog == null) initDialog();
+        dialog.setVisible(true);
+
+        // 获取用户选择结果
+        Object value = optionPane.getValue();
+        return (value instanceof Integer) ? (Integer) value : JOptionPane.CLOSED_OPTION;
     }
 
     public abstract T getData();

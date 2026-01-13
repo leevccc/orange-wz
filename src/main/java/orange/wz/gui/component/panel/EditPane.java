@@ -6,10 +6,7 @@ import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.dialog.*;
-import orange.wz.gui.component.form.data.ExportXmlData;
-import orange.wz.gui.component.form.data.KeyData;
-import orange.wz.gui.component.form.data.SearchFormData;
-import orange.wz.gui.component.form.data.SearchResult;
+import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.form.impl.*;
 import orange.wz.gui.component.menu.*;
 import orange.wz.gui.utils.JMessageUtil;
@@ -807,11 +804,19 @@ public final class EditPane extends JSplitPane {
         if (oldObject instanceof WzFolder oldFolder) {
             newObject = new WzFolder(oldFolder.getFilePath(), key.getName(), key.getIv(), key.getUserKey());
         } else if (oldObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
+            if (wzDir.getWzFile().isNewFile()) {
+                JMessageUtil.error("新建的文件无法使用重载功能，请先另存为。");
+                return;
+            }
             WzFile oldWzFile = wzDir.getWzFile();
             String filePath = oldWzFile.getFilePath();
             WzFile newWzFile = new WzFile(filePath, (short) -1, key.getName(), key.getIv(), key.getUserKey());
             newObject = newWzFile.getWzDirectory();
         } else if (oldObject instanceof WzImageFile oldImg) {
+            if (oldImg.isNewFile()) {
+                JMessageUtil.error("新建的文件无法使用重载功能，请先另存为。");
+                return;
+            }
             Path filePath = Path.of(oldImg.getFilePath());
             String filename = filePath.getFileName().toString();
             newObject = new WzImageFile(filename, filePath.toString(), key.getName(), key.getIv(), key.getUserKey());
@@ -1120,7 +1125,19 @@ public final class EditPane extends JSplitPane {
      */
     private void saveFile(DefaultMutableTreeNode node) {
         WzObject wzObject = (WzObject) node.getUserObject();
+
+        if (wzObject instanceof WzImageFile wzImageFile) {
+            if (wzImageFile.isNewFile()) {
+                JMessageUtil.error("新建的文件请使用另存为指定要保存的路径");
+                return;
+            }
+        }
+
         if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
+            if (wzDir.getWzFile().isNewFile()) {
+                JMessageUtil.error("新建的文件请使用另存为指定要保存的路径");
+                return;
+            }
             wzObject = wzDir.getWzFile();
         }
 
@@ -1641,6 +1658,7 @@ public final class EditPane extends JSplitPane {
         insertNodeToTree(pNode, wzObject, true, index);
     }
 
+    // 剪贴板操作 --------------------------------------------------------------------------------------------------------
     public void doCopy() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
@@ -1804,5 +1822,42 @@ public final class EditPane extends JSplitPane {
 
         resetValueForm();
         clipboard.unlock();
+    }
+
+    // 新建文件 ----------------------------------------------------------------------------------------------------------
+    public void createWz() {
+        CreateFileDialog dialog = new CreateFileDialog(this, true);
+        CreateFileData data = dialog.getData();
+        if (data == null) return;
+
+        String name = data.getName();
+        if (!name.endsWith(".wz")) name = name + ".wz";
+        short fileVer = data.getVersion();
+        WzKey wzKey = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
+        if (wzKey == null) return;
+
+        WzFile wzFile = WzFile.createNewFile(name, fileVer, wzKey.getName(), wzKey.getIv(), wzKey.getUserKey());
+        wzFile.setNewFile(true);
+        wzFile.getWzDirectory().setTempChanged(true);
+        insertNodeToTree(treeRoot, wzFile.getWzDirectory(), true);
+    }
+
+    public void createImg() {
+        CreateFileDialog dialog = new CreateFileDialog(this, false);
+        CreateFileData data = dialog.getData();
+        if (data == null) return;
+
+        String name = data.getName();
+        if (!name.endsWith(".img")) name = name + ".img";
+        WzKey wzKey = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
+        if (wzKey == null) return;
+
+        WzImageFile wzImageFile = new WzImageFile(name, name, wzKey.getName(), wzKey.getIv(), wzKey.getUserKey());
+        wzImageFile.setReader(new BinaryReader(wzImageFile.getIv(), wzImageFile.getKey()));
+        wzImageFile.setNewFile(true);
+        wzImageFile.setStatus(WzFileStatus.PARSE_SUCCESS);
+        wzImageFile.setChanged(true);
+        wzImageFile.setTempChanged(true);
+        insertNodeToTree(treeRoot, wzImageFile, true);
     }
 }

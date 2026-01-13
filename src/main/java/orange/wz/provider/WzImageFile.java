@@ -19,15 +19,13 @@ public class WzImageFile extends WzImage implements WzSavableFile {
     private byte[] iv;
     private byte[] key;
 
-    public WzImageFile(String name, String filePath, byte[] iv, byte[] key) {
+    private boolean newFile = false;
+
+    public WzImageFile(String name, String filePath, String keyBoxName, byte[] iv, byte[] key) {
         super(name, null);
         this.filePath = filePath;
         this.iv = Arrays.copyOf(iv, iv.length);
         this.key = Arrays.copyOf(key, key.length);
-    }
-
-    public WzImageFile(String name, String filePath, String keyBoxName, byte[] iv, byte[] key) {
-        this(name, filePath, iv, key);
         this.keyBoxName = keyBoxName;
     }
 
@@ -74,6 +72,7 @@ public class WzImageFile extends WzImage implements WzSavableFile {
     public boolean save() {
         boolean result = save(Path.of(filePath));
         setReader(null);
+        setNewFile(false);
         return result;
     }
 }

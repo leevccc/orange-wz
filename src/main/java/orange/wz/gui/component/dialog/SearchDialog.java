@@ -44,22 +44,8 @@ public final class SearchDialog extends BaseDialog<SearchFormData> {
         options3.add(checkParseImgMod);
         checkParseImgMod.setSelected(true);
         addRow("选项", options3);
-    }
 
-    @Override
-    protected int showDialog() {
-        // 创建 JOptionPane
-        JOptionPane optionPane = new JOptionPane(
-                panel,
-                JOptionPane.PLAIN_MESSAGE,
-                JOptionPane.OK_CANCEL_OPTION
-        );
-
-        // 创建 JDialog
-        JDialog dialog = optionPane.createDialog(editPane, title);
-
-        // 注册窗口打开事件，打开时聚焦 searchField
-        dialog.addWindowListener(new WindowAdapter() {
+        addWindowListener(new WindowAdapter() {
             @Override
             public void windowOpened(WindowEvent e) {
                 if (searchField.isVisible() && searchField.isEnabled()) {
@@ -68,13 +54,6 @@ public final class SearchDialog extends BaseDialog<SearchFormData> {
                 }
             }
         });
-
-        // 显示对话框（阻塞）
-        dialog.setVisible(true);
-
-        // 获取用户选择结果
-        Object value = optionPane.getValue();
-        return (value instanceof Integer) ? (Integer) value : JOptionPane.CLOSED_OPTION;
     }
 
     @Override

@@ -30,36 +30,26 @@ public final class WzFile extends WzObject implements WzSavableFile {
     private boolean withEncVerHeader = true;  // KMS update after Q4 2021, ver 1.2.357 does not contain any wz enc header information
     public static final short verHeader64BitStart = 770;
 
+    @Setter
+    private boolean newFile = false;
+
     // 初始化 -----------------------------------------------------------------------------------------------------------
-    public WzFile(String filePath, short fileVersion, byte[] iv, byte[] key) {
+    public WzFile(String filePath, short fileVersion, String keyBoxName, byte[] iv, byte[] key) {
         super(Path.of(filePath).getFileName().toString(), WzType.WZ_FILE, null);
         this.filePath = filePath;
         this.header = new WzHeader(fileVersion);
+        this.keyBoxName = keyBoxName;
         this.iv = Arrays.copyOf(iv, iv.length);
         this.key = Arrays.copyOf(key, key.length);
         this.wzDirectory = new WzDirectory(name, this, this);
     }
 
-    public WzFile(String filePath, short fileVersion, String keyBoxName, byte[] iv, byte[] key) {
-        this(filePath, fileVersion, iv, key);
-        this.keyBoxName = keyBoxName;
-    }
-
-    public static WzFile createNewFile(String filePath, short fileVersion, byte[] iv, byte[] key) {
-        iv = Arrays.copyOf(iv, iv.length);
-        key = Arrays.copyOf(key, key.length);
-
-        WzFile wzFile = new WzFile(filePath, fileVersion, iv, key);
+    public static WzFile createNewFile(String filePath, short fileVersion, String keyBoxName, byte[] iv, byte[] key) {
+        WzFile wzFile = new WzFile(filePath, fileVersion, keyBoxName, iv, key);
 
         wzFile.header = WzHeader.getDefault(fileVersion);
         wzFile.reader = new BinaryReader(iv, key);
         wzFile.status = WzFileStatus.PARSE_SUCCESS;
-        return wzFile;
-    }
-
-    public static WzFile createNewFile(String filePath, short fileVersion, String keyBoxName, byte[] iv, byte[] key) {
-        WzFile wzFile = createNewFile(filePath, fileVersion, iv, key);
-        wzFile.keyBoxName = keyBoxName;
         return wzFile;
     }
 
@@ -127,7 +117,9 @@ public final class WzFile extends WzObject implements WzSavableFile {
                 if (tryDecode(encVersion, testVersion)) {
                     // tryDecode 只会设置 versionHash 用于解密，这里的 wzDir 对象已经绑定到 JTree 里，不能在 tryDecode 重设，只能在这重解析
                     header.setFileVersion(testVersion);
-                    wzDirectory.parse(reader);
+                    if (reader.hasRemaining()) { // 可能是个空文件，要加判断
+                        wzDirectory.parse(reader);
+                    }
                     status = WzFileStatus.PARSE_SUCCESS;
                     return true;
                 }
@@ -218,6 +210,7 @@ public final class WzFile extends WzObject implements WzSavableFile {
             reader = null;
             ServerManager.getBean(FileWriteQueue.class).addToQueue(Path.of(path), context);
             log.info("保存 {} Wz 的任务已提交", getName());
+            setNewFile(false);
             return true;
         } catch (Exception e) {
             log.error("保存出错 Wz: {} 错误消息: {}", getName(), e.getMessage());
@@ -277,6 +270,10 @@ public final class WzFile extends WzObject implements WzSavableFile {
         WzDirectory testDirectory = new WzDirectory(name, this, this);
 
         header.setVersionHash(versionHash);
+
+        if (!reader.hasRemaining()) {
+            return true; // 文件没有内容，是个空的wz，没有测试的必要了，fileVer 可能因此变低，不过无所谓了
+        }
 
         try {
             testDirectory.parse(reader);
