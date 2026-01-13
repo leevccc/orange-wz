@@ -53,10 +53,11 @@ public final class EditPane extends JSplitPane {
     private WzListPropertyMenu wzListPropertyPopupMenu;
     private WzValuePropertyMenu wzValuePropertyPopupMenu;
 
+    @Getter
     private String currentFormName;
     private final Map<String, AbstractValueForm> nodeForms = Map.ofEntries(
             Map.entry("node", new NodeForm()),
-            Map.entry("canvas", new CanvasForm()),
+            Map.entry("canvas", new CanvasForm(this)),
             Map.entry("double", new DoubleForm()),
             Map.entry("float", new FloatForm()),
             Map.entry("int", new IntForm()),
@@ -64,7 +65,7 @@ public final class EditPane extends JSplitPane {
             Map.entry("short", new ShortForm()),
             Map.entry("sound", new SoundForm()),
             Map.entry("string", new StringForm()),
-            Map.entry("uolCanvas", new UolCanvasForm()),
+            Map.entry("uolCanvas", new UolCanvasForm(this)),
             Map.entry("uolSound", new UolSoundForm()),
             Map.entry("vector", new VectorForm())
     );

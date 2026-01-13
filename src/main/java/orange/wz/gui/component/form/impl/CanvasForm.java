@@ -6,6 +6,7 @@ import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.base.DisabledItemComboBox;
 import orange.wz.gui.component.form.data.CanvasFormData;
+import orange.wz.gui.component.panel.CenterPane;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.model.TransferableImage;
@@ -29,7 +30,7 @@ public class CanvasForm extends AbstractValueForm {
     private JSlider zoomSlider; // 缩放条
     private double zoomFactor = 1.0; // 当前缩放比例
 
-    public CanvasForm() {
+    public CanvasForm(EditPane editPane) {
         super();
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createValuePanel(), createImagePanelPanel());
         splitPane.setDividerLocation(150);
@@ -42,6 +43,7 @@ public class CanvasForm extends AbstractValueForm {
         JButton downloadBtn = new JButton("下载");
         JButton uploadBtn = new JButton("上传");
         JButton copyBtn = new JButton("复制");
+        JButton transferBtn = new JButton("转移");
 
         downloadBtn.addActionListener(e -> {
             byte[] imageBytes;
@@ -110,9 +112,25 @@ public class CanvasForm extends AbstractValueForm {
             MainFrame.getInstance().setStatusText("图片已经复制到系统剪贴板");
         });
 
+        transferBtn.addActionListener(e -> {
+            CenterPane centerPane = MainFrame.getInstance().getCenterPane();
+            EditPane anotherPane = centerPane.getAnotherPane(editPane);
+            if (centerPane.getRightEditPane() == anotherPane && !centerPane.isRightShowing()) {
+                JMessageUtil.error("另一个视图未激活");
+                return;
+            }
+            if (!anotherPane.getCurrentFormName().equals("canvas")) {
+                JMessageUtil.error("另一个视图的编辑器未处于Canvas节点");
+                return;
+            }
+
+            anotherPane.getCanvasForm().transferData(imagePanel.image, widthField.getText(), heightField.getText(), (WzPngFormat) formatField.getSelectedItem(), scaleField.getText());
+        });
+
         addButton(downloadBtn);
         addButton(uploadBtn);
         addButton(copyBtn);
+        addButton(transferBtn);
     }
 
     private JPanel createValuePanel() {
@@ -236,6 +254,17 @@ public class CanvasForm extends AbstractValueForm {
         imagePanel.repaint();
     }
 
+    public void transferData(BufferedImage image, String width, String height, WzPngFormat format, String scale) {
+        widthField.setText(width);
+        heightField.setText(height);
+        formatField.setSelectedItem(format);
+        scaleField.setText(scale);
+
+        imagePanel.setImage(image);
+        imagePanel.repaint();
+        MainFrame.getInstance().setStatusText("转移成功，请手动点击保存按钮。");
+    }
+
     @Setter
     private class ImagePanel extends JPanel {
         private BufferedImage image;
@@ -264,11 +293,19 @@ public class CanvasForm extends AbstractValueForm {
 
     @Override
     public CanvasFormData getData() {
+        int scale;
+        try {
+            scale = Integer.parseInt(scaleField.getText());
+        } catch (NumberFormatException ex) {
+            scale = 0;
+        }
+
         return new CanvasFormData(
                 nameInput.getText(),
                 typeInput.getText(),
                 imagePanel.image,
-                (WzPngFormat) formatField.getSelectedItem()
+                (WzPngFormat) formatField.getSelectedItem(),
+                scale
         );
     }
 }

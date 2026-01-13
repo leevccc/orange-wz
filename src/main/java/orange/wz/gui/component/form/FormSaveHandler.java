@@ -82,7 +82,7 @@ public class FormSaveHandler {
             return false;
         }
 
-        property.setPng(data.getValue(), data.getFormat());
+        property.setPng(data.getValue(), data.getFormat(), data.getScale());
 
         property.getWzImage().setChanged(true);
         property.setTempChanged(true);

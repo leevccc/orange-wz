@@ -14,8 +14,8 @@ import java.awt.image.BufferedImage;
 public class UolCanvasForm extends CanvasForm {
     protected final JTextArea valueInput = new JTextArea(1, defaultColumns);
 
-    public UolCanvasForm() {
-        super();
+    public UolCanvasForm(EditPane editPane) {
+        super(editPane);
         addRow("UOL:", valueInput);
         formatField.setEnabled(false);
     }
