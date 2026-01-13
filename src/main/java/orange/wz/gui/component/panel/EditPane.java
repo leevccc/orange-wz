@@ -1874,4 +1874,40 @@ public final class EditPane extends JSplitPane {
         wzImageFile.setTempChanged(true);
         insertNodeToTree(treeRoot, wzImageFile, true);
     }
+
+    public void removeAllWzChildWithName() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        NodeDialog dialog = new NodeDialog("批量删除节点", "节点名称", this);
+        NodeFormData data = dialog.getData();
+        if (data == null) return;
+
+        String name = data.getName();
+        int count = 0;
+        for (TreePath path : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+            WzObject wzObj = (WzObject) node.getUserObject();
+            int current = 0;
+            if (wzObj instanceof WzImage image) {
+                if (!image.parse()) {
+                    MainFrame.getInstance().setStatusText("由于 %s 解析失败，操作中断，已经删除了 %d 个节点", image.getName(), count);
+                    return;
+                }
+                current = image.removeAllChildWithName(name);
+            } else if (wzObj instanceof WzImageProperty prop) {
+                current = prop.removeAllChildWithName(name);
+            }
+
+            if (current > 0) {
+                DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
+                int index = pNode.getIndex(node);
+                removeNodeFromTree(node);
+                insertNodeToTree(pNode, wzObj, true, index);
+                count += current;
+            }
+        }
+
+        MainFrame.getInstance().setStatusText("总共删除了 %d 个节点", count);
+    }
 }

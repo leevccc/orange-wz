@@ -9,7 +9,9 @@ import orange.wz.provider.tools.BinaryWriter;
 import orange.wz.provider.tools.WzChildrenProperty;
 import orange.wz.provider.tools.WzType;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 @Slf4j
@@ -46,6 +48,7 @@ public abstract class WzImageProperty extends WzObject {
         if (children == null) return false;
         if (children.add(child)) {
             if (wzImage != null) { // deepClone 时wzImage为null
+                setTempChanged(true);
                 wzImage.setChanged(true);
                 wzImage.setTempChanged(true);
             }
@@ -57,16 +60,38 @@ public abstract class WzImageProperty extends WzObject {
     public void addChildren(List<WzImageProperty> children) {
         if (children == null) return;
         this.children.add(children);
+        setTempChanged(true);
+        if (wzImage != null) {
+            wzImage.setTempChanged(true);
+            wzImage.setChanged(true);
+        }
     }
 
     public boolean removeChild(String name) {
         if (children == null) return false;
         if (children.remove(name)) {
+            setTempChanged(true);
             wzImage.setChanged(true);
             wzImage.setTempChanged(true);
             return true;
         }
         return false;
+    }
+
+    public int removeAllChildWithName(String name) {
+        if (children == null) return 0;
+
+        int count = 0;
+
+        for (WzImageProperty child : children.get()) {
+            if (child.getName().equals(name)) {
+                count += removeChild(name) ? 1 : 0;
+            } else {
+                count += child.removeAllChildWithName(name);
+            }
+        }
+
+        return count;
     }
 
     public boolean existChild(String name) {

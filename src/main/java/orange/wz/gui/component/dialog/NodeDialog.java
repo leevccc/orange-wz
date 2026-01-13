@@ -10,9 +10,13 @@ public class NodeDialog extends BaseDialog<NodeFormData> {
     protected final JTextField nameField = new JTextField(20);
 
     public NodeDialog(String title, EditPane editPane) {
+        this(title, "名称", editPane);
+    }
+
+    public NodeDialog(String title, String fieldName, EditPane editPane) {
         super(title, editPane);
 
-        addRow("名称", nameField);
+        addRow(fieldName, nameField);
 
         // 显示的时候光标聚焦在Name输入框
         nameField.addHierarchyListener(e -> {

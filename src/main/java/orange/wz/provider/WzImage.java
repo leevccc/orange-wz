@@ -229,6 +229,20 @@ public class WzImage extends WzObject {
         }
     }
 
+    public int removeAllChildWithName(String name) {
+        int count = 0;
+
+        for (WzImageProperty child : children.get()) {
+            if (child.getName().equals(name)) {
+                count += removeChild(name) ? 1 : 0;
+            } else {
+                count += child.removeAllChildWithName(name);
+            }
+        }
+
+        return count;
+    }
+
     // ChangeKey -------------------------------------------------------------------------------------------------------
     public void rebuildCompressedForPngBelongListWz(List<WzImageProperty> propertyList, WzMutableKey wzMutableKey) {
         for (WzImageProperty property : propertyList) {
