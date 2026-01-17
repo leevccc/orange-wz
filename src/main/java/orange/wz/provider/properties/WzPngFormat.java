@@ -13,7 +13,8 @@ public enum WzPngFormat {
     RGB565(513),
     // Format517(517), // 废弃 实际是 format 513 + scale 4
     DXT3(1026),
-    DXT5(2050);
+    DXT5(2050),
+    BC7(4098);
 
     private final int value;
 

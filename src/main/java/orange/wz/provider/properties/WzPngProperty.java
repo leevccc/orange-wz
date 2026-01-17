@@ -168,6 +168,14 @@ public class WzPngProperty extends WzImageProperty {
                 argb32 = ImgTool.Argb32.fromDXT5(rawBytesReader, width, height);
                 img.setRGB(0, 0, width, height, argb32, 0, width);
                 break;
+            case WzPngFormat.BC7:
+                // CMS220 Character/TamingMob/_Canvas/_Canvas_007.wz/01984266.img/sit/0/tamingMobRear
+                if (actualScale != 1) {
+                    throw new IllegalArgumentException(WzPngFormat.BC7 + " 不支持 scale");
+                }
+                argb32 = ImgTool.Argb32.fromBC7(rawBytesReader, width & ~3, height & ~3);
+                img.setRGB(0, 0, width, height, argb32, 0, width);
+                break;
         }
 
         image = img;
@@ -303,6 +311,16 @@ public class WzPngProperty extends WzImageProperty {
                     throw new IllegalArgumentException(WzPngFormat.ARGB1555 + " 不支持 scale");
                 }
                 ImgTool.Argb32.toDXT5(img, writer);
+                yield writer.output();
+            }
+            case WzPngFormat.BC7 -> {
+                if (actualScale != 1) {
+                    throw new IllegalArgumentException(WzPngFormat.BC7 + " 不支持 scale");
+                }
+                this.format = WzPngFormat.DXT5;
+                ImgTool.Argb32.toDXT5(img, writer);
+                log.warn("目前还不支持BC7编码, 已降级为 DXT5, 节点: {}", getPath());
+                // ImgTool.Argb32.toBC7(img, writer);
                 yield writer.output();
             }
         };

@@ -488,7 +488,7 @@ public final class ImgTool {
 
             // 写入 6 字节
             for (int i = 0; i < 6; i++) {
-                writer.putByte((byte) ((alphaBits >> (8 * i)) & 0xFF));
+                writer.putByte((byte) ((alphaBits >>> (8 * i)) & 0xFF));
             }
         }
 
@@ -497,8 +497,8 @@ public final class ImgTool {
             int rMax = 0, gMax = 0, bMax = 0;
 
             for (int px : pixels) {
-                int r = (px >> 16) & 0xFF;
-                int g = (px >> 8) & 0xFF;
+                int r = (px >>> 16) & 0xFF;
+                int g = (px >>> 8) & 0xFF;
                 int b = px & 0xFF;
 
                 if (r < rMin) rMin = r;
@@ -523,8 +523,8 @@ public final class ImgTool {
             int bits = 0; // 实际只用到 1 byte = 8 bit = 4 组 2bit 索引
             for (int i = 0; i < 16; i++) { // 依次处理16个像素点
                 int px = pixels[i];
-                int r = (px >> 16) & 0xFF;
-                int g = (px >> 8) & 0xFF;
+                int r = (px >>> 16) & 0xFF;
+                int g = (px >>> 8) & 0xFF;
                 int b = px & 0xFF;
 
                 int best = 0;
@@ -545,7 +545,7 @@ public final class ImgTool {
                 bitIndex += 2;
                 if (bitIndex >= 8) {
                     writer.putByte((byte) (bits & 0xFF));
-                    bits >>= 8;
+                    bits >>>= 8;
                     bitIndex -= 8;
                 }
             }
@@ -554,7 +554,682 @@ public final class ImgTool {
             }
         }
 
-        //
+        // BC7 https://github.com/richgel999/bc7enc_rdo/blob/master/bc7decomp.cpp
+        public static int[] fromBC7(BinaryReader reader, int width, int height) {
+            int[] argb32 = new int[width * height];
+            ColorRGBA[] pixels = new ColorRGBA[16];
+            byte[] block;
+
+            for (int y = 0; y < height; y += 4) {
+                for (int x = 0; x < width; x += 4) {
+                    // 2 个 long 转成 16 个 int argb
+                    block = reader.getBytes(16);
+                    decodeBC7(block, pixels);
+                    for (int i = 0; i < 16; i++) {
+                        int row = i / 4;
+                        int col = i % 4;
+                        int index = (y + row) * width + x + col;
+                        argb32[index] = pixels[i].getARGB();
+                    }
+                }
+            }
+
+            return argb32;
+        }
+
+        private static final class ColorRGBA {
+            public int red;
+            public int green;
+            public int blue;
+            public int alpha;
+
+            public void set(int index, long val) {
+                val &= 0xFF;
+                switch (index) {
+                    case 0:
+                        red = (int) val;
+                        break;
+                    case 1:
+                        green = (int) val;
+                        break;
+                    case 2:
+                        blue = (int) val;
+                        break;
+                    case 3:
+                        alpha = (int) val;
+                        break;
+                }
+            }
+
+            public int get(int index) {
+                return switch (index) {
+                    case 0 -> red;
+                    case 1 -> green;
+                    case 2 -> blue;
+                    case 3 -> alpha;
+                    default -> throw new IndexOutOfBoundsException();
+                };
+            }
+
+            public int getARGB() {
+                return (alpha << 24) | (red << 16) | (green << 8) | blue;
+            }
+
+            public ColorRGBA copy() {
+                ColorRGBA color = new ColorRGBA();
+                color.red = red;
+                color.green = green;
+                color.blue = blue;
+                color.alpha = alpha;
+                return color;
+            }
+        }
+
+        private static final byte[] gBC7FirstByteToMode = { // 256
+                8, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+                4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+        };
+
+        private static final int[] gBC7Weights2 = {0, 21, 43, 64};
+        private static final int[] gBC7Weights3 = {0, 9, 18, 27, 37, 46, 55, 64};
+        private static final int[] gBC7Weights4 = {0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64};
+
+        // @formatter:off
+        private static final byte[] gBC7TableAnchorIndexSecondSubset = { // 64
+                15,15,15,15,15,15,15,15,                15,15,15,15,15,15,15,15,                15, 2, 8, 2, 2, 8, 8,15,                2, 8, 2, 2, 8, 8, 2, 2,                 15,15, 6, 8, 2, 8,15,15,                2, 8, 2, 2, 2,15,15, 6,                 6, 2, 6, 8,15,15, 2, 2,                 15,15,15,15,15, 2, 2,15
+        };
+
+        private static final byte[] gBC7TableAnchorIndexThirdSubset_1 = { // 64
+                3, 3,15,15, 8, 3,15,15,                 8, 8, 6, 6, 6, 5, 3, 3,                 3, 3, 8,15, 3, 3, 6,10,                 5, 8, 8, 6, 8, 5,15,15,                 8,15, 3, 5, 6,10, 8,15,                 15, 3,15, 5,15,15,15,15,                3,15, 5, 5, 5, 8, 5,10,                 5,10, 8,13,15,12, 3, 3
+        };
+
+        private static final byte[] gBC7TableAnchorIndexThirdSubset_2 = { // 64
+                15, 8, 8, 3,15,15, 3, 8,                15,15,15,15,15,15,15, 8,                15, 8,15, 3,15, 8,15, 8,                3,15, 6,10,15,15,10, 8,                 15, 3,15,10,10, 8, 9,10,                6,15, 8,15, 3, 6, 6, 8,                 15, 3,15,15,15,15,15,15,                15,15,15,15, 3,15,15, 8
+        };
+        
+        private static final byte[] gBC7Partition2 = { //64 x 16
+                0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,        0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,        0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,        0,0,0,1,0,0,1,1,0,0,1,1,0,1,1,1,        0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,1,        0,0,1,1,0,1,1,1,0,1,1,1,1,1,1,1,        0,0,0,1,0,0,1,1,0,1,1,1,1,1,1,1,        0,0,0,0,0,0,0,1,0,0,1,1,0,1,1,1,
+                0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,        0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,        0,0,0,0,0,0,0,1,0,1,1,1,1,1,1,1,        0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,        0,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,        0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,        0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,        0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,
+                0,0,0,0,1,0,0,0,1,1,1,0,1,1,1,1,        0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,        0,0,0,0,0,0,0,0,1,0,0,0,1,1,1,0,        0,1,1,1,0,0,1,1,0,0,0,1,0,0,0,0,        0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,        0,0,0,0,1,0,0,0,1,1,0,0,1,1,1,0,        0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,        0,1,1,1,0,0,1,1,0,0,1,1,0,0,0,1,
+                0,0,1,1,0,0,0,1,0,0,0,1,0,0,0,0,        0,0,0,0,1,0,0,0,1,0,0,0,1,1,0,0,        0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,        0,0,1,1,0,1,1,0,0,1,1,0,1,1,0,0,        0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,0,        0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,        0,1,1,1,0,0,0,1,1,0,0,0,1,1,1,0,        0,0,1,1,1,0,0,1,1,0,0,1,1,1,0,0,
+                0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,        0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,        0,1,0,1,1,0,1,0,0,1,0,1,1,0,1,0,        0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,        0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,        0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0,        0,1,1,0,1,0,0,1,0,1,1,0,1,0,0,1,        0,1,0,1,1,0,1,0,1,0,1,0,0,1,0,1,
+                0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,0,        0,0,0,1,0,0,1,1,1,1,0,0,1,0,0,0,        0,0,1,1,0,0,1,0,0,1,0,0,1,1,0,0,        0,0,1,1,1,0,1,1,1,1,0,1,1,1,0,0,        0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0,        0,0,1,1,1,1,0,0,1,1,0,0,0,0,1,1,        0,1,1,0,0,1,1,0,1,0,0,1,1,0,0,1,        0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,
+                0,1,0,0,1,1,1,0,0,1,0,0,0,0,0,0,        0,0,1,0,0,1,1,1,0,0,1,0,0,0,0,0,        0,0,0,0,0,0,1,0,0,1,1,1,0,0,1,0,        0,0,0,0,0,1,0,0,1,1,1,0,0,1,0,0,        0,1,1,0,1,1,0,0,1,0,0,1,0,0,1,1,        0,0,1,1,0,1,1,0,1,1,0,0,1,0,0,1,        0,1,1,0,0,0,1,1,1,0,0,1,1,1,0,0,        0,0,1,1,1,0,0,1,1,1,0,0,0,1,1,0,
+                0,1,1,0,1,1,0,0,1,1,0,0,1,0,0,1,        0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,        0,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,        0,0,0,1,1,0,0,0,1,1,1,0,0,1,1,1,        0,0,0,0,1,1,1,1,0,0,1,1,0,0,1,1,        0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,        0,0,1,0,0,0,1,0,1,1,1,0,1,1,1,0,        0,1,0,0,0,1,0,0,0,1,1,1,0,1,1,1
+        };
+
+        private static final byte[] gBC7Partition3 = { //64 x 16
+                0,0,1,1,0,0,1,1,0,2,2,1,2,2,2,2,        0,0,0,1,0,0,1,1,2,2,1,1,2,2,2,1,        0,0,0,0,2,0,0,1,2,2,1,1,2,2,1,1,        0,2,2,2,0,0,2,2,0,0,1,1,0,1,1,1,        0,0,0,0,0,0,0,0,1,1,2,2,1,1,2,2,        0,0,1,1,0,0,1,1,0,0,2,2,0,0,2,2,        0,0,2,2,0,0,2,2,1,1,1,1,1,1,1,1,        0,0,1,1,0,0,1,1,2,2,1,1,2,2,1,1,
+                0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,        0,0,0,0,1,1,1,1,1,1,1,1,2,2,2,2,        0,0,0,0,1,1,1,1,2,2,2,2,2,2,2,2,        0,0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,        0,1,1,2,0,1,1,2,0,1,1,2,0,1,1,2,        0,1,2,2,0,1,2,2,0,1,2,2,0,1,2,2,        0,0,1,1,0,1,1,2,1,1,2,2,1,2,2,2,        0,0,1,1,2,0,0,1,2,2,0,0,2,2,2,0,
+                0,0,0,1,0,0,1,1,0,1,1,2,1,1,2,2,        0,1,1,1,0,0,1,1,2,0,0,1,2,2,0,0,        0,0,0,0,1,1,2,2,1,1,2,2,1,1,2,2,        0,0,2,2,0,0,2,2,0,0,2,2,1,1,1,1,        0,1,1,1,0,1,1,1,0,2,2,2,0,2,2,2,        0,0,0,1,0,0,0,1,2,2,2,1,2,2,2,1,        0,0,0,0,0,0,1,1,0,1,2,2,0,1,2,2,        0,0,0,0,1,1,0,0,2,2,1,0,2,2,1,0,
+                0,1,2,2,0,1,2,2,0,0,1,1,0,0,0,0,        0,0,1,2,0,0,1,2,1,1,2,2,2,2,2,2,        0,1,1,0,1,2,2,1,1,2,2,1,0,1,1,0,        0,0,0,0,0,1,1,0,1,2,2,1,1,2,2,1,        0,0,2,2,1,1,0,2,1,1,0,2,0,0,2,2,        0,1,1,0,0,1,1,0,2,0,0,2,2,2,2,2,        0,0,1,1,0,1,2,2,0,1,2,2,0,0,1,1,        0,0,0,0,2,0,0,0,2,2,1,1,2,2,2,1,
+                0,0,0,0,0,0,0,2,1,1,2,2,1,2,2,2,        0,2,2,2,0,0,2,2,0,0,1,2,0,0,1,1,        0,0,1,1,0,0,1,2,0,0,2,2,0,2,2,2,        0,1,2,0,0,1,2,0,0,1,2,0,0,1,2,0,        0,0,0,0,1,1,1,1,2,2,2,2,0,0,0,0,        0,1,2,0,1,2,0,1,2,0,1,2,0,1,2,0,        0,1,2,0,2,0,1,2,1,2,0,1,0,1,2,0,        0,0,1,1,2,2,0,0,1,1,2,2,0,0,1,1,
+                0,0,1,1,1,1,2,2,2,2,0,0,0,0,1,1,        0,1,0,1,0,1,0,1,2,2,2,2,2,2,2,2,        0,0,0,0,0,0,0,0,2,1,2,1,2,1,2,1,        0,0,2,2,1,1,2,2,0,0,2,2,1,1,2,2,        0,0,2,2,0,0,1,1,0,0,2,2,0,0,1,1,        0,2,2,0,1,2,2,1,0,2,2,0,1,2,2,1,        0,1,0,1,2,2,2,2,2,2,2,2,0,1,0,1,        0,0,0,0,2,1,2,1,2,1,2,1,2,1,2,1,
+                0,1,0,1,0,1,0,1,0,1,0,1,2,2,2,2,        0,2,2,2,0,1,1,1,0,2,2,2,0,1,1,1,        0,0,0,2,1,1,1,2,0,0,0,2,1,1,1,2,        0,0,0,0,2,1,1,2,2,1,1,2,2,1,1,2,        0,2,2,2,0,1,1,1,0,1,1,1,0,2,2,2,        0,0,0,2,1,1,1,2,1,1,1,2,0,0,0,2,        0,1,1,0,0,1,1,0,0,1,1,0,2,2,2,2,        0,0,0,0,0,0,0,0,2,1,1,2,2,1,1,2,
+                0,1,1,0,0,1,1,0,2,2,2,2,2,2,2,2,        0,0,2,2,0,0,1,1,0,0,1,1,0,0,2,2,        0,0,2,2,1,1,2,2,1,1,2,2,0,0,2,2,        0,0,0,0,0,0,0,0,0,0,0,0,2,1,1,2,        0,0,0,2,0,0,0,1,0,0,0,2,0,0,0,1,        0,2,2,2,1,2,2,2,0,2,2,2,1,2,2,2,        0,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,        0,1,1,1,2,0,1,1,2,2,0,1,2,2,2,0,
+        };
+        // @formatter:on
+
+        private static void decodeBC7(byte[] blockBytes, ColorRGBA[] pixels) {
+            long[] dataChunks = new long[2];
+            BinaryReader reader = new BinaryReader(blockBytes);
+            dataChunks[0] = reader.getLong();
+            dataChunks[1] = reader.getLong();
+
+            int mode = gBC7FirstByteToMode[blockBytes[0] & 0xFF];
+            switch (mode) {
+                case 0:
+                case 2:
+                    unpackBC7Mode0_2(mode, dataChunks, pixels);
+                    break;
+                case 1:
+                case 3:
+                case 7:
+                    unpackBC7Mode1_3_7(mode, dataChunks, pixels);
+                    break;
+                case 4:
+                case 5:
+                    unpackBC7Mode4_5(mode, dataChunks, pixels);
+                    break;
+                case 6:
+                    unpackBC7Mode6(dataChunks, pixels);
+                    break;
+            }
+        }
+
+        private static void unpackBC7Mode0_2(int mode, long[] dataChunks, ColorRGBA[] pixels) {
+            final int ENDPOINTS = 6;
+            final int WEIGHT_BITS = (mode == 0) ? 3 : 2;
+            final int WEIGHT_MASK = (1 << WEIGHT_BITS) - 1;
+            final int ENDPOINT_BITS = (mode == 0) ? 4 : 5;
+            final int ENDPOINT_MASK = (1 << ENDPOINT_BITS) - 1;
+            final int PBITS = (mode == 0) ? 6 : 0;
+            final int WEIGHT_VALS = 1 << WEIGHT_BITS;
+            final int PART_BITS = (mode == 0) ? 4 : 6;
+            final int PART_MASK = (1 << PART_BITS) - 1;
+
+            final long chunkLow = dataChunks[0];
+            final long chunkHigh = dataChunks[1];
+
+            final int part = (int) (chunkLow >>> (mode + 1)) & PART_MASK;
+
+            long[] channelReaChunks = new long[3];
+
+            if (mode == 0) {
+                channelReaChunks[0] = chunkLow >>> 5;
+                channelReaChunks[1] = chunkHigh >>> 29;
+                channelReaChunks[2] = ((chunkLow >>> 53) | (chunkHigh << 11));
+            } else {
+                channelReaChunks[0] = chunkLow >>> 9;
+                channelReaChunks[1] = ((chunkLow >>> 39) | (chunkHigh << 25));
+                channelReaChunks[2] = chunkHigh >>> 5;
+            }
+
+            ColorRGBA[] endpoints = new ColorRGBA[ENDPOINTS];
+            for (int e = 0; e < ENDPOINTS; e++) {
+                endpoints[e] = new ColorRGBA();
+            }
+            for (int c = 0; c < 3; c++) {
+                long channelReadChunk = channelReaChunks[c];
+                for (int e = 0; e < ENDPOINTS; e++) {
+                    endpoints[e].set(c, channelReadChunk & ENDPOINT_MASK);
+                    channelReadChunk >>>= ENDPOINT_BITS;
+                }
+            }
+
+            int[] bits = new int[6];
+            if (mode == 0) {
+                byte bitsChunk = (byte) ((chunkHigh >>> 13) & 0xFF);
+                for (int p = 0; p < PBITS; p++) {
+                    bits[p] = (bitsChunk >>> p) & 1;
+                }
+            }
+
+            long weightsReadChunk = chunkHigh >>> (67 - 16 * WEIGHT_BITS);
+            weightsReadChunk = insertWeightZero(weightsReadChunk, WEIGHT_BITS, 0);
+            weightsReadChunk = insertWeightZero(weightsReadChunk, WEIGHT_BITS, Math.min(gBC7TableAnchorIndexThirdSubset_1[part], gBC7TableAnchorIndexThirdSubset_2[part]));
+            weightsReadChunk = insertWeightZero(weightsReadChunk, WEIGHT_BITS, Math.max(gBC7TableAnchorIndexThirdSubset_1[part], gBC7TableAnchorIndexThirdSubset_2[part]));
+
+            int[] weights = new int[16];
+            for (int i = 0; i < 16; i++) {
+                weights[i] = (int) weightsReadChunk & WEIGHT_MASK;
+                weightsReadChunk >>>= WEIGHT_BITS;
+            }
+
+            for (int e = 0; e < ENDPOINTS; e++) {
+                for (int c = 0; c < 4; c++) {
+                    endpoints[e].set(c, c == 3 ? 255 : (PBITS != 0 ? bc7DeQuant(endpoints[e].get(c), bits[e], ENDPOINT_BITS) : bc7DeQuant(endpoints[e].get(c), ENDPOINT_BITS)));
+                }
+            }
+
+            ColorRGBA[][] blockColors = new ColorRGBA[3][8];
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 8; j++) {
+                    blockColors[i][j] = new ColorRGBA();
+                }
+            }
+            for (int s = 0; s < 3; s++) {
+                for (int i = 0; i < WEIGHT_VALS; i++) {
+                    for (int c = 0; c < 3; c++) {
+                        blockColors[s][i].set(c, bc7Interp(endpoints[s * 2 + 0].get(c), endpoints[s * 2 + 1].get(c), i, WEIGHT_BITS));
+                    }
+                    blockColors[s][i].set(3, 255);
+                }
+            }
+
+            for (int i = 0; i < 16; i++) {
+                pixels[i] = blockColors[gBC7Partition3[part * 16 + i]][weights[i]].copy();
+            }
+        }
+
+        private static void unpackBC7Mode1_3_7(int mode, long[] dataChunks, ColorRGBA[] pixels) {
+            final int ENDPOINTS = 4;
+            final int COMPS = (mode == 7) ? 4 : 3;
+            final int WEIGHT_BITS = (mode == 1) ? 3 : 2;
+            final int WEIGHT_MASK = (1 << WEIGHT_BITS) - 1;
+            final int ENDPOINT_BITS = (mode == 7) ? 5 : ((mode == 1) ? 6 : 7);
+            final int ENDPOINT_MASK = (1 << ENDPOINT_BITS) - 1;
+            final int PBITS = (mode == 1) ? 2 : 4;
+            final boolean SHARED_PBITS = mode == 1;
+            final int WEIGHT_VALS = 1 << WEIGHT_BITS;
+
+            final long low_chunk = dataChunks[0];
+            final long high_chunk = dataChunks[1];
+
+            final int part = (int) ((low_chunk >>> (mode + 1)) & 0x3F);
+
+            ColorRGBA[] endpoints = new ColorRGBA[ENDPOINTS];
+            long[] channelReadChunks = new long[4];
+            long readChunk = 0;
+            channelReadChunks[0] = (low_chunk >>> (mode + 7));
+            long weightsReadChunk = 0;
+
+            switch (mode) {
+                case 1:
+                    channelReadChunks[1] = low_chunk >>> 32;
+                    channelReadChunks[2] = (low_chunk >>> 56) | (high_chunk << 8);
+                    readChunk = high_chunk >>> 16;
+                    weightsReadChunk = high_chunk >>> 18;
+                    break;
+                case 3:
+                    channelReadChunks[1] = (low_chunk >>> 38) | (high_chunk << 26);
+                    channelReadChunks[2] = high_chunk >>> 2;
+                    readChunk = high_chunk >>> 30;
+                    weightsReadChunk = high_chunk >>> 34;
+                    break;
+                case 7:
+                    channelReadChunks[1] = low_chunk >>> 34;
+                    channelReadChunks[2] = (low_chunk >>> 54) | (high_chunk << 10);
+                    channelReadChunks[3] = high_chunk >>> 10;
+                    readChunk = high_chunk >>> 30;
+                    weightsReadChunk = high_chunk >>> 34;
+                    break;
+            }
+
+            for (int e = 0; e < ENDPOINTS; e++) {
+                endpoints[e] = new ColorRGBA();
+            }
+            for (int c = 0; c < COMPS; c++) {
+                long channelReadChunk = channelReadChunks[c];
+                for (int e = 0; e < ENDPOINTS; e++) {
+                    endpoints[e].set(c, channelReadChunk & ENDPOINT_MASK);
+                    channelReadChunk >>>= ENDPOINT_BITS;
+                }
+            }
+
+            int[] bits = new int[4];
+            for (int p = 0; p < PBITS; p++) {
+                bits[p] = (int) ((readChunk >>> p) & 1);
+            }
+
+            weightsReadChunk = insertWeightZero(weightsReadChunk, WEIGHT_BITS, 0);
+            weightsReadChunk = insertWeightZero(weightsReadChunk, WEIGHT_BITS, gBC7TableAnchorIndexSecondSubset[part]);
+
+            int[] weights = new int[16];
+            for (int i = 0; i < 16; i++) {
+                weights[i] = (int) (weightsReadChunk & WEIGHT_MASK);
+                weightsReadChunk >>>= WEIGHT_BITS;
+            }
+
+            for (int e = 0; e < ENDPOINTS; e++) {
+                for (int c = 0; c < 4; c++) {
+                    endpoints[e].set(c, (mode != 7 && c == 3) ? 255 : bc7DeQuant(endpoints[e].get(c), bits[SHARED_PBITS ? (e >>> 1) : e], ENDPOINT_BITS));
+                }
+            }
+
+            ColorRGBA[][] blockColors = new ColorRGBA[2][8];
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 8; j++) {
+                    blockColors[i][j] = new ColorRGBA();
+                }
+            }
+            for (int s = 0; s < 2; s++) {
+                for (int i = 0; i < WEIGHT_VALS; i++) {
+                    for (int c = 0; c < COMPS; c++) {
+                        blockColors[s][i].set(c, bc7Interp(endpoints[s * 2 + 0].get(c), endpoints[s * 2 + 1].get(c), i, WEIGHT_BITS));
+                    }
+                    if (COMPS == 3) {
+                        blockColors[s][i].set(3, 255);
+                    }
+                }
+            }
+
+            for (int i = 0; i < 16; i++) {
+                pixels[i] = blockColors[gBC7Partition2[part * 16 + i]][weights[i]].copy();
+            }
+        }
+
+        private static void unpackBC7Mode4_5(int mode, long[] dataChunks, ColorRGBA[] pixels) {
+            final int ENDPOINTS = 2;
+            final int WEIGHT_BITS = 2;
+            final int WEIGHT_MASK = (1 << WEIGHT_BITS) - 1;
+            final int A_WEIGHT_BITS = (mode == 4) ? 3 : 2;
+            final int A_WEIGHT_MASK = (1 << A_WEIGHT_BITS) - 1;
+            final int ENDPOINT_BITS = (mode == 4) ? 5 : 7;
+            final int ENDPOINT_MASK = (1 << ENDPOINT_BITS) - 1;
+            final int A_ENDPOINT_BITS = (mode == 4) ? 6 : 8;
+            final int A_ENDPOINT_MASK = (1 << A_ENDPOINT_BITS) - 1;
+
+            final long low_chunk = dataChunks[0];
+            final long high_chunk = dataChunks[1];
+
+            final int comp_rot = (int) ((low_chunk >>> (mode + 1)) & 0x3);
+            final int index_mode = (mode == 4) ? (int) ((low_chunk >>> 7) & 1) : 0;
+            final boolean indexModeBool = index_mode != 0;
+
+            long colorReadBits = low_chunk >>> 8;
+
+            ColorRGBA[] endpoints = new ColorRGBA[ENDPOINTS];
+            for (int e = 0; e < ENDPOINTS; e++) {
+                endpoints[e] = new ColorRGBA();
+            }
+            for (int c = 0; c < 3; c++) {
+                for (int e = 0; e < ENDPOINTS; e++) {
+                    endpoints[e].set(c, colorReadBits & ENDPOINT_MASK);
+                    colorReadBits >>>= ENDPOINT_BITS;
+                }
+            }
+
+            endpoints[0].set(3, colorReadBits & ENDPOINT_MASK);
+
+            long rgbWeightChunk = 0;
+            long aWeightChunk = 0;
+            if (mode == 4) {
+                endpoints[0].set(3, colorReadBits & A_ENDPOINT_MASK);
+                endpoints[1].set(3, (colorReadBits >>> A_ENDPOINT_BITS) & A_ENDPOINT_MASK);
+                rgbWeightChunk = (low_chunk >>> 50) | (high_chunk << 14);
+                aWeightChunk = high_chunk >>> 17;
+            } else if (mode == 5) {
+                endpoints[0].set(3, colorReadBits & A_ENDPOINT_MASK);
+                endpoints[1].set(3, ((low_chunk >>> 58) | (high_chunk << 6)) & A_ENDPOINT_MASK);
+                rgbWeightChunk = high_chunk >>> 2;
+                aWeightChunk = high_chunk >>> 33;
+            }
+
+            rgbWeightChunk = insertWeightZero(rgbWeightChunk, WEIGHT_BITS, 0);
+            aWeightChunk = insertWeightZero(aWeightChunk, A_WEIGHT_BITS, 0);
+
+            final int[] weight_bits = {
+                    indexModeBool ? A_WEIGHT_BITS : WEIGHT_BITS,
+                    indexModeBool ? WEIGHT_BITS : A_WEIGHT_BITS
+            };
+            final int[] weight_mask = {
+                    indexModeBool ? A_WEIGHT_MASK : WEIGHT_MASK,
+                    indexModeBool ? WEIGHT_MASK : A_WEIGHT_MASK
+            };
+
+            int[] weights = new int[16];
+            int[] aWeights = new int[16];
+
+            if (indexModeBool) {
+                long temp = rgbWeightChunk;
+                rgbWeightChunk = aWeightChunk;
+                aWeightChunk = temp;
+            }
+
+            for (int i = 0; i < 16; i++) {
+                weights[i] = (int) (rgbWeightChunk & weight_mask[0]);
+                rgbWeightChunk >>>= weight_bits[0];
+            }
+
+            for (int i = 0; i < 16; i++) {
+                aWeights[i] = (int) (aWeightChunk & weight_mask[1]);
+                aWeightChunk >>>= weight_bits[1];
+            }
+
+            for (int e = 0; e < ENDPOINTS; e++) {
+                for (int c = 0; c < 4; c++) {
+                    endpoints[e].set(c, bc7DeQuant(endpoints[e].get(c), (c == 3) ? A_ENDPOINT_BITS : ENDPOINT_BITS));
+                }
+            }
+
+            ColorRGBA[] blockColors = new ColorRGBA[8];
+            for (int i = 0; i < 8; i++) {
+                blockColors[i] = new ColorRGBA();
+            }
+            for (int i = 0; i < 1 << weight_bits[0]; i++) {
+                for (int c = 0; c < 3; c++) {
+                    blockColors[i].set(c, bc7Interp(endpoints[0].get(c), endpoints[1].get(c), i, weight_bits[0]));
+                }
+            }
+
+            for (int i = 0; i < 1 << weight_bits[1]; i++) {
+                blockColors[i].set(3, bc7Interp(endpoints[0].get(3), endpoints[1].get(3), i, weight_bits[1]));
+            }
+
+            for (int i = 0; i < 16; i++) {
+                pixels[i] = blockColors[weights[i]].copy();
+                pixels[i].alpha = blockColors[aWeights[i]].alpha;
+                if (comp_rot >= 1) {
+                    int temp = pixels[i].alpha;
+                    pixels[i].alpha = pixels[i].get(comp_rot - 1);
+                    pixels[i].set(comp_rot - 1, temp);
+
+                }
+            }
+        }
+
+        private static final class BC7Mode6 {
+
+            public final long m_lo;
+            public final long m_hi;
+
+            public BC7Mode6(long lo, long hi) {
+                this.m_lo = lo;
+                this.m_hi = hi;
+            }
+
+            // ---- m_lo fields ----
+
+            public long m_mode() {
+                return m_lo & 0x7FL;
+            }
+
+            public long m_r0() {
+                return (m_lo >>> 7) & 0x7FL;
+            }
+
+            public long m_r1() {
+                return (m_lo >>> 14) & 0x7FL;
+            }
+
+            public long m_g0() {
+                return (m_lo >>> 21) & 0x7FL;
+            }
+
+            public long m_g1() {
+                return (m_lo >>> 28) & 0x7FL;
+            }
+
+            public long m_b0() {
+                return (m_lo >>> 35) & 0x7FL;
+            }
+
+            public long m_b1() {
+                return (m_lo >>> 42) & 0x7FL;
+            }
+
+            public long m_a0() {
+                return (m_lo >>> 49) & 0x7FL;
+            }
+
+            public long m_a1() {
+                return (m_lo >>> 56) & 0x7FL;
+            }
+
+            public long m_p0() {
+                return (m_lo >>> 63) & 0x7FL;
+            }
+
+            // ---- m_hi fields ----
+
+            public long m_p1() {
+                return m_hi & 0x01L;
+            }
+
+            public long m_s00() {
+                return (m_hi >>> 1) & 0x07L;
+            }
+
+            public long m_s10() {
+                return (m_hi >>> 4) & 0x0FL;
+            }
+
+            public long m_s20() {
+                return (m_hi >>> 8) & 0x0FL;
+            }
+
+            public long m_s30() {
+                return (m_hi >>> 12) & 0x0FL;
+            }
+
+            public long m_s01() {
+                return (m_hi >>> 16) & 0x0FL;
+            }
+
+            public long m_s11() {
+                return (m_hi >>> 20) & 0x0FL;
+            }
+
+            public long m_s21() {
+                return (m_hi >>> 24) & 0x0FL;
+            }
+
+            public long m_s31() {
+                return (m_hi >>> 28) & 0x0FL;
+            }
+
+            public long m_s02() {
+                return (m_hi >>> 32) & 0x0FL;
+            }
+
+            public long m_s12() {
+                return (m_hi >>> 36) & 0x0FL;
+            }
+
+            public long m_s22() {
+                return (m_hi >>> 40) & 0x0FL;
+            }
+
+            public long m_s32() {
+                return (m_hi >>> 44) & 0x0FL;
+            }
+
+            public long m_s03() {
+                return (m_hi >>> 48) & 0x0FL;
+            }
+
+            public long m_s13() {
+                return (m_hi >>> 52) & 0x0FL;
+            }
+
+            public long m_s23() {
+                return (m_hi >>> 56) & 0x0FL;
+            }
+
+            public long m_s33() {
+                return (m_hi >>> 60) & 0x0FL;
+            }
+        }
+
+        private static void unpackBC7Mode6(long[] dataChunks, ColorRGBA[] pixels) {
+            BC7Mode6 block = new BC7Mode6(dataChunks[0], dataChunks[1]);
+
+            if (block.m_mode() != (1 << 6)) {
+                throw new IllegalArgumentException("Invalid BC7Mode6 block");
+            }
+
+            final long r0 = ((block.m_r0() << 1) | block.m_p0());
+            final long g0 = ((block.m_g0() << 1) | block.m_p0());
+            final long b0 = ((block.m_b0() << 1) | block.m_p0());
+            final long a0 = ((block.m_a0() << 1) | block.m_p0());
+            final long r1 = ((block.m_r1() << 1) | block.m_p1());
+            final long g1 = ((block.m_g1() << 1) | block.m_p1());
+            final long b1 = ((block.m_b1() << 1) | block.m_p1());
+            final long a1 = ((block.m_a1() << 1) | block.m_p1());
+
+            ColorRGBA[] vals = new ColorRGBA[16];
+            for (int i = 0; i < 16; i++) {
+                vals[i] = new ColorRGBA();
+            }
+            for (int i = 0; i < 16; i++) {
+                final long w = gBC7Weights4[i];
+                final long iw = 64 - w;
+                vals[i].set(0, (r0 * iw + r1 * w + 32) >> 6);
+                vals[i].set(1, (g0 * iw + g1 * w + 32) >> 6);
+                vals[i].set(2, (b0 * iw + b1 * w + 32) >> 6);
+                vals[i].set(3, (a0 * iw + a1 * w + 32) >> 6);
+            }
+
+            pixels[0] = vals[(int) block.m_s00()].copy();
+            pixels[1] = vals[(int) block.m_s10()].copy();
+            pixels[2] = vals[(int) block.m_s20()].copy();
+            pixels[3] = vals[(int) block.m_s30()].copy();
+
+            pixels[4] = vals[(int) block.m_s01()].copy();
+            pixels[5] = vals[(int) block.m_s11()].copy();
+            pixels[6] = vals[(int) block.m_s21()].copy();
+            pixels[7] = vals[(int) block.m_s31()].copy();
+
+            pixels[8] = vals[(int) block.m_s02()].copy();
+            pixels[9] = vals[(int) block.m_s12()].copy();
+            pixels[10] = vals[(int) block.m_s22()].copy();
+            pixels[11] = vals[(int) block.m_s32()].copy();
+
+            pixels[12] = vals[(int) block.m_s03()].copy();
+            pixels[13] = vals[(int) block.m_s13()].copy();
+            pixels[14] = vals[(int) block.m_s23()].copy();
+            pixels[15] = vals[(int) block.m_s33()].copy();
+        }
+
+        private static long insertWeightZero(long indexBits, int bitsPerIndex, int offset) {
+            long LOW_BIT_MASK = (1L << ((bitsPerIndex * (offset + 1)) - 1)) - 1;
+            long HIGH_BIT_MASK = ~LOW_BIT_MASK;
+
+            indexBits = ((indexBits & HIGH_BIT_MASK) << 1) | (indexBits & LOW_BIT_MASK);
+
+            return indexBits;
+        }
+
+        private static int bc7DeQuant(int val, int pbit, int val_bits) {
+            assert (val < (1 << val_bits));
+            assert (pbit < 2);
+            assert (val_bits >= 4 && val_bits <= 8);
+            final int total_bits = val_bits + 1;
+            val = (val << 1) | pbit;
+            val <<= (8 - total_bits);
+            val |= (val >>> total_bits);
+            assert (val <= 255);
+            return val;
+        }
+
+        private static int bc7DeQuant(int val, int val_bits) {
+            assert (val < (1 << val_bits));
+            assert (val_bits >= 4 && val_bits <= 8);
+            val <<= (8 - val_bits);
+            val |= (val >>> val_bits);
+            assert (val <= 255);
+            return val;
+        }
+
+        private static int bc7Interp2(int l, int h, int w) {
+            assert (w < 4);
+            return (l * (64 - gBC7Weights2[w]) + h * gBC7Weights2[w] + 32) >>> 6;
+        }
+
+        private static int bc7Interp3(int l, int h, int w) {
+            assert (w < 8);
+            return (l * (64 - gBC7Weights3[w]) + h * gBC7Weights3[w] + 32) >>> 6;
+        }
+
+        private static int bc7Interp4(int l, int h, int w) {
+            assert (w < 16);
+            return (l * (64 - gBC7Weights4[w]) + h * gBC7Weights4[w] + 32) >>> 6;
+        }
+
+        private static int bc7Interp(int l, int h, int w, int bits) {
+            assert (l <= 255 && h <= 255);
+            return switch (bits) {
+                case 2 -> bc7Interp2(l, h, w);
+                case 3 -> bc7Interp3(l, h, w);
+                case 4 -> bc7Interp4(l, h, w);
+                default -> 0;
+            };
+        }
     }
 
     public static int getRawByteSize(WzPngFormat format, int scale, int width, int height) {
@@ -575,12 +1250,13 @@ public final class ImgTool {
             case WzPngFormat.ARGB4444, WzPngFormat.ARGB1555, WzPngFormat.RGB565 -> size / 2; // int 压缩成 short 大小减半
             case WzPngFormat.ARGB8888 -> size; // 原始数据
             case WzPngFormat.DXT3, WzPngFormat.DXT5 -> size / 4; // 特殊压缩，大小为原来的1/4
+            case BC7 -> (width & ~3) * (height & ~3); // 宽度高度不总是4的倍数，NX会额外添加行数来补齐
         };
     }
 
     public static int getBufferImageType(WzPngFormat format) {
         return switch (format) {
-            case WzPngFormat.ARGB4444, ARGB8888, ARGB1555, DXT3, DXT5 -> BufferedImage.TYPE_INT_ARGB;
+            case WzPngFormat.ARGB4444, ARGB8888, ARGB1555, DXT3, DXT5, BC7 -> BufferedImage.TYPE_INT_ARGB;
             case RGB565 -> BufferedImage.TYPE_USHORT_565_RGB;
         };
     }
