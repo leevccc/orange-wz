@@ -75,6 +75,10 @@ public class WzPngProperty extends WzImageProperty {
 
     private void parse(boolean saveInMem) {
         byte[] compressedBytes = getCompressedBytes(saveInMem);
+        if (compressedBytes == null) {
+            log.warn("{} 没有图像数据", getPath());
+            return;
+        }
         byte[] rawBytes = decompress(compressedBytes);
         if (rawBytes.length == 0) {
             throw new RuntimeException("rawBytes 是空的");
