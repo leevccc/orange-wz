@@ -106,6 +106,7 @@ public final class XmlImport {
             }
 
             case "canvas" -> {
+                if (image.getMeType() == MediaExportType.NONE) yield null;
                 int width = 0;
                 int height = 0;
                 int format = 2;
@@ -125,6 +126,10 @@ public final class XmlImport {
                 } else if (image.getMeType() == MediaExportType.FILE) {
                     Path mediaPath = Path.of(image.getFilePath()).getParent().resolve("media").resolve(image.getImgName()).resolve(FileTool.safeFileName(mediaFileName + name + ".png"));
                     imageBytes = FileTool.readFile(mediaPath);
+                }
+                if (imageBytes == null) {
+                    image.setMeType(MediaExportType.NONE);
+                    yield null;
                 }
 
                 WzCanvasProperty canvas = new WzCanvasProperty(name, width, height, format, scale, imageBytes, parent, image);
@@ -159,6 +164,7 @@ public final class XmlImport {
             }
 
             case "sound" -> {
+                if (image.getMeType() == MediaExportType.NONE) yield null;
                 int length = 0;
                 byte[] header = null;
                 byte[] mp3 = null;
@@ -176,6 +182,11 @@ public final class XmlImport {
                     }
                 } catch (Exception ex) {
                     log.warn("Image: {} SoundNode: {} Error: {}", image.getName(), name, ex.getMessage());
+                }
+
+                if (mp3 == null) {
+                    image.setMeType(MediaExportType.NONE);
+                    yield null;
                 }
 
                 yield new WzSoundProperty(name, length, header, mp3, parent, image);
