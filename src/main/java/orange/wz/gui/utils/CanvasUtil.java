@@ -6,6 +6,7 @@ import orange.wz.provider.WzImage;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.WzCanvasProperty;
+import orange.wz.provider.properties.WzPngFormat;
 
 import java.util.List;
 
@@ -37,4 +38,17 @@ public final class CanvasUtil {
             }
         }
     }
+
+    public static void changeFormat(List<WzImageProperty> properties, WzPngFormat format) {
+        for (WzImageProperty prop : properties) {
+            if (prop instanceof WzCanvasProperty canvas) {
+                if (canvas.getFormat() == format) continue;
+                canvas.setPng(canvas.getPngImage(false), format, 0);
+                MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+            } else if (prop.isListProperty()) {
+                changeFormat(prop.getChildren(), format);
+            }
+        }
+    }
+
 }

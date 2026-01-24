@@ -9,10 +9,7 @@ import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.form.impl.*;
 import orange.wz.gui.component.menu.*;
-import orange.wz.gui.utils.ChineseUtil;
-import orange.wz.gui.utils.JMessageUtil;
-import orange.wz.gui.utils.SearchUtil;
-import orange.wz.gui.utils.TreePathUtil;
+import orange.wz.gui.utils.*;
 import orange.wz.manager.ServerManager;
 import orange.wz.model.Pair;
 import orange.wz.provider.*;
@@ -757,6 +754,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // Tree 操作 --------------------------------------------------------------------------------------------------------
+
     /**
      * 将 WzObject 插入到指定节点的末尾
      *
@@ -876,6 +874,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 编辑框 -----------------------------------------------------------------------------------------------------------
+
     /**
      * 重置编辑框，避免编辑框里的 WzObject 占着已卸载的对象，无法释放内存
      */
@@ -890,6 +889,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 同步 -------------------------------------------------------------------------------------------------------------
+
     /**
      * 在树里查找到 WzObject 对象（根据 WzObject.getPath 相对路径），并同步单击操作
      *
@@ -1111,6 +1111,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 保存 -------------------------------------------------------------------------------------------------------------
+
     /**
      * 保存节点文件
      *
@@ -1291,6 +1292,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 导出 -------------------------------------------------------------------------------------------------------------
+
     /**
      * 收集要导出的 Img节点
      *
@@ -1476,6 +1478,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 修改密钥 ----------------------------------------------------------------------------------------------------------
+
     /**
      * 收集可以修改密钥的文件
      *
@@ -1554,6 +1557,7 @@ public final class EditPane extends JSplitPane {
     }
 
     // 导入--------------------------------------------------------------------------------------------------------------
+
     /**
      * 导入 Img
      *
@@ -1964,6 +1968,32 @@ public final class EditPane extends JSplitPane {
 
                     ChineseUtil.chineseImg(from, to);
                 }
+                return null;
+            }
+        }.execute();
+    }
+
+    // 批量修改图片格式 ---------------------------------------------------------------------------------------------------
+    public void changeCavFmt() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        ChangeCavFmtDialog dialog = new ChangeCavFmtDialog(this);
+        CanvasFormData data = dialog.getData();
+        if (data == null) return;
+        WzPngFormat format = data.getFormat();
+
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                List<WzImageProperty> properties = new ArrayList<>();
+                for (TreePath treePath : selectedPaths) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+                    WzImageProperty prop = (WzImageProperty) node.getUserObject();
+                    properties.add(prop);
+                }
+                CanvasUtil.changeFormat(properties, format);
+                MainFrame.getInstance().setStatusText("修改完成");
                 return null;
             }
         }.execute();
