@@ -201,9 +201,15 @@ public class WzImage extends WzObject {
     }
 
     public boolean addChild(WzImageProperty child) {
+        return addChild(child, false);
+    }
+
+    public boolean addChild(WzImageProperty child, boolean isParseXml) {
         if (children.add(child)) {
-            setChanged(true);
-            setTempChanged(true);
+            if (!isParseXml) {
+                setChanged(true);
+                setTempChanged(true);
+            }
             return true;
         }
         return false;

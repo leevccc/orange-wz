@@ -45,12 +45,18 @@ public abstract class WzImageProperty extends WzObject {
     }
 
     public boolean addChild(WzImageProperty child) {
+        return addChild(child, false);
+    }
+
+    public boolean addChild(WzImageProperty child, boolean isParseXml) {
         if (children == null) return false;
         if (children.add(child)) {
             if (wzImage != null) { // deepClone 时wzImage为null
-                setTempChanged(true);
-                wzImage.setChanged(true);
-                wzImage.setTempChanged(true);
+                if (!isParseXml) {
+                    setTempChanged(true);
+                    wzImage.setChanged(true);
+                    wzImage.setTempChanged(true);
+                }
             }
             return true;
         }

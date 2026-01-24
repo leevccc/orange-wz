@@ -84,7 +84,7 @@ public final class XmlImport {
                 if (node instanceof Element element) {
                     WzImageProperty prop = readProperty(element, wzXmlFile, wzXmlFile, "");
                     if (prop != null) {
-                        wzXmlFile.addChild(prop);
+                        wzXmlFile.addChild(prop, true);
                     }
                 }
             }
@@ -197,7 +197,7 @@ public final class XmlImport {
             if (node instanceof Element element) {
                 WzImageProperty child = readProperty(element, parentProp, image, mediaFileName);
                 if (child != null) {
-                    parentProp.addChild(child);
+                    parentProp.addChild(child, true);
                 }
             }
         }
