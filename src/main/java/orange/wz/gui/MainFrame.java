@@ -1,6 +1,8 @@
 package orange.wz.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.component.FileDialog;
@@ -13,11 +15,23 @@ import orange.wz.manager.ServerManager;
 import orange.wz.provider.tools.wzkey.WzKey;
 import orange.wz.provider.tools.wzkey.WzKeyStorage;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 
 import static orange.wz.gui.Icons.*;
@@ -36,6 +50,7 @@ public class MainFrame extends JFrame {
 
     private JProgressBar progressBar;
     private JLabel statusLabel;
+    private JLabel newVerLabel;
 
     private final Clipboard clipboard = new Clipboard();
 
@@ -44,6 +59,7 @@ public class MainFrame extends JFrame {
     public static MainFrame getInstance() {
         if (instance == null) {
             instance = new MainFrame();
+            instance.checkUpdate();
         }
         return instance;
     }
@@ -195,10 +211,39 @@ public class MainFrame extends JFrame {
         statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         statusBar.add(statusLabel, BorderLayout.CENTER);
 
-        // 状态文字
+        // 右下角的标签面板
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.X_AXIS)); // 水平排列
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+
+        // 新版本
+        newVerLabel = new JLabel("");
+        newVerLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        newVerLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String url = "https://moguwuyu.com/t/orzrepacker";
+                try {
+                    Desktop.getDesktop().browse(new URI(url));
+                } catch (Exception ex) {
+                    log.error("无法打开系统浏览器，请自行访问 {}", url, ex);
+                }
+            }
+        });
+        rightPanel.add(newVerLabel);
+        rightPanel.add(Box.createHorizontalStrut(10)); // 间距
+
+        // 内存
+        JLabel memLabel = new JLabel("");
+        rightPanel.add(memLabel);
+        rightPanel.add(Box.createHorizontalStrut(10)); // 间距
+
+        // 当前版本
         JLabel versionLabel = new JLabel("OrzRepacker " + ServerManager.getVersion());
-        versionLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
-        statusBar.add(versionLabel, BorderLayout.EAST);
+        rightPanel.add(versionLabel);
+
+        // 添加到右侧
+        statusBar.add(rightPanel, BorderLayout.EAST);
 
         Timer timer = new Timer(1000, e -> {
             Runtime rt = Runtime.getRuntime();
@@ -206,8 +251,8 @@ public class MainFrame extends JFrame {
             long used = rt.totalMemory() - rt.freeMemory();
             long max = rt.maxMemory();
 
-            versionLabel.setText(String.format(
-                    "内存 %.1f MB / %.1f MB    OrzRepacker" + ServerManager.getVersion(),
+            memLabel.setText(String.format(
+                    "内存 %.1f MB / %.1f MB",
                     used / 1024.0 / 1024.0,
                     max / 1024.0 / 1024.0
             ));
@@ -251,5 +296,81 @@ public class MainFrame extends JFrame {
         clipboard.clear();
         clipboard.unlock();
         setStatusText("剪贴板已清空");
+    }
+
+    private void checkUpdate() {
+        new SwingWorker<JsonObject, Void>() {
+            @Override
+            protected JsonObject doInBackground() {
+                try {
+                    String version = ServerManager.getVersion();
+                    String key = ServerManager.getKey();
+                    long timestamp = Instant.now().getEpochSecond();
+                    String token = generateHmacSha256(timestamp, key);
+
+                    String urlStr = String.format(
+                            "https://moguwuyu.com/api/checkUpdate?name=%s&version=%s&timestamp=%d&token=%s",
+                            "OrzRepacker", version, timestamp, token
+                    );
+
+                    URL url = URI.create(urlStr).toURL();
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(5000); // 连接超时
+                    conn.setReadTimeout(5000);    // 读取超时
+
+                    int responseCode = conn.getResponseCode();
+                    if (responseCode != 200) {
+                        log.warn("检查更新失败 Code {}", responseCode);
+                        return null;
+                    }
+
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+                    );
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    final Gson gson = new Gson();
+                    JsonObject json = gson.fromJson(response.toString(), JsonObject.class);
+                    JsonObject data = json.getAsJsonObject("data");
+                    JsonObject attributes = data.getAsJsonObject("attributes");
+
+                    int code = attributes.get("code").getAsInt();
+                    String message = attributes.get("message").getAsString();
+
+                    if (code == 200) return null;
+                    if (code == 201) {
+                        newVerLabel.setText("<html><a href='' style='color:red;'>有新版本 " + message + "</a></html>");
+                    }
+                    return null;
+
+                } catch (ConnectException ignored) {
+                    return null;
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                    return null;
+                }
+            }
+        }.execute();
+    }
+
+    private String generateHmacSha256(long timestamp, String key) throws Exception {
+        String message = String.valueOf(timestamp);
+        Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        sha256_HMAC.init(secret_key);
+        byte[] hashBytes = sha256_HMAC.doFinal(message.getBytes(StandardCharsets.UTF_8));
+
+        // 转成16进制字符串
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashBytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }

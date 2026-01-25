@@ -32,6 +32,14 @@ public class ServerManager implements ApplicationContextAware, ApplicationRunner
     }
 
     @Getter
+    private static String key;
+
+    @Value("${key}")
+    public void setKey(String k) {
+        key = k;
+    }
+
+    @Getter
     private static String slog;
 
     @Value("${server.logging}")
