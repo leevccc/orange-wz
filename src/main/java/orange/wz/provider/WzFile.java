@@ -147,7 +147,7 @@ public final class WzFile extends WzObject implements WzSavableFile {
         if (header.getFileSize() >= 2) {
             reader.setPosition(header.getDataStartPos());
             int encVersion = reader.getShort();
-            if (encVersion > 0xff) {  // encVersion 永远低于 256
+            if (Integer.compareUnsigned(encVersion, 0xff) > 0) {  // encVersion 永远低于 256
                 withEncVerHeader = false;
             } else if (encVersion == 0x80) {
                 // there's an exceptional case that the first field of data part is a compressed int which determined property count,
