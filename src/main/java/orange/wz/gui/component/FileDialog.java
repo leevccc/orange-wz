@@ -50,7 +50,7 @@ public class FileDialog {
         }
 
         if (!result.isEmpty()) {
-            prefs.put("last", result.getFirst().getParent());
+            prefs.put("last", result.getFirst().toString());
         }
 
         return result;
@@ -86,7 +86,7 @@ public class FileDialog {
         }
 
         if (!result.isEmpty()) {
-            prefs.put("last", result.getFirst().getParent());
+            prefs.put("last", result.getFirst().toString());
         }
 
         return result;
