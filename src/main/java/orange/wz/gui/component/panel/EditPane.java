@@ -71,6 +71,10 @@ public final class EditPane extends JSplitPane {
     private final SearchDialog searchDialog = new SearchDialog("搜索", this);
     private final List<SearchResult> searchResults = new ArrayList<>();
 
+    // 按键搜索
+    private final StringBuilder inputBuffer = new StringBuilder();
+    private Instant lastInputTime = Instant.EPOCH;
+
     public NodeForm getNodeForm() {
         return (NodeForm) nodeForms.get("node");
     }
@@ -751,6 +755,30 @@ public final class EditPane extends JSplitPane {
                 }
             }
         });
+
+        // 按键搜索
+        tree.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                TreePath path = tree.getSelectionPath();
+                if (path == null) return;
+
+                char c = e.getKeyChar();
+                if (!Character.isLetterOrDigit(c)) return;
+
+                Instant now = Instant.now();
+                if (now.minusMillis(500).isAfter(lastInputTime)) {
+                    inputBuffer.setLength(0); // 超时 → 重置
+                }
+                lastInputTime = now;
+
+                inputBuffer.append(c);
+                String prefix = inputBuffer.toString().toLowerCase();
+
+
+                selectNextMatchingSibling(prefix, path, true);
+            }
+        });
     }
 
     // Tree 操作 --------------------------------------------------------------------------------------------------------
@@ -871,6 +899,56 @@ public final class EditPane extends JSplitPane {
             }
         }
         return null;
+    }
+
+    /**
+     * 在当前选中节点的同级节点中：
+     * 1. 先从“当前节点之后”找第一个以 prefix 开头的
+     * 2. 如果没找到，再从“当前节点之前”找第一个
+     */
+    private void selectNextMatchingSibling(String prefix, TreePath path, boolean toNext) {
+        DefaultMutableTreeNode current = (DefaultMutableTreeNode) path.getLastPathComponent();
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) current.getParent();
+        if (parent == null) return;
+
+        int count = parent.getChildCount();
+        int currentIndex = toNext ? parent.getIndex(current) : parent.getChildCount();
+
+        DefaultMutableTreeNode target = null;
+        // 从当前之后查找
+        if (toNext) {
+            for (int i = currentIndex; i < count; i++) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) parent.getChildAt(i);
+                WzObject wzObject = (WzObject) node.getUserObject();
+                if (wzObject.getName().toLowerCase().startsWith(prefix)) {
+                    target = node;
+                    break;
+                }
+            }
+        }
+
+        if (target == null) {
+            // 从当前之前查找
+            for (int i = 0; i < currentIndex; i++) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) parent.getChildAt(i);
+                WzObject wzObject = (WzObject) node.getUserObject();
+                if (wzObject.getName().toLowerCase().startsWith(prefix)) {
+                    target = node;
+                    break;
+                }
+            }
+        }
+
+        if (target != null) {
+            TreePath newPath = new TreePath(target.getPath());
+            tree.setSelectionPath(newPath);
+            tree.scrollPathToVisible(newPath);
+        } else {
+            // 找不到的情况下，试着往下一级去找
+            if (!current.isLeaf() && tree.isExpanded(path)) {
+                selectNextMatchingSibling(prefix, new TreePath(((DefaultMutableTreeNode) current.getFirstChild()).getPath()), false);
+            }
+        }
     }
 
     // 编辑框 -----------------------------------------------------------------------------------------------------------
