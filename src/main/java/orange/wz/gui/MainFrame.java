@@ -35,14 +35,17 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 import static orange.wz.gui.Icons.*;
 
 @Slf4j
 @Getter
 public class MainFrame extends JFrame {
-    private final WzKeyStorage wzKeyStorage = new WzKeyStorage();
     private static MainFrame instance;
+    private static final Preferences prefs = Preferences.userNodeForPackage(MainFrame.class);
+
+    private final WzKeyStorage wzKeyStorage = new WzKeyStorage();
 
     private KeyBox keyBox;
     private KeyManager keyManager;
@@ -77,8 +80,16 @@ public class MainFrame extends JFrame {
         setSize(1024, 768);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                saveConfig();
+            }
+        });
 
         drawPanel();
+
+        loadConfig();
     }
 
     private void drawPanel() {
@@ -428,5 +439,23 @@ public class MainFrame extends JFrame {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private void loadConfig() {
+        int kid = Integer.parseInt(prefs.get("keybox", "1"));
+        for (int i = 0; i < keyBox.getItemCount(); i++) {
+            WzKey wzKey = keyBox.getItemAt(i);
+            if (wzKey.getId() == kid) {
+                keyBox.setSelectedItem(wzKey);
+                break;
+            }
+        }
+    }
+
+    private void saveConfig() {
+        WzKey wzKey = (WzKey) keyBox.getSelectedItem();
+        if (wzKey != null) {
+            prefs.put("keybox", String.valueOf(wzKey.getId()));
+        }
     }
 }
