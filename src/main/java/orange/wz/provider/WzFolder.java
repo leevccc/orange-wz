@@ -89,26 +89,37 @@ public class WzFolder extends WzObject {
         }
 
         try (var paths = Files.list(folderPath)) {
-            paths.forEach(path -> {
-                String filename = path.getFileName().toString();
-                String pathStr = path.toAbsolutePath().toString();
-                if (Files.isDirectory(path)) {
-                    WzFolder folder = new WzFolder(pathStr, keyBoxName, iv, key);
-                    children.add(folder);
-                    folder.loadFolder();
-                } else if (filename.endsWith("List.wz")) {
-                    log.info("展开目录 {} 跳过 List.wz 文件", getName());
-                } else if (filename.endsWith(".wz")) {
-                    children.add(new WzFile(pathStr, (short) -1, keyBoxName, iv, key).getWzDirectory());
-                } else if (filename.endsWith(".img")) {
-                    children.add(new WzImageFile(filename, pathStr, keyBoxName, iv, key));
-                } else if (filename.endsWith(".xml")) {
-                    children.add(new WzXmlFile(filename, pathStr, keyBoxName, iv, key));
-                }
-            });
+            paths.forEach(this::addFile);
         } catch (IOException e) {
             throw new RuntimeException();
         }
+    }
+
+    public WzObject addFile(Path path) {
+        String filename = path.getFileName().toString();
+        String pathStr = path.toAbsolutePath().toString();
+        if (Files.isDirectory(path)) {
+            WzFolder folder = new WzFolder(pathStr, keyBoxName, iv, key);
+            children.add(folder);
+            folder.loadFolder();
+            return folder;
+        } else if (filename.endsWith("List.wz")) {
+            log.info("展开目录 {} 跳过 List.wz 文件", getName());
+        } else if (filename.endsWith(".wz")) {
+            WzDirectory wzDirectory = new WzFile(pathStr, (short) -1, keyBoxName, iv, key).getWzDirectory();
+            children.add(wzDirectory);
+            return wzDirectory;
+        } else if (filename.endsWith(".img")) {
+            WzImageFile wzImageFile = new WzImageFile(filename, pathStr, keyBoxName, iv, key);
+            children.add(wzImageFile);
+            return wzImageFile;
+        } else if (filename.endsWith(".xml")) {
+            WzXmlFile wzXmlFile = new WzXmlFile(filename, pathStr, keyBoxName, iv, key);
+            children.add(wzXmlFile);
+            return wzXmlFile;
+        }
+
+        return null;
     }
 
     @Override

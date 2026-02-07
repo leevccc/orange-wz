@@ -10,7 +10,6 @@ import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.form.impl.*;
 import orange.wz.gui.component.menu.*;
 import orange.wz.gui.utils.*;
-import orange.wz.manager.ServerManager;
 import orange.wz.model.Pair;
 import orange.wz.provider.*;
 import orange.wz.provider.properties.*;
@@ -1002,11 +1001,33 @@ public final class EditPane extends JSplitPane {
                 if (path == null) {
                     editPane.loadFiles(files);
                 } else {
-                    MainFrame.getInstance().setStatusText("暂不支持拖入指定节点，已经按默认加载处理。");
-                    editPane.loadFiles(files);
-                    // DefaultMutableTreeNode parent = (DefaultMutableTreeNode) path.getLastPathComponent();
-                    // DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-                    // log.info(path.toString());
+                    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) path.getLastPathComponent();
+                    WzObject wzObject = (WzObject) parent.getUserObject();
+                    if (wzObject instanceof WzFolder) {
+                        editPane.attachFolder(parent, files);
+                    } else if (wzObject instanceof WzDirectory) {
+                        List<File> imgFiles = new ArrayList<>();
+                        List<File> xmlFiles = new ArrayList<>();
+                        for (File file : files) {
+                            if (file.isDirectory()) {
+                                log.warn("目录不能拖入到 WzDirectory");
+                                continue;
+                            }
+                            String filename = file.getName();
+                            if (filename.endsWith(".img")) {
+                                imgFiles.add(file);
+                            } else if (filename.endsWith(".xml")) {
+                                xmlFiles.add(file);
+                            } else {
+                                log.warn("非 img、xml 类型的文件不能拖入到 WzDirectory");
+                            }
+                        }
+
+                        editPane.attachImg(parent, imgFiles);
+                        editPane.attachXml(parent, xmlFiles);
+                    } else {
+                        log.warn("不能拖入的节点");
+                    }
                 }
 
 
@@ -1674,7 +1695,10 @@ public final class EditPane extends JSplitPane {
      */
     public void importImg(DefaultMutableTreeNode node) {
         List<File> imgFiles = FileDialog.chooseOpenFiles(new String[]{"img"});
+        attachImg(node, imgFiles);
+    }
 
+    private void attachImg(DefaultMutableTreeNode node, List<File> imgFiles) {
         final int[] count = {0};
         new SwingWorker<Void, Void>() {
             @Override
@@ -1748,6 +1772,10 @@ public final class EditPane extends JSplitPane {
      */
     public void importXml(DefaultMutableTreeNode node) {
         List<File> xmlFiles = FileDialog.chooseOpenFiles(new String[]{"xml"});
+        attachXml(node, xmlFiles);
+    }
+
+    private void attachXml(DefaultMutableTreeNode node, List<File> xmlFiles) {
         final int[] count = {0};
         new SwingWorker<Void, Void>() {
             @Override
@@ -1802,6 +1830,42 @@ public final class EditPane extends JSplitPane {
                     MainFrame.getInstance().updateProgress(++count[0], total);
                 }
 
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }.execute();
+    }
+
+    private void attachFolder(DefaultMutableTreeNode node, List<File> files) {
+        final int[] count = {0};
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                WzFolder targetWzFolder = (WzFolder) node.getUserObject();
+                targetWzFolder.getChildren(); // 只是调用一下确保加载了子项
+                int total = files.size();
+                TreePath treePath = new TreePath(node.getPath());
+                boolean expanded = tree.isExpanded(treePath);
+                for (File file : files) {
+                    WzObject wzObject = targetWzFolder.addFile(file.toPath());
+                    if (expanded) {
+                        insertNodeToTree(node, wzObject, true);
+                    }
+                    MainFrame.getInstance().updateProgress(++count[0], total);
+                }
+
+                if (!expanded) {
+                    tree.expandPath(new TreePath(node.getPath()));
+                }
                 return null;
             }
 
