@@ -20,6 +20,7 @@ import orange.wz.provider.tools.wzkey.WzKey;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.io.File;
@@ -144,6 +145,9 @@ public final class EditPane extends JSplitPane {
         tree.setShowsRootHandles(true); // 隐藏自带的展开/收缩图标
         tree.setToggleClickCount(0);
         treeModel = (DefaultTreeModel) tree.getModel();
+
+        tree.setDropMode(DropMode.ON);
+        tree.setTransferHandler(new FileDropTransferHandler(this, tree));
 
         // 节点自定义渲染器
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer() {
@@ -954,6 +958,63 @@ public final class EditPane extends JSplitPane {
             if (!current.isLeaf() && tree.isExpanded(path)) {
                 selectNextMatchingSibling(prefix, new TreePath(((DefaultMutableTreeNode) current.getFirstChild()).getPath()), false);
             }
+        }
+    }
+
+    private static class FileDropTransferHandler extends TransferHandler {
+        private final EditPane editPane;
+        private final JTree tree;
+
+        public FileDropTransferHandler(EditPane editPane, JTree tree) {
+            this.editPane = editPane;
+            this.tree = tree;
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) return false;
+
+            try {
+                List<File> files = (List<File>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+
+                if (files.isEmpty()) return false;
+
+                for (File file : files) {
+                    if (file.isFile()) {
+
+                        String name = file.getName().toLowerCase();
+                        if (!(name.endsWith(".xml") || name.endsWith(".wz") || name.endsWith(".img"))) {
+                            JMessageUtil.error("包含了未知的文件！");
+                            return false;
+                        }
+                    }
+                }
+
+                JTree.DropLocation dl = (JTree.DropLocation) support.getDropLocation();
+                TreePath path = dl.getPath();
+
+                if (path == null) {
+                    editPane.loadFiles(files);
+                } else {
+                    MainFrame.getInstance().setStatusText("暂不支持拖入指定节点，已经按默认加载处理。");
+                    editPane.loadFiles(files);
+                    // DefaultMutableTreeNode parent = (DefaultMutableTreeNode) path.getLastPathComponent();
+                    // DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                    // log.info(path.toString());
+                }
+
+
+                return true;
+            } catch (Exception e) {
+                log.error("拖入文件异常 {}", e.getMessage());
+            }
+            return false;
         }
     }
 
