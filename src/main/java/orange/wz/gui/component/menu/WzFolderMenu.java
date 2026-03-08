@@ -152,7 +152,7 @@ public final class WzFolderMenu extends JPopupMenu {
         Set<String> directories = new HashSet<>();
         List<WzImageFile> imageFiles = new ArrayList<>();
         for (WzObject child : wzFolder.getChildren()) {
-            if (child instanceof WzDirectory directory) {
+            if (child instanceof WzFolder directory) {
                 directories.add(directory.getName());
             } else if (child instanceof WzImageFile imageFile) {
                 imageFiles.add(imageFile);
