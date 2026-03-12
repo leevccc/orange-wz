@@ -225,7 +225,7 @@ public final class EditPane extends JSplitPane {
             if (selectedPath != null) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPath.getLastPathComponent();
                 WzObject wzObject = (WzObject) node.getUserObject();
-                handleTreeClick(wzObject);
+                handleTreeClick(node);
                 MainFrame.getInstance().getCenterPane().getAnotherPane(EditPane.this).syncTreeClick(wzObject);
             }
         });
@@ -376,11 +376,11 @@ public final class EditPane extends JSplitPane {
     }
 
     /**
-     * 单击事件
-     *
-     * @param wzObject 目标 WzObject
+     * node 单击事件
      */
-    private void handleTreeClick(WzObject wzObject) {
+    private void handleTreeClick(DefaultMutableTreeNode node) {
+        WzObject wzObject = (WzObject) node.getUserObject();
+        String npcAction = null;
         switch (wzObject) {
             case WzFolder obj -> {
                 getNodeForm().setData(obj.getName(), WzType.FOLDER.name(), wzObject, this);
@@ -441,6 +441,10 @@ public final class EditPane extends JSplitPane {
             case WzStringProperty obj -> {
                 getStringForm().setData(obj.getName(), WzType.STRING_PROPERTY.name(), obj.getValue(), wzObject, this);
                 switchForm("string");
+                if (obj.getWzImage().getName().equals("Npc.img") && !obj.getName().equals("name") && !obj.getName().equals("func")) {
+                    npcAction = TreeNodeUtil.getNpcActionName(node);
+                    if (npcAction == null) npcAction = "动作不存在";
+                }
             }
             case WzUOLProperty obj -> {
                 WzObject target = obj.getUolTarget();
@@ -474,6 +478,10 @@ public final class EditPane extends JSplitPane {
             text = text + "  /  " + obj.getWzFile().getKeyBoxName() + "  /  版本 " + obj.getWzFile().getHeader().getFileVersion();
         } else if (wzObject instanceof WzImageFile obj) {
             text = text + "  /  " + obj.getKeyBoxName();
+        }
+
+        if (npcAction != null) {
+            text = text + " (" + npcAction + ")";
         }
         MainFrame.getInstance().setStatusText(text);
     }
