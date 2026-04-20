@@ -15,9 +15,9 @@ public class WzCanvasProperty extends WzExtended {
         super(name, WzType.CANVAS_PROPERTY, parent, wzImage);
     }
 
-    public WzCanvasProperty(String name, int width, int height, int format, int scale, byte[] imageBytes, WzObject parent, WzImage wzImage) {
+    public WzCanvasProperty(String name, int format, int scale, byte[] imageBytes, WzObject parent, WzImage wzImage) {
         this(name, parent, wzImage);
-        png = new WzPngProperty(name, width, height, format, scale, imageBytes, this, wzImage);
+        png = new WzPngProperty(name, format, scale, imageBytes, this, wzImage);
     }
 
     // Png -------------------------------------------------------------------------------------------------------------

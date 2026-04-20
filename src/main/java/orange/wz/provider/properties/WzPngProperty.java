@@ -36,10 +36,8 @@ public class WzPngProperty extends WzImageProperty {
         super(name, WzType.PNG_PROPERTY, parent, wzImage);
     }
 
-    public WzPngProperty(String name, int width, int height, int format, int scale, byte[] imageBytes, WzObject parent, WzImage wzImage) {
+    public WzPngProperty(String name, int format, int scale, byte[] imageBytes, WzObject parent, WzImage wzImage) {
         this(name, parent, wzImage);
-        this.width = width;
-        this.height = height;
         this.format = WzPngFormat.getByValue(format);
         this.scale = scale;
 
@@ -50,6 +48,8 @@ public class WzPngProperty extends WzImageProperty {
                     throw new IOException("无法解码图片数据，可能不是支持的图片格式");
                 }
                 this.image = image;
+                this.width = image.getWidth();
+                this.height = image.getHeight();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
