@@ -2345,6 +2345,18 @@ public final class EditPane extends JSplitPane {
         MainFrame.getInstance().setStatusText("修改完成");
     }
 
+    public void rawToIcon() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject root = (WzObject) node.getUserObject();
+            WzNodeUtil.rawToIcon(root);
+        }
+        MainFrame.getInstance().setStatusText("修改完成");
+    }
+
 
     // 批量缩放图片 ------------------------------------------------------------------------------------------------------
     public void scaleImage() {

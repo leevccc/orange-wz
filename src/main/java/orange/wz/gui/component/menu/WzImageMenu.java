@@ -86,6 +86,7 @@ public final class WzImageMenu extends JPopupMenu {
         JMenuItem scaleImage = new JMenuItem("图片缩放");
         JMenuItem changeNodeName = new JMenuItem("修改节点名");
         JMenuItem changeIntNodeValue = new JMenuItem("修改int值");
+        JMenuItem rawToIcon = new JMenuItem("RawToIcon");
 
         addCanvasBtnItem(addCanvasBtn);
         addConvexBtnItem(addConvexBtn);
@@ -115,6 +116,7 @@ public final class WzImageMenu extends JPopupMenu {
         scaleImage.addActionListener(e -> editPane.scaleImage());
         changeNodeName.addActionListener(e -> editPane.changeNodeName());
         changeIntNodeValue.addActionListener(e -> editPane.changeIntNodeValue());
+        rawToIcon.addActionListener(e -> editPane.rawToIcon());
 
         add(addBtn);
         add(copyBtn);
@@ -131,6 +133,7 @@ public final class WzImageMenu extends JPopupMenu {
         add(scaleImage);
         add(changeNodeName);
         add(changeIntNodeValue);
+        add(rawToIcon);
     }
 
     private void deleteBtnAction(JMenuItem item) {
