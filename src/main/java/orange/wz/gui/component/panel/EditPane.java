@@ -2339,6 +2339,8 @@ public final class EditPane extends JSplitPane {
         double scale = data.getValue();
         if (scale == 1.0) return;
 
+        String name = data.getName();
+
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() {
@@ -2348,7 +2350,7 @@ public final class EditPane extends JSplitPane {
                     WzImageProperty prop = (WzImageProperty) node.getUserObject();
                     properties.add(prop);
                 }
-                CanvasUtil.scaleImage(properties, scale);
+                CanvasUtil.scaleImage(properties, name, scale);
                 MainFrame.getInstance().setStatusText("修改完成");
                 return null;
             }

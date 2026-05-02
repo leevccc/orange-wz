@@ -51,13 +51,15 @@ public final class CanvasUtil {
         }
     }
 
-    public static void scaleImage(List<WzImageProperty> properties, double scale) {
+    public static void scaleImage(List<WzImageProperty> properties, String nodeName, double scale) {
         for (WzImageProperty prop : properties) {
             if (prop instanceof WzCanvasProperty canvas) {
-                canvas.scale(scale);
-                MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                if (nodeName.isEmpty() || prop.getName().equals(nodeName)) {
+                    canvas.scale(scale);
+                    MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                }
             } else if (prop.isListProperty()) {
-                scaleImage(prop.getChildren(), scale);
+                scaleImage(prop.getChildren(), nodeName, scale);
             }
         }
     }

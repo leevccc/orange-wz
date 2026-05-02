@@ -156,6 +156,34 @@ public class WzImage extends WzObject {
         }
     }
 
+    /**
+     * 仅供 xml 转 img 的工具使用，不考虑内存泄露、文件占用等问题
+     * @param path 输出 img 路径
+     * @return 保存状态
+     */
+    public boolean saveFromXml(Path path) {
+        if (path == null) return false;
+        boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
+        if (!parseStatus) {
+            if (!parse()) {
+                log.error("解析文件失败");
+                return false;
+            }
+        }
+
+        try {
+            BinaryWriter writer = new BinaryWriter();
+            writer.setWzMutableKey(reader.getWzMutableKey());
+            save(writer);
+
+            FileTool.saveFile(path, writer.output());
+            return true;
+        } catch (Exception e) {
+            log.error("保存出错 Img: {} 错误消息: {}", getName(), e.getMessage());
+            return false;
+        }
+    }
+
     public boolean exportToXml(Path path, int indent, MediaExportType mediaExportType, boolean linux) {
         boolean parseStatus = status == WzFileStatus.PARSE_SUCCESS;
         if (!parseStatus) {
