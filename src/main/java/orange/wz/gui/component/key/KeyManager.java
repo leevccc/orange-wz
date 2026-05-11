@@ -27,7 +27,7 @@ public final class KeyManager extends JDialog {
     private final JButton btnDelete = new JButton("删除方案");
     private final JButton btnRename = new JButton("重命名");
     private final JButton btnReset = new JButton("重置");
-    private final JButton btnSave = new JButton("保存");
+    private final JButton btnSave = new JButton(MainFrame.i18n.get("save"));
 
     public KeyManager(Window owner) {
         super(owner, "密钥管理器", ModalityType.APPLICATION_MODAL);

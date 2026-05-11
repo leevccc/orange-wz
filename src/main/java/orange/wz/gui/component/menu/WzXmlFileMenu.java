@@ -65,12 +65,12 @@ public final class WzXmlFileMenu extends JPopupMenu {
         addBtn.add(addStringBtn);
         addBtn.add(addUOLBtn);
         addBtn.add(addVectorBtn);
-        JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
+        JMenuItem saveBtn = new JMenuItem(MainFrame.i18n.get("save"), AiOutlineSaveIcon);
         JMenuItem saveAsBtn = new JMenuItem("另存为", AiOutlineSaveIcon);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
         JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);
         JMenuItem moveBtn = new JMenuItem("转移视图", AiOutlineEye);
-        copyBtn = new JMenuItem("复制", AiOutlineCopy);
+        copyBtn = new JMenuItem(MainFrame.i18n.get("copy"), AiOutlineCopy);
         pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         JMenu exportBtn = new JMenu("导出");
         JMenuItem exportImgBtn = new JMenuItem("Img");

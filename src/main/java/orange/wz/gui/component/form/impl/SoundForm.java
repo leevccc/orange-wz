@@ -2,6 +2,7 @@ package orange.wz.gui.component.form.impl;
 
 import com.formdev.flatlaf.util.SystemFileChooser;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.data.SoundFormData;
 import orange.wz.gui.component.panel.EditPane;
@@ -41,8 +42,8 @@ public class SoundForm extends AbstractValueForm {
         super();
         initPlayerUI();
 
-        JButton downloadBtn = new JButton("下载");
-        JButton uploadBtn = new JButton("上传");
+        JButton downloadBtn = new JButton(MainFrame.i18n.get("download"));
+        JButton uploadBtn = new JButton(MainFrame.i18n.get("upload"));
 
         downloadBtn.addActionListener(e -> {
             if (soundBytes == null || soundBytes.length == 0) {

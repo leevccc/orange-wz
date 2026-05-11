@@ -1,5 +1,6 @@
 package orange.wz.gui.component.form.impl;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.DoubleFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.filter.DecimalFilter;
@@ -14,7 +15,7 @@ public class DoubleForm extends AbstractValueForm {
     public DoubleForm() {
         super();
         ((AbstractDocument) valueInput.getDocument()).setDocumentFilter(new DecimalFilter());
-        addRow("值:", valueInput);
+        addRow(MainFrame.i18n.get("form.value"), valueInput);
     }
 
     public void setData(String name, String type, double value, WzObject wzObject, EditPane editPane) {

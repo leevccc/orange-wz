@@ -29,7 +29,7 @@ public final class WzFolderMenu extends JPopupMenu {
         this.editPane = editPane;
         this.tree = tree;
 
-        JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
+        JMenuItem saveBtn = new JMenuItem(MainFrame.i18n.get("save"), AiOutlineSaveIcon);
         JMenuItem packageBtn = new JMenuItem("打包", FiPackage);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
         JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);

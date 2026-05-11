@@ -1,6 +1,7 @@
 package orange.wz.gui.component.form.impl;
 
 import lombok.Getter;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.FormSaveHandler;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
@@ -36,12 +37,12 @@ public abstract class AbstractValueForm {
 
         topLeftPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        addRow("名称:", nameInput);
+        addRow(MainFrame.i18n.get("form.name"), nameInput);
 
         typeInput.setEditable(false);
-        addRow("类型:", typeInput);
+        addRow(MainFrame.i18n.get("form.type"), typeInput);
 
-        JButton saveBtn = new JButton("保存");
+        JButton saveBtn = new JButton(MainFrame.i18n.get("save"));
         saveBtn.addActionListener(e -> FormSaveHandler.saveClick(curWzObject, editPane));
         addButton(saveBtn);
     }

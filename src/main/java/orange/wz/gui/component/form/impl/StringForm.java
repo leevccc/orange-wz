@@ -1,5 +1,6 @@
 package orange.wz.gui.component.form.impl;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.StringFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.provider.WzObject;
@@ -14,7 +15,7 @@ public class StringForm extends AbstractValueForm {
     public StringForm() {
         super();
         initialValueInput();
-        addRow("值:", valueInput);
+        addRow(MainFrame.i18n.get("form.value"), valueInput);
     }
 
     private void initialValueInput() {

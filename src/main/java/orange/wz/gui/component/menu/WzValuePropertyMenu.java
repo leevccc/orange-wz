@@ -32,7 +32,7 @@ public final class WzValuePropertyMenu extends JPopupMenu {
         this.editPane = editPane;
         this.tree = tree;
 
-        copyBtn = new JMenuItem("复制", AiOutlineCopy);
+        copyBtn = new JMenuItem(MainFrame.i18n.get("copy"), AiOutlineCopy);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
         JMenuItem chineseBtn = new JMenuItem("汉化");
 

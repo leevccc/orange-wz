@@ -1,5 +1,12 @@
 ## OrzRepacker
 
+### I18n 多语言配置方法
+创建 config.ini 文件
+```ini
+# zh_CN / en_US
+language = zh_CN
+```
+
 ### 打包流程
 1. 更新 application.properties 里新版本的 key
 2. 提交所有记录

@@ -43,7 +43,7 @@ public final class WzFileMenu extends JPopupMenu {
         JMenuItem addImgBtn = new JMenuItem("Image");
         addBtn.add(addDirBtn);
         addBtn.add(addImgBtn);
-        JMenuItem saveBtn = new JMenuItem("保存", AiOutlineSaveIcon);
+        JMenuItem saveBtn = new JMenuItem(MainFrame.i18n.get("save"), AiOutlineSaveIcon);
         JMenuItem saveAsBtn = new JMenuItem("另存为", AiOutlineSaveIcon);
         JMenuItem unloadBtn = new JMenuItem("卸载", AiOutlineCloseIcon);
         JMenuItem reloadBtn = new JMenuItem("重载", AiOutlineReloadIcon);

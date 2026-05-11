@@ -47,7 +47,7 @@ public final class WzDirectoryMenu extends JPopupMenu {
         addBtn.add(addDirBtn);
         addBtn.add(addImgBtn);
 
-        copyBtn = new JMenuItem("复制", AiOutlineCopy);
+        copyBtn = new JMenuItem(MainFrame.i18n.get("copy"), AiOutlineCopy);
         pasteBtn = new JMenuItem("粘贴", MdOutlineContentPaste);
         deleteBtn = new JMenuItem("删除节点", AiOutlineDelete);
         JMenuItem imageBtn = new JMenuItem("图片嗅探");

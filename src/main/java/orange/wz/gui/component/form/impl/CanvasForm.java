@@ -41,10 +41,10 @@ public class CanvasForm extends AbstractValueForm {
         valuePane.add(splitPane, BorderLayout.CENTER);
 
 
-        JButton downloadBtn = new JButton("下载");
-        JButton uploadBtn = new JButton("上传");
-        JButton copyBtn = new JButton("复制");
-        JButton transferBtn = new JButton("转移");
+        JButton downloadBtn = new JButton(MainFrame.i18n.get("download"));
+        JButton uploadBtn = new JButton(MainFrame.i18n.get("upload"));
+        JButton copyBtn = new JButton();
+        JButton transferBtn = new JButton(MainFrame.i18n.get("transfer"));
 
         downloadBtn.addActionListener(e -> {
             byte[] imageBytes;

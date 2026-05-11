@@ -57,7 +57,7 @@ public final class Outlink {
 
         // 确保version已经生成
         if (!wzFile.parse()) {
-            MainFrame.getInstance().setStatusText("文件 %s 解析失败", wzFile.getName());
+            MainFrame.getInstance().setStatusText("文件 %s 解析失败 %s", wzFile.getName(), wzFile.getStatus().getMessage());
             throw new RuntimeException();
         }
 
@@ -78,7 +78,7 @@ public final class Outlink {
 
                 WzFile canvasWz = new WzFile(path.toString(), version, keyBoxName, iv, key);
                 if (!canvasWz.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败", canvasWz.getName());
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败 %s", canvasWz.getName(), canvasWz.getStatus().getMessage());
                     throw new RuntimeException();
                 }
                 canvasCache.add(canvasWz.getWzDirectory());

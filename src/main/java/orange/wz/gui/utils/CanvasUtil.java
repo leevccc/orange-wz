@@ -25,7 +25,7 @@ public final class CanvasUtil {
                 search(result, prop.getChildren());
             } else if (wzObject instanceof WzDirectory wzDir) {
                 if (wzDir.isWzFile() && !wzDir.getWzFile().parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败", wzDir.getName());
+                    MainFrame.getInstance().setStatusText("文件 %s 解析失败 %s", wzDir.getName(), wzDir.getWzFile().getStatus().getMessage());
                     throw new RuntimeException();
                 }
                 search(result, wzDir.getChildren());
