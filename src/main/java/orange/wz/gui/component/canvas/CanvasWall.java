@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 public final class CanvasWall extends JFrame {
     public CanvasWall(List<CanvasUtilData> data, String title, DefaultMutableTreeNode node, EditPane editPane) {
-        super("图片嗅探 " + title);
+        super(MainFrame.i18n.get("canvas_wall") + " " + title);
         setIconImage(MainFrame.getInstance().getIconImage()); // 继承主窗口 icon
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH); // 最大化
@@ -48,12 +48,12 @@ public final class CanvasWall extends JFrame {
 
         // --- 1. 顶部按钮面板 ---
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        JButton saveAllBtn = new JButton("保存全部");
+        JButton saveAllBtn = new JButton(MainFrame.i18n.get("canvas_wall.save_all"));
         topPanel.add(saveAllBtn);
         mainPanel.add(topPanel, BorderLayout.SOUTH);
 
         saveAllBtn.addActionListener(e -> {
-            File folder = FileDialog.chooseOpenFolder("选择保存的目录");
+            File folder = FileDialog.chooseOpenFolder(MainFrame.i18n.get("canvas_wall.save_path"));
             if (folder == null) return;
             for (CanvasUtilData c : data) {
                 // 构造目标文件
@@ -64,7 +64,7 @@ public final class CanvasWall extends JFrame {
                 if (!parentDir.exists()) {
                     boolean created = parentDir.mkdirs(); // 递归创建目录
                     if (!created) {
-                        log.warn("目录创建失败: {}", parentDir.getAbsolutePath());
+                        log.warn(MainFrame.i18n.get("warn.canvas_wall.folder_create", parentDir.getAbsolutePath()));
                     }
                 }
 
@@ -75,10 +75,10 @@ public final class CanvasWall extends JFrame {
                     byte[] imageBytes = stream.toByteArray();
                     fos.write(imageBytes);
                 } catch (IOException ex) {
-                    log.error("保存失败: {}", ex.getMessage());
+                    log.error(MainFrame.i18n.get("error.canvas_wall.save", ex.getMessage()));
                 }
             }
-            JMessageUtil.info("保存成功");
+            JMessageUtil.info(MainFrame.i18n.get("canvas_wall.saved"));
         });
 
         // --- 2. 图片网格面板 ---

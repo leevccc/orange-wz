@@ -28,7 +28,7 @@ public final class WzFolderMenu extends TreeMenu {
         super(editPane);
         this.tree = tree;
 
-        JMenuItem btnPackage = new JMenuItem("打包", FiPackage);
+        JMenuItem btnPackage = new JMenuItem(MainFrame.i18n.get("test.temp0127"), FiPackage);
         btnPackage.addActionListener(e -> packageBtnAction());
 
         add(btnSave);
@@ -45,20 +45,20 @@ public final class WzFolderMenu extends TreeMenu {
 
         Short fileVersion = null;
         while (fileVersion == null) {
-            String input = JOptionPane.showInputDialog("版本号(79、83等)：");
+            String input = JOptionPane.showInputDialog(MainFrame.i18n.get("test.temp0128"));
             if (input == null) return;
             try {
                 short value = Short.parseShort(input.trim());
-                if (value < 0) JMessageUtil.error("版本号只能是大于0的纯数字");
+                if (value < 0) JMessageUtil.error(MainFrame.i18n.get("test.temp0129"));
                 fileVersion = value;
             } catch (NumberFormatException ex) {
-                JMessageUtil.error("版本号只能是大于0的纯数字");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0129"));
             }
         }
 
-        File folder = FileDialog.chooseOpenFolder("请选择输出目录");
+        File folder = FileDialog.chooseOpenFolder(MainFrame.i18n.get("test.temp0130"));
         if (folder == null) {
-            log.info("用户取消了操作");
+            log.info(MainFrame.i18n.get("test.temp0131"));
             return;
         }
 
@@ -99,7 +99,7 @@ public final class WzFolderMenu extends TreeMenu {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("%s 打包完成", wzFolder.getName());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.package_success", wzFolder.getName()));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -122,7 +122,7 @@ public final class WzFolderMenu extends TreeMenu {
         directories.forEach(directory -> wzFile.getWzDirectory().addChild(new WzDirectory(directory, wzFile.getWzDirectory(), wzFile)));
         imageFiles.forEach(imageFile -> {
             if (!imageFile.parse(false)) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", imageFile.getName(), imageFile.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", imageFile.getName(), imageFile.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             wzFile.getWzDirectory().addChild(imageFile);
@@ -133,16 +133,16 @@ public final class WzFolderMenu extends TreeMenu {
     private void packageFolder(short fileVersion, WzFolder wzFolder, String savePath) {
         WzFile wzFile = WzFile.createNewFile(savePath, fileVersion, wzFolder.getKeyBoxName(), wzFolder.getIv(), wzFolder.getKey());
         packageSubToWz(wzFolder, wzFile.getWzDirectory());
-        MainFrame.getInstance().setStatusText("开始保存 %s", wzFile.getName());
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.package_start", wzFile.getName()));
         wzFile.save();
-        MainFrame.getInstance().setStatusText("已保存 %s", wzFile.getName());
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.package_success", wzFile.getName()));
     }
 
     private void packageSubToWz(WzFolder wzFolder, WzDirectory parent) {
         List<WzObject> children = wzFolder.getChildren();
         int total = children.size();
         int current = 0;
-        MainFrame.getInstance().setStatusText("正在处理 %s", wzFolder.getName());
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.package_running", wzFolder.getName()));
         for (WzObject child : children) {
             if (child instanceof WzFolder subFolder) {
                 WzDirectory wzDirectory = new WzDirectory(child.getName(), parent, parent.getWzFile());
@@ -150,13 +150,13 @@ public final class WzFolderMenu extends TreeMenu {
                 parent.addChild(wzDirectory);
             } else if (child instanceof WzImageFile imageFile) {
                 if (!imageFile.parse(false)) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", imageFile.getName(), imageFile.getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", imageFile.getName(), imageFile.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 parent.addChild(imageFile);
             } else if (child instanceof WzXmlFile xmlFile) {
                 if (!xmlFile.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", xmlFile.getName(), xmlFile.getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", xmlFile.getName(), xmlFile.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 parent.addChild(xmlFile);

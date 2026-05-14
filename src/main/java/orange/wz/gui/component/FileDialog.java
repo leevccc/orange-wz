@@ -1,6 +1,7 @@
 package orange.wz.gui.component;
 
 import com.formdev.flatlaf.util.SystemFileChooser;
+import orange.wz.gui.MainFrame;
 
 import java.awt.*;
 import java.io.File;
@@ -37,7 +38,7 @@ public class FileDialog {
 
         // 添加扩展名过滤
         if (filters != null && filters.length > 0) {
-            String desc = String.join(", ", filters) + " 文件";
+            String desc = String.join(", ", filters) + " " + MainFrame.i18n.get("test.temp0147");
             chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter(desc, filters));
             chooser.setAcceptAllFileFilterUsed(false);
         }
@@ -93,11 +94,11 @@ public class FileDialog {
     }
 
     public static List<File> chooseOpenFolders() {
-        return chooseOpenFolders(null, "请选择文件夹", true);
+        return chooseOpenFolders(null, MainFrame.i18n.get("test.temp0149"), true);
     }
 
     public static List<File> chooseOpenFiles(String[] filters) {
-        return chooseOpenFiles(null, "请选择文件", true, filters);
+        return chooseOpenFiles(null, MainFrame.i18n.get("test.temp0148"), true, filters);
     }
 
     public static File chooseOpenFolder(String title) {
@@ -107,7 +108,7 @@ public class FileDialog {
     }
 
     public static File chooseOpenFile(String[] filters) {
-        List<File> files = chooseOpenFiles(null, "请选择文件", false, filters);
+        List<File> files = chooseOpenFiles(null, MainFrame.i18n.get("test.temp0148"), false, filters);
         if (files.isEmpty()) {
             return null;
         }
@@ -124,7 +125,7 @@ public class FileDialog {
         // 添加扩展名过滤
         boolean hasFilter = filters != null && filters.length > 0;
         if (hasFilter) {
-            String desc = String.join(", ", filters) + " 文件";
+            String desc = String.join(", ", filters) + " " + MainFrame.i18n.get("test.temp0147");
             chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter(desc, filters));
             chooser.setAcceptAllFileFilterUsed(false);
         }

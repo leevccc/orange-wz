@@ -53,9 +53,9 @@ public final class ListEditor extends JDialog {
         saveButton.addActionListener((ActionEvent e) -> {
             String content = textArea.getText();
             if (saveFile(file, (WzKey) keyBox.getSelectedItem(), content)) {
-                JMessageUtil.info("文件已保存到 " + file);
+                JMessageUtil.info(MainFrame.i18n.get("test.temp0067", file));
             } else {
-                JMessageUtil.error("保存失败");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0066"));
             }
         });
 

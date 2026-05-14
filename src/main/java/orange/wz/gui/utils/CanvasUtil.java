@@ -44,7 +44,7 @@ public final class CanvasUtil {
             if (prop instanceof WzCanvasProperty canvas) {
                 if (canvas.getFormat() == format) continue;
                 canvas.setPng(canvas.getPngImage(false), format, 0);
-                MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.success", canvas.getPath()));
             } else if (prop.isListProperty()) {
                 changeFormat(prop.getChildren(), format);
             }
@@ -56,7 +56,7 @@ public final class CanvasUtil {
             if (prop instanceof WzCanvasProperty canvas) {
                 if (nodeName.isEmpty() || prop.getName().equals(nodeName)) {
                     canvas.scale(scale);
-                    MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.success", canvas.getPath()));
                 }
             } else if (prop.isListProperty()) {
                 scaleImage(prop.getChildren(), nodeName, scale);

@@ -23,14 +23,14 @@ public final class KeyManager extends JDialog {
     private final int cols = 4;
     private final JTextField[][] userKeyFields = new JTextField[rows][cols];
 
-    private final JButton btnNew = new JButton("新建方案");
-    private final JButton btnDelete = new JButton("删除方案");
-    private final JButton btnRename = new JButton("重命名");
-    private final JButton btnReset = new JButton("重置");
-    private final JButton btnSave = new JButton(MainFrame.i18n.get("save"));
+    private final JButton btnNew = new JButton(MainFrame.i18n.get("keyManager.new"));
+    private final JButton btnDelete = new JButton(MainFrame.i18n.get("keyManager.delete"));
+    private final JButton btnRename = new JButton(MainFrame.i18n.get("keyManager.rename"));
+    private final JButton btnReset = new JButton(MainFrame.i18n.get("keyManager.reset"));
+    private final JButton btnSave = new JButton(MainFrame.i18n.get("keyManager.save"));
 
     public KeyManager(Window owner) {
-        super(owner, "密钥管理器", ModalityType.APPLICATION_MODAL);
+        super(owner, MainFrame.i18n.get("keyManager"), ModalityType.APPLICATION_MODAL);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(350, 520);
         setLocationRelativeTo(owner);
@@ -59,7 +59,7 @@ public final class KeyManager extends JDialog {
     // ---------- Name ----------
     private JPanel createNamePanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBorder(new TitledBorder("方案"));
+        panel.setBorder(new TitledBorder(MainFrame.i18n.get("keyManager.plan")));
 
         WzKey[] wzKeys = MainFrame.getInstance().getWzKeyStorage().loadAll().toArray(new WzKey[0]);
         keyBox = new KeyBox(wzKeys);
@@ -78,13 +78,13 @@ public final class KeyManager extends JDialog {
 
         btnNew.addActionListener(e -> {
             while (true) {
-                String input = JOptionPane.showInputDialog("方案名称：");
+                String input = JOptionPane.showInputDialog(MainFrame.i18n.get("keyManager.plan_name"));
 
                 if (input == null) break; // 用户取消
 
                 input = input.trim();
                 if (input.isEmpty()) {
-                    JMessageUtil.error("请输入方案名称");
+                    JMessageUtil.error(MainFrame.i18n.get("keyManager.plan_name_error"));
                     continue; // 回到输入框
                 }
 
@@ -98,13 +98,13 @@ public final class KeyManager extends JDialog {
         btnRename.addActionListener(e -> {
             WzKey wzKey = (WzKey) Objects.requireNonNull(keyBox.getSelectedItem());
             while (true) {
-                String input = JOptionPane.showInputDialog("方案名称：");
+                String input = JOptionPane.showInputDialog(MainFrame.i18n.get("keyManager.plan_name"));
 
                 if (input == null) break; // 用户取消
 
                 input = input.trim();
                 if (input.isEmpty()) {
-                    JMessageUtil.error("请输入方案名称");
+                    JMessageUtil.error(MainFrame.i18n.get("keyManager.plan_name_error"));
                     continue; // 回到输入框
                 }
 
@@ -121,7 +121,7 @@ public final class KeyManager extends JDialog {
     // ---------- AES IV ----------
     private JPanel createIvPanel() {
         JPanel panel = new JPanel(new GridLayout(1, 4, 8, 4));
-        panel.setBorder(new TitledBorder("IV"));
+        panel.setBorder(new TitledBorder(MainFrame.i18n.get("keyManager.iv")));
 
         for (int i = 0; i < 4; i++) {
             ivFields[i] = createHexField();
@@ -133,9 +133,7 @@ public final class KeyManager extends JDialog {
     // ---------- AES User Key ----------
     private JPanel createUserKeyPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
-        panel.setBorder(new TitledBorder(
-                "User Key (128 字节, 16 列 x 8 行, 每行设置4列有效字节)"
-        ));
+        panel.setBorder(new TitledBorder(MainFrame.i18n.get("keyManager.key")));
 
         JPanel center = new JPanel(new BorderLayout(8, 8));
         center.add(createUserKeyGrid(), BorderLayout.CENTER);
@@ -191,7 +189,7 @@ public final class KeyManager extends JDialog {
 
     private static byte fromHex(String hex) {
         if (!hex.matches("[0-9A-Fa-f]{2}")) {
-            throw new IllegalArgumentException("非法字节: " + hex);
+            throw new IllegalArgumentException(MainFrame.i18n.get("keyManager.illegal", hex));
         }
         return (byte) Integer.parseInt(hex, 16);
     }
@@ -220,7 +218,7 @@ public final class KeyManager extends JDialog {
     private boolean addClick(String name) {
         WzKey wzKey = MainFrame.getInstance().getWzKeyStorage().addWzKey(name);
         if (wzKey == null) {
-            JMessageUtil.error("已存在同名方案");
+            JMessageUtil.error(MainFrame.i18n.get("keyManager.exists"));
             return false;
         }
 
@@ -233,7 +231,7 @@ public final class KeyManager extends JDialog {
 
     private boolean renameClick(int id, String name) {
         if (!MainFrame.getInstance().getWzKeyStorage().renameById(id, name)) {
-            JMessageUtil.error("新名称已被使用或者要改名的方案不存在");
+            JMessageUtil.error(MainFrame.i18n.get("keyManager.name_used_or_plan_not_exist"));
             return false;
         }
 
@@ -313,6 +311,6 @@ public final class KeyManager extends JDialog {
         }
 
         MainFrame.getInstance().getWzKeyStorage().saveAll(wzKeys);
-        JMessageUtil.info("密钥已保存");
+        JMessageUtil.info(MainFrame.i18n.get("keyManager.saved"));
     }
 }

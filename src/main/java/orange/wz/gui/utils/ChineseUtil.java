@@ -110,10 +110,10 @@ public final class ChineseUtil {
                 // 来源方没有图片
                 fromCav.clearImage();
                 toCav.clearImage();
-                log.info("{} 来源图片为 1x1 空白图片，已跳过", fromCav.getPath());
+                log.info(MainFrame.i18n.get("test.temp0077", fromCav.getPath()));
             } else {
                 imageCompareDialog.addCompare(toCav, fromCav);
-                log.debug("{} 差异率 {}", to.getPath(), diff);
+                log.debug(MainFrame.i18n.get("test.temp0078", to.getPath(), diff));
             }
         }
     }

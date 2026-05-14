@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
 
@@ -10,7 +11,7 @@ public class NodeDialog extends BaseDialog<NodeFormData> {
     protected final JTextField nameField = new JTextField(20);
 
     public NodeDialog(String title, EditPane editPane) {
-        this(title, "名称", editPane);
+        this(title, MainFrame.i18n.get("test.temp0126"), editPane);
     }
 
     public NodeDialog(String title, String fieldName, EditPane editPane) {

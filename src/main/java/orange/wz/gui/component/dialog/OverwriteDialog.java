@@ -1,5 +1,7 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -8,16 +10,16 @@ public final class OverwriteDialog {
     public static OverwriteChoice show(Component parent, String name) {
 
         String[] options = {
-                "覆盖",
-                "跳过",
-                "全部覆盖",
-                "全部跳过"
+                MainFrame.i18n.get("test.temp0112"),
+                MainFrame.i18n.get("test.temp0113"),
+                MainFrame.i18n.get("test.temp0114"),
+                MainFrame.i18n.get("test.temp0115")
         };
 
         int result = JOptionPane.showOptionDialog(
                 parent,
-                name + " 已存在，是否覆盖？",
-                "确认操作",
+                name + MainFrame.i18n.get("test.temp0116"),
+                MainFrame.i18n.get("test.temp0117"),
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 null,

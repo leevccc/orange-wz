@@ -47,14 +47,14 @@ public class SoundForm extends AbstractValueForm {
 
         downloadBtn.addActionListener(e -> {
             if (soundBytes == null || soundBytes.length == 0) {
-                JMessageUtil.error("没有可保存的音频数据");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0150"));
                 return;
             }
 
             SystemFileChooser chooser = new SystemFileChooser();
-            chooser.setDialogTitle("保存音频文件");
+            chooser.setDialogTitle(MainFrame.i18n.get("test.temp0151"));
             chooser.setSelectedFile(new File(nameInput.getText() + ".mp3"));
-            chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("MP3 文件 (*.mp3)", "mp3"));
+            chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter(MainFrame.i18n.get("test.temp0152"), "mp3"));
 
             File file = null;
             int res = chooser.showSaveDialog(valuePane);
@@ -72,10 +72,10 @@ public class SoundForm extends AbstractValueForm {
 
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(soundBytes);
-                JMessageUtil.info("保存成功：\n" + file.getAbsolutePath());
+                JMessageUtil.info(MainFrame.i18n.get("test.temp0153", file.getAbsolutePath()));
             } catch (IOException ex) {
-                log.error("保存失败：{}", ex.getMessage());
-                JMessageUtil.error("保存失败：" + ex.getMessage());
+                log.error(MainFrame.i18n.get("test.temp0154", ex.getMessage()));
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0154", ex.getMessage()));
             }
         });
 
@@ -88,8 +88,8 @@ public class SoundForm extends AbstractValueForm {
             try {
                 setData(Files.readAllBytes(file.toPath()), -1);
             } catch (IOException ex) {
-                log.error("读取文件失败：{}", ex.getMessage());
-                JMessageUtil.error("读取文件失败：" + ex.getMessage());
+                log.error(MainFrame.i18n.get("test.temp0155", ex.getMessage()));
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0155", ex.getMessage()));
             }
         });
 
@@ -104,18 +104,18 @@ public class SoundForm extends AbstractValueForm {
         soundPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // --- 播放按钮 ---
-        btnPlay = new JButton("播放");
+        btnPlay = new JButton(MainFrame.i18n.get("test.temp0156"));
         btnPlay.setEnabled(false);
         btnPlay.addActionListener(e -> togglePlay());
         soundPanel.add(btnPlay);
         soundPanel.add(Box.createHorizontalStrut(5)); // 间距
 
         // --- 循环按钮 ---
-        btnLoop = new JButton("循环: 关");
+        btnLoop = new JButton(MainFrame.i18n.get("test.temp0157"));
         btnLoop.setEnabled(false);
         btnLoop.addActionListener(e -> {
             loopEnabled = !loopEnabled;
-            btnLoop.setText(loopEnabled ? "循环: 开" : "循环: 关");
+            btnLoop.setText(loopEnabled ? MainFrame.i18n.get("test.temp0158") : MainFrame.i18n.get("test.temp0157"));
         });
         soundPanel.add(btnLoop);
         soundPanel.add(Box.createHorizontalStrut(5));
@@ -134,7 +134,7 @@ public class SoundForm extends AbstractValueForm {
                     if (newMicro > clip.getMicrosecondLength()) newMicro = clip.getMicrosecondLength();
                     clip.setMicrosecondPosition(newMicro);
                     clipTimePosition = newMicro;
-                    if (btnPlay.getText().equals("暂停")) clip.start();
+                    if (btnPlay.getText().equals(MainFrame.i18n.get("test.temp0159"))) clip.start();
                 }
             }
         });
@@ -230,7 +230,7 @@ public class SoundForm extends AbstractValueForm {
                                 clip.setMicrosecondPosition(0);
                                 clip.start();
                             } else {
-                                btnPlay.setText("播放");
+                                btnPlay.setText(MainFrame.i18n.get("test.temp0156"));
                                 isPaused = false;
                                 clip.setMicrosecondPosition(0);
                                 slider.setValue(0);
@@ -241,8 +241,8 @@ public class SoundForm extends AbstractValueForm {
                 }
             });
         } catch (Exception e) {
-            log.error("无法加载音频: {}", e.getMessage());
-            JMessageUtil.error("无法加载音频: " + e.getMessage());
+            log.error(MainFrame.i18n.get("test.temp0160", e.getMessage()));
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0160", e.getMessage()));
         }
     }
 
@@ -255,7 +255,7 @@ public class SoundForm extends AbstractValueForm {
             clipTimePosition = clip.getMicrosecondPosition();
             clip.stop();
             progressTimer.stop();
-            btnPlay.setText("播放");
+            btnPlay.setText(MainFrame.i18n.get("test.temp0156"));
             isPaused = true;
         } else {
             // 播放
@@ -264,14 +264,14 @@ public class SoundForm extends AbstractValueForm {
             }
             clip.start();
             progressTimer.start();
-            btnPlay.setText("暂停");
+            btnPlay.setText(MainFrame.i18n.get("test.temp0159"));
             isPaused = false;
         }
     }
 
     private void resetUIState() {
         if (progressTimer != null) progressTimer.stop();
-        btnPlay.setText("播放");
+        btnPlay.setText(MainFrame.i18n.get("test.temp0156"));
         btnPlay.setEnabled(false);
         slider.setValue(0);
         slider.setEnabled(false);

@@ -8,7 +8,7 @@ import java.awt.*;
 public final class JMessageUtil {
 
     public static void info(String message) {
-        info("消息", message);
+        info(MainFrame.i18n.get("info"), message);
     }
 
     public static void info(String title, String message) {
@@ -25,7 +25,7 @@ public final class JMessageUtil {
     }
 
     public static void warn(String message) {
-        warn("警告", message);
+        warn(MainFrame.i18n.get("warn"), message);
     }
 
     public static void warn(String title, String message) {
@@ -42,7 +42,7 @@ public final class JMessageUtil {
     }
 
     public static void error(String message) {
-        error("错误", message);
+        error(MainFrame.i18n.get("error"), message);
     }
 
     public static void error(String title, String message) {

@@ -1,6 +1,10 @@
 package orange.wz.gui.utils;
 
-import orange.wz.provider.*;
+import orange.wz.gui.MainFrame;
+import orange.wz.provider.WzDirectory;
+import orange.wz.provider.WzFolder;
+import orange.wz.provider.WzImage;
+import orange.wz.provider.WzObject;
 import orange.wz.provider.properties.WzListProperty;
 import orange.wz.provider.properties.WzStringProperty;
 
@@ -25,7 +29,7 @@ public final class TreeNodeUtil {
         String result = null;
         WzStringProperty wzObject = (WzStringProperty) node.getUserObject();
         String actionMark = wzObject.getName();
-        if (actionMark.matches("d\\d+")) return "对话框";
+        if (actionMark.matches("d\\d+")) return MainFrame.i18n.get("dialog");
 
         String[] paths = wzObject.getPath().split("/");
         String first = paths[0];
@@ -108,7 +112,7 @@ public final class TreeNodeUtil {
         }
 
         if (result == null) return null;
-        if (result.equals("info")) return "默认";
+        if (result.equals("info")) return MainFrame.i18n.get("default");
         return result;
     }
 

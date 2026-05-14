@@ -58,14 +58,14 @@ public class CanvasForm extends AbstractValueForm {
             }
 
             if (imageBytes.length == 0) {
-                JMessageUtil.warn("没有可保存的图片数据");
+                JMessageUtil.warn(MainFrame.i18n.get("test.temp0099"));
                 return;
             }
 
             SystemFileChooser chooser = new SystemFileChooser();
-            chooser.setDialogTitle("保存图片文件");
+            chooser.setDialogTitle(MainFrame.i18n.get("test.temp0100"));
             chooser.setSelectedFile(new File(nameInput.getText() + ".png"));
-            chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter("PNG 文件 (*.png)", "png"));
+            chooser.addChoosableFileFilter(new SystemFileChooser.FileNameExtensionFilter(MainFrame.i18n.get("test.temp0101"), "png"));
 
             File file = null;
             int res = chooser.showSaveDialog(valuePane);
@@ -84,10 +84,10 @@ public class CanvasForm extends AbstractValueForm {
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 fos.write(imageBytes);
 
-                JMessageUtil.info("保存成功：\n" + file.getAbsolutePath());
+                JMessageUtil.info(MainFrame.i18n.get("test.temp0102", file.getAbsolutePath()));
             } catch (IOException ex) {
                 ex.printStackTrace();
-                JMessageUtil.error("保存失败: " + ex.getMessage());
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0103", ex.getMessage()));
             }
         });
 
@@ -102,7 +102,7 @@ public class CanvasForm extends AbstractValueForm {
 
             } catch (IOException ex) {
                 ex.printStackTrace();
-                JMessageUtil.error("读取文件失败: " + ex.getMessage());
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0104", ex.getMessage()));
             }
         });
 
@@ -110,18 +110,18 @@ public class CanvasForm extends AbstractValueForm {
             TransferableImage trans = new TransferableImage(imagePanel.getImage());
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(trans, null);
-            MainFrame.getInstance().setStatusText("图片已经复制到系统剪贴板");
+            MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.image_copied"));
         });
 
         transferBtn.addActionListener(e -> {
             CenterPane centerPane = MainFrame.getInstance().getCenterPane();
             EditPane anotherPane = centerPane.getAnotherPane(editPane);
             if (centerPane.getRightEditPane() == anotherPane && !centerPane.isRightShowing()) {
-                JMessageUtil.error("另一个视图未激活");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0105"));
                 return;
             }
             if (!anotherPane.getCurrentFormName().equals("canvas")) {
-                JMessageUtil.error("另一个视图的编辑器未处于Canvas节点");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0106"));
                 return;
             }
 
@@ -149,7 +149,7 @@ public class CanvasForm extends AbstractValueForm {
         gbc.gridy = 0;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        topPanel.add(new JLabel("宽度:"), gbc);
+        topPanel.add(new JLabel(MainFrame.i18n.get("test.temp0107")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
@@ -163,7 +163,7 @@ public class CanvasForm extends AbstractValueForm {
         gbc.gridy = 1;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        topPanel.add(new JLabel("高度:"), gbc);
+        topPanel.add(new JLabel(MainFrame.i18n.get("test.temp0108")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
@@ -177,7 +177,7 @@ public class CanvasForm extends AbstractValueForm {
         gbc.gridy = 2;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        topPanel.add(new JLabel("格式:"), gbc);
+        topPanel.add(new JLabel(MainFrame.i18n.get("test.temp0109")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
@@ -190,7 +190,7 @@ public class CanvasForm extends AbstractValueForm {
         gbc.gridy = 3;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        topPanel.add(new JLabel("缩放:"), gbc);
+        topPanel.add(new JLabel(MainFrame.i18n.get("test.temp0110")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1.0;
@@ -231,7 +231,7 @@ public class CanvasForm extends AbstractValueForm {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes)) {
             image = ImageIO.read(bis);
             if (image == null) {
-                throw new IOException("无法解码图片数据，可能不是支持的图片格式");
+                throw new IOException(MainFrame.i18n.get("test.temp0111"));
             }
         } catch (IOException ex) {
             throw new RuntimeException();
@@ -260,7 +260,7 @@ public class CanvasForm extends AbstractValueForm {
         scaleField.setText(scale);
 
         imagePanel.setImage(image);
-        MainFrame.getInstance().setStatusText("转移成功，请手动点击保存按钮。");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.transfer_success"));
     }
 
     @Override

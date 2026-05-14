@@ -16,18 +16,18 @@ public final class ChangeKeyDialog extends BaseDialog<KeyData> {
     private final KeyBox keyBox;
 
     public ChangeKeyDialog(EditPane editPane, boolean wzFile) {
-        super("修改密钥", editPane);
+        super(MainFrame.i18n.get("test.temp0079"), editPane);
 
         if (wzFile) {
             ((AbstractDocument) versionInput.getDocument()).setDocumentFilter(new IntegerFilter());
-            addRow("版本号", versionInput);
+            addRow(MainFrame.i18n.get("test.temp0080"), versionInput);
         } else {
             versionInput.setText("-1");
         }
 
         WzKey[] wzKeys = MainFrame.getInstance().getWzKeyStorage().loadAll().toArray(new WzKey[0]);
         keyBox = new KeyBox(wzKeys);
-        addRow("密钥", keyBox);
+        addRow(MainFrame.i18n.get("test.temp0081"), keyBox);
     }
 
     @Override
@@ -40,7 +40,7 @@ public final class ChangeKeyDialog extends BaseDialog<KeyData> {
         try {
             version = Short.parseShort(versionInput.getText());
         } catch (NumberFormatException e) {
-            JMessageUtil.error("错误版本号 " + versionInput.getText());
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0082", versionInput.getText()));
             return null;
         }
         WzKey wzKey = (WzKey) keyBox.getSelectedItem();

@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.data.SoundFormData;
 import orange.wz.gui.component.panel.EditPane;
@@ -18,8 +19,8 @@ public final class SoundDialog extends NodeDialog {
         super(title, editPane);
 
         pathField.setEditable(false);
-        JButton selectBtn = new JButton("选择音频");
-        addRow("路径", pathField, selectBtn);
+        JButton selectBtn = new JButton(MainFrame.i18n.get("test.temp0164"));
+        addRow(MainFrame.i18n.get("test.temp0165"), pathField, selectBtn);
 
         selectBtn.addActionListener(e -> {
             File mp3File = FileDialog.chooseOpenFile(new String[]{"mp3"});
@@ -28,7 +29,7 @@ public final class SoundDialog extends NodeDialog {
             try {
                 soundBytes = Files.readAllBytes(mp3File.toPath());
             } catch (IOException ex) {
-                JMessageUtil.error("无法读取文件");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0166"));
                 return;
             }
 

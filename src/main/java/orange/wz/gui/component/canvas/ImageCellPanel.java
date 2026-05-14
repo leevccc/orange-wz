@@ -1,6 +1,7 @@
 package orange.wz.gui.component.canvas;
 
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.CanvasUtilData;
@@ -42,8 +43,8 @@ public final class ImageCellPanel extends JPanel {
 
         // --- 添加右键菜单 ---
         JPopupMenu cellMenu = new JPopupMenu();
-        JMenuItem jumpBtn = new JMenuItem("打开节点");
-        JMenuItem saveBtn = new JMenuItem("保存图片");
+        JMenuItem jumpBtn = new JMenuItem(MainFrame.i18n.get("test.temp0058"));
+        JMenuItem saveBtn = new JMenuItem(MainFrame.i18n.get("test.temp0059"));
 
         cellMenu.add(jumpBtn);
         cellMenu.add(saveBtn);
@@ -65,7 +66,7 @@ public final class ImageCellPanel extends JPanel {
             }
 
             if (!found) {
-                JMessageUtil.error("路径异常");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0060"));
                 return;
             }
 
@@ -85,7 +86,7 @@ public final class ImageCellPanel extends JPanel {
             String[] p = data.getPath().split("/");
             String fileName = p[p.length - 1] + ".png";
             File preFile = new File(fileName);
-            File file = FileDialog.chooseSaveFile(null, "保存 " + fileName, preFile, new String[]{"png"});
+            File file = FileDialog.chooseSaveFile(null, MainFrame.i18n.get("save") + " " + fileName, preFile, new String[]{"png"});
             if (file == null) return;
 
             try (FileOutputStream fos = new FileOutputStream(file)) {
@@ -95,7 +96,7 @@ public final class ImageCellPanel extends JPanel {
                 byte[] imageBytes = stream.toByteArray();
                 fos.write(imageBytes);
             } catch (IOException ex) {
-                log.error("保存失败: {}", ex.getMessage());
+                log.error(MainFrame.i18n.get("test.temp0061", ex.getMessage()));
             }
         });
 
@@ -208,7 +209,7 @@ public final class ImageCellPanel extends JPanel {
     private void showPreview() {
         JDialog dialog = new JDialog(
                 SwingUtilities.getWindowAncestor(this),
-                "预览 - " + data.getPath(),
+                MainFrame.i18n.get("test.temp0062", data.getPath()),
                 Dialog.ModalityType.APPLICATION_MODAL
         );
 
