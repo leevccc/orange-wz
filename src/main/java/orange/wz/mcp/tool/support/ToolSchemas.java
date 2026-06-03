@@ -80,13 +80,15 @@ public final class ToolSchemas {
                         Map.entry("nodePath", stringSchema()),
                         Map.entry("op", stringSchema()),
                         Map.entry("autoParse", booleanSchema()),
+                        Map.entry("type", stringSchema()),
                         Map.entry("name", stringSchema()),
                         Map.entry("value", stringSchema()),
                         Map.entry("x", numberSchema()),
                         Map.entry("y", numberSchema()),
                         Map.entry("base64Png", stringSchema()),
                         Map.entry("base64Mp3", stringSchema()),
-                        Map.entry("pngFormat", stringSchema())
+                        Map.entry("pngFormat", stringSchema()),
+                        Map.entry("filePath", stringSchema())
                 ),
                 List.of("rootPath")
         );

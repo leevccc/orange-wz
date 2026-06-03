@@ -290,17 +290,7 @@ public final class DefaultMcpWorkspaceService implements McpWorkspaceService {
         session.lock();
         try {
             for (Map<String, Object> operation : operations) {
-                NodeReference reference = nodeReference(operation);
-                boolean autoParse = booleanValue(operation.get("autoParse"), true);
-                WzObject obj = resolver.resolveFromRoots(session.getRoots(), reference, autoParse);
-                String op = updateNode(obj, operation);
-                results.add(Map.of(
-                        "rootPath", NodePathResolver.rootPathOf(obj),
-                        "nodePath", NodePathResolver.nodePathOf(obj),
-                        "node", NodeSummary.from(obj),
-                        "op", op,
-                        "updated", true
-                ));
+                results.add(executeBatchUpdateOperation(session, operation));
             }
         } finally {
             session.unlock();
@@ -665,6 +655,106 @@ public final class DefaultMcpWorkspaceService implements McpWorkspaceService {
         return List.of();
     }
 
+    private Map<String, Object> executeBatchUpdateOperation(McpSessionState session, Map<String, Object> operation) {
+        String op = normalizeUpdateOp(optionalString(operation.get("op")), operation);
+        boolean autoParse = booleanValue(operation.get("autoParse"), true);
+        return switch (op) {
+            case "create_child" -> executeCreateChildOperation(session, operation, autoParse, op);
+            case "delete" -> executeDeleteOperation(session, operation, autoParse, op);
+            case "save" -> executeSaveOperation(session, operation, autoParse, op);
+            case "save_as" -> executeSaveAsOperation(session, operation, autoParse, op);
+            default -> executeValueUpdateOperation(session, operation, autoParse);
+        };
+    }
+
+    private Map<String, Object> executeCreateChildOperation(McpSessionState session, Map<String, Object> operation, boolean autoParse, String op) {
+        NodeReference parentReference = nodeReference(operation);
+        NodeSummary child = createChildNode(
+                session,
+                parentReference,
+                stringValue(operation.get("type")),
+                stringValue(operation.get("name")),
+                optionalString(operation.get("value")),
+                integerValue(operation.get("x")),
+                integerValue(operation.get("y")),
+                optionalString(operation.get("base64Png")),
+                optionalString(operation.get("base64Mp3")),
+                optionalString(operation.get("pngFormat")),
+                autoParse
+        );
+        return Map.of(
+                "rootPath", parentReference.rootPath(),
+                "nodePath", parentReference.nodePath(),
+                "node", child,
+                "op", op,
+                "created", true
+        );
+    }
+
+    private Map<String, Object> executeDeleteOperation(McpSessionState session, Map<String, Object> operation, boolean autoParse, String op) {
+        NodeReference reference = nodeReference(operation);
+        WzObject obj = resolver.resolveFromRoots(session.getRoots(), reference, autoParse);
+        NodeSummary deletedNode = NodeSummary.from(obj);
+        if (obj.getParent() == null) {
+            session.getRoots().remove(obj);
+        } else {
+            removeFromParent(obj.getParent(), obj);
+        }
+        return Map.of(
+                "rootPath", deletedNode.rootPath(),
+                "nodePath", deletedNode.nodePath(),
+                "node", deletedNode,
+                "op", op,
+                "deleted", true
+        );
+    }
+
+    private Map<String, Object> executeSaveOperation(McpSessionState session, Map<String, Object> operation, boolean autoParse, String op) {
+        NodeReference reference = nodeReference(operation);
+        WzObject obj = resolver.resolveFromRoots(session.getRoots(), reference, autoParse);
+        WzSavableFile file = toSavableFile(obj);
+        if (file == null) throw new McpException("该节点不支持保存: " + obj.getClass().getSimpleName());
+        if (!file.save()) throw new McpException("保存失败: " + file.getName());
+        return Map.of(
+                "rootPath", NodePathResolver.rootPathOf(obj),
+                "nodePath", NodePathResolver.nodePathOf(obj),
+                "node", NodeSummary.from(obj),
+                "op", op,
+                "saved", true
+        );
+    }
+
+    private Map<String, Object> executeSaveAsOperation(McpSessionState session, Map<String, Object> operation, boolean autoParse, String op) {
+        NodeReference reference = nodeReference(operation);
+        String filePath = stringValue(operation.get("filePath"));
+        WzObject obj = resolver.resolveFromRoots(session.getRoots(), reference, autoParse);
+        WzSavableFile file = toSavableFile(obj);
+        if (file == null) throw new McpException("该节点不支持另存为: " + obj.getClass().getSimpleName());
+        file.setFilePath(filePath);
+        if (!file.save()) throw new McpException("另存为失败: " + file.getName());
+        return Map.of(
+                "rootPath", NodePathResolver.rootPathOf(obj),
+                "nodePath", NodePathResolver.nodePathOf(obj),
+                "node", NodeSummary.from(obj),
+                "op", op,
+                "filePath", filePath,
+                "saved", true
+        );
+    }
+
+    private Map<String, Object> executeValueUpdateOperation(McpSessionState session, Map<String, Object> operation, boolean autoParse) {
+        NodeReference reference = nodeReference(operation);
+        WzObject obj = resolver.resolveFromRoots(session.getRoots(), reference, autoParse);
+        String op = updateNode(obj, operation);
+        return Map.of(
+                "rootPath", NodePathResolver.rootPathOf(obj),
+                "nodePath", NodePathResolver.nodePathOf(obj),
+                "node", NodeSummary.from(obj),
+                "op", op,
+                "updated", true
+        );
+    }
+
     private String updateNode(WzObject obj, Map<String, Object> operation) {
         String op = normalizeUpdateOp(optionalString(operation.get("op")), operation);
         return switch (op) {
@@ -921,11 +1011,15 @@ public final class DefaultMcpWorkspaceService implements McpWorkspaceService {
     private String normalizeUpdateOp(String op, Map<String, Object> operation) {
         if (op != null && !op.isBlank()) {
             return switch (op.trim().toLowerCase(Locale.ROOT)) {
+                case "create", "create_child", "add", "add_child" -> "create_child";
+                case "delete", "delete_node", "remove", "remove_node" -> "delete";
                 case "rename", "set_name" -> "rename";
                 case "set_value", "value" -> "set_value";
                 case "set_vector", "vector" -> "set_vector";
                 case "set_png", "png" -> "set_png";
                 case "set_sound", "sound" -> "set_sound";
+                case "save", "save_node" -> "save";
+                case "save_as" -> "save_as";
                 default -> throw new McpException("未知的批量修改 op: " + op);
             };
         }

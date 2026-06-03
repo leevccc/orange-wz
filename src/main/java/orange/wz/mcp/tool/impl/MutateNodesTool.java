@@ -14,20 +14,22 @@ public final class MutateNodesTool extends BaseSessionTool {
     private final McpWorkspaceService service;
 
     public MutateNodesTool(McpSessionManager sessionManager, McpWorkspaceService service) {
-        super(sessionManager, "统一节点修改入口。直接传单项返回 result+results；传 operations 数组返回 results。支持 rename、set_value、set_vector、set_png、set_sound。", objectSchema(
+        super(sessionManager, "统一节点写入入口。直接传单项返回 result+results；传 operations 数组返回 results。支持 create_child、delete、rename、set_value、set_vector、set_png、set_sound、save、save_as。", objectSchema(
                 Map.ofEntries(
                         Map.entry("operations", arraySchema(updateOperationSchema())),
                         Map.entry("rootPath", stringSchema()),
                         Map.entry("nodePath", stringSchema()),
                         Map.entry("op", stringSchema()),
                         Map.entry("autoParse", booleanSchema()),
+                        Map.entry("type", stringSchema()),
                         Map.entry("name", stringSchema()),
                         Map.entry("value", stringSchema()),
                         Map.entry("x", numberSchema()),
                         Map.entry("y", numberSchema()),
                         Map.entry("base64Png", stringSchema()),
                         Map.entry("base64Mp3", stringSchema()),
-                        Map.entry("pngFormat", stringSchema())
+                        Map.entry("pngFormat", stringSchema()),
+                        Map.entry("filePath", stringSchema())
                 ),
                 List.of()
         ));

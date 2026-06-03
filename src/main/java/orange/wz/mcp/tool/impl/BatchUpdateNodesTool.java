@@ -13,7 +13,7 @@ public final class BatchUpdateNodesTool extends BaseSessionTool {
     private final McpWorkspaceService service;
 
     public BatchUpdateNodesTool(McpSessionManager sessionManager, McpWorkspaceService service) {
-        super(sessionManager, "兼容批量修改入口；新调用优先使用 mutate_nodes 的 operations 数组。", objectSchema(
+        super(sessionManager, "兼容批量写入入口；新调用优先使用 mutate_nodes 的 operations 数组。支持 create_child、delete、rename、set_value、set_vector、set_png、set_sound、save、save_as。", objectSchema(
                 Map.of("operations", arraySchema(updateOperationSchema())),
                 List.of("operations")
         ));

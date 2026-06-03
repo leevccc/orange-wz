@@ -94,7 +94,7 @@ public final class McpUiBridge {
                     focusNode(editPane, extractNode(result));
                 }
                 case "paste_nodes" -> {
-                    insertPasted(editPane, (List<Object>) result.get("pasted"), nodeReference(arguments));
+                    insertPastedResults(editPane, result, nodeReference(arguments));
                     focusFirstPasted(editPane, result);
                 }
                 case "find_node", "search_node" -> {
@@ -116,7 +116,10 @@ public final class McpUiBridge {
                     }
                 }
                 case "list_children", "get_node_tree_json" -> focusFirstReference(editPane, arguments);
-                case "batch_update_nodes", "mutate_nodes" -> focusFirstUpdated(editPane, result);
+                case "batch_update_nodes", "mutate_nodes" -> {
+                    applyMutationResults(editPane, result);
+                    focusFirstUpdated(editPane, result);
+                }
                 case "query_nodes" -> focusFirstNodeFromResults(editPane, result);
                 case "save_node", "save_as" -> {
                     NodeReference reference = nodeReference(arguments);
@@ -184,6 +187,20 @@ public final class McpUiBridge {
                 insertChild(editPane, nodeSummary, target);
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void insertPastedResults(EditPane editPane, Map<String, Object> result, NodeReference singleTarget) {
+        Object rawResults = result.get("results");
+        if (rawResults instanceof List<?> results) {
+            for (Object item : results) {
+                if (item instanceof Map<?, ?> map) {
+                    insertPasted(editPane, (List<Object>) map.get("pasted"), nodeReference(map));
+                }
+            }
+            return;
+        }
+        insertPasted(editPane, (List<Object>) result.get("pasted"), singleTarget);
     }
 
     private void focusNode(EditPane editPane, NodeSummary node) {
@@ -268,6 +285,42 @@ public final class McpUiBridge {
             case "mutate_nodes" -> "MCP 统一修改完成";
             default -> "MCP 执行完成";
         };
+    }
+
+    private void applyMutationResults(EditPane editPane, Map<String, Object> result) {
+        Object rawResult = result.get("result");
+        if (rawResult instanceof Map<?, ?> resultMap) {
+            applyMutationResultItem(editPane, resultMap);
+            return;
+        }
+        Object rawResults = result.get("results");
+        if (!(rawResults instanceof List<?> results)) {
+            return;
+        }
+        for (Object item : results) {
+            if (item instanceof Map<?, ?> map) {
+                applyMutationResultItem(editPane, map);
+            }
+        }
+    }
+
+    private void applyMutationResultItem(EditPane editPane, Map<?, ?> map) {
+        Object rawOp = map.get("op");
+        if (!(rawOp instanceof String op)) {
+            return;
+        }
+        switch (op) {
+            case "create_child" -> insertChild(editPane, nodeSummary(map.get("node")), nodeReference(map));
+            case "delete" -> removeNode(editPane, nodeReference(map));
+            case "save", "save_as" -> {
+                NodeReference reference = nodeReference(map);
+                if (reference != null) {
+                    editPane.reloadFilePreservingStateByRootPath(reference.rootPath());
+                }
+            }
+            default -> {
+            }
+        }
     }
 
     private void focusFirstNodeFromResults(EditPane editPane, Map<String, Object> result) {
@@ -359,8 +412,18 @@ public final class McpUiBridge {
 
     private void focusFirstUpdated(EditPane editPane, Map<String, Object> result) {
         Object rawResult = result.get("result");
-        if (rawResult instanceof Map<?, ?> resultMap && focusFirstNodeFromResultItem(editPane, resultMap)) {
-            return;
+        if (rawResult instanceof Map<?, ?> resultMap) {
+            Object rawOp = resultMap.get("op");
+            if ("delete".equals(rawOp)) {
+                NodeReference reference = nodeReference(resultMap);
+                if (reference != null) {
+                    focusParent(editPane, reference);
+                    return;
+                }
+            }
+            if (focusFirstNodeFromResultItem(editPane, resultMap)) {
+                return;
+            }
         }
         Object rawResults = result.get("results");
         if (!(rawResults instanceof List<?> results)) {
@@ -369,6 +432,14 @@ public final class McpUiBridge {
         for (Object item : results) {
             if (!(item instanceof Map<?, ?> map)) {
                 continue;
+            }
+            Object rawOp = map.get("op");
+            if ("delete".equals(rawOp)) {
+                NodeReference reference = nodeReference(map);
+                if (reference != null) {
+                    focusParent(editPane, reference);
+                    return;
+                }
             }
             Object rawNode = map.get("node");
             if (rawNode instanceof NodeSummary nodeSummary) {
@@ -398,6 +469,27 @@ public final class McpUiBridge {
     }
 
     private void focusFirstPasted(EditPane editPane, Map<String, Object> result) {
+        Object rawResults = result.get("results");
+        if (rawResults instanceof List<?> results) {
+            for (Object item : results) {
+                if (item instanceof Map<?, ?> map) {
+                    Object nestedPasted = map.get("pasted");
+                    if (nestedPasted instanceof List<?> nested && !nested.isEmpty()) {
+                        Object first = nested.get(0);
+                        if (first instanceof NodeSummary nodeSummary) {
+                            focusNode(editPane, nodeSummary);
+                            return;
+                        }
+                        NodeSummary mapped = nodeSummary(first);
+                        if (mapped != null) {
+                            focusNode(editPane, mapped);
+                            return;
+                        }
+                    }
+                }
+            }
+            return;
+        }
         Object rawPasted = result.get("pasted");
         if (!(rawPasted instanceof List<?> pasted) || pasted.isEmpty()) {
             return;
