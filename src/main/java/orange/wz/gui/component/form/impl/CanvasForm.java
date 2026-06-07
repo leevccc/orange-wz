@@ -43,7 +43,7 @@ public class CanvasForm extends AbstractValueForm {
 
         JButton downloadBtn = new JButton(MainFrame.i18n.get("download"));
         JButton uploadBtn = new JButton(MainFrame.i18n.get("upload"));
-        JButton copyBtn = new JButton();
+        JButton copyBtn = new JButton(MainFrame.i18n.get("copy"));
         JButton transferBtn = new JButton(MainFrame.i18n.get("transfer"));
 
         downloadBtn.addActionListener(e -> {
