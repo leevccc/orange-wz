@@ -198,7 +198,34 @@ public final class EditPane extends JSplitPane {
                         case WZ_FILE, PNG_PROPERTY -> null;
                     };
                     setIcon(icon);
-                    setText(obj.getName());
+                    String extraText = "&nbsp;&nbsp;";
+                    switch (obj) {
+                        case WzFolder wzFolder -> extraText += "[" + wzFolder.getChildren().size() + "]";
+                        case WzDirectory wzDir -> extraText += "[" + wzDir.getChildren().size() + "]";
+                        case WzImage wzImg -> extraText += "[" + wzImg.getChildren().size() + "]";
+                        case WzCanvasProperty prop -> extraText += prop.getWidth() + " x " + prop.getHeight();
+                        case WzDoubleProperty prop -> extraText += prop.getValue();
+                        case WzFloatProperty prop -> extraText += prop.getValue();
+                        case WzIntProperty prop -> extraText += prop.getValue();
+                        case WzLongProperty prop -> extraText += prop.getValue();
+                        case WzShortProperty prop -> extraText += prop.getValue();
+                        case WzSoundProperty prop -> extraText += prop.getLenMs() + "ms";
+                        case WzStringProperty prop -> extraText += prop.getValue();
+                        case WzUOLProperty prop -> extraText += prop.getValue();
+                        case WzVectorProperty prop -> extraText += "(" + prop.getX() + ", " + prop.getY() + ")";
+                        case WzImageProperty prop when prop.isListProperty() ->
+                                extraText += "[" + prop.getChildren().size() + "]";
+                        default -> {
+                        }
+                    }
+
+                    setText(
+                            "<html>" +
+                                    obj.getName() +
+                                    " <font color='#808080'>" +
+                                    extraText +
+                                    "</font></html>"
+                    );
                     if (obj.isTempChanged()) {
                         setForeground(Color.MAGENTA);
                     }
