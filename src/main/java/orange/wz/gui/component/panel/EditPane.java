@@ -845,6 +845,15 @@ public final class EditPane extends JSplitPane {
             }
         });
 
+        // Ctrl+S 保存
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "save");
+        am.put("save", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                save();
+            }
+        });
+
         // 按键搜索
         tree.addKeyListener(new KeyAdapter() {
             @Override
@@ -1122,6 +1131,17 @@ public final class EditPane extends JSplitPane {
         }
     }
 
+    /**
+     * 根据 node 定位到文件层 node
+     */
+    public DefaultMutableTreeNode findFileNode(DefaultMutableTreeNode node) {
+        DefaultMutableTreeNode p = (DefaultMutableTreeNode) node.getParent();
+        WzObject wzObject = (WzObject) p.getUserObject();
+        if (wzObject instanceof WzSavableFile) {
+            return p;
+        } else return findFileNode(p);
+    }
+
     // 编辑框 -----------------------------------------------------------------------------------------------------------
 
     /**
@@ -1372,10 +1392,14 @@ public final class EditPane extends JSplitPane {
             protected Void doInBackground() {
                 for (TreePath treePath : treePaths) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                    if (node.getUserObject() instanceof WzFolder) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    if (wzObject instanceof WzFolder) {
                         saveWzFolder(node);
-                    } else {
+                    } else if (wzObject instanceof WzSavableFile) {
                         saveFile(node);
+                    } else {
+                        DefaultMutableTreeNode fileNode = findFileNode(node);
+                        saveFile(fileNode);
                     }
                 }
 
@@ -1398,7 +1422,8 @@ public final class EditPane extends JSplitPane {
     private void saveWzFolder(DefaultMutableTreeNode node) {
         for (int i = 0; i < node.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
-            if (child.getUserObject() instanceof WzFolder) {
+            WzObject wzObject = (WzObject) child.getUserObject();
+            if (wzObject instanceof WzFolder) {
                 saveWzFolder(child);
             } else {
                 saveFile(child);
@@ -1456,6 +1481,8 @@ public final class EditPane extends JSplitPane {
                 JMessageUtil.error(MainFrame.i18n.get("error.save_read_log"));
             }
             reloadFile(node, new WzKey(-1, keyBoxName, iv, key));
+        } else {
+            JMessageUtil.error(MainFrame.i18n.get("error.try_save_error"));
         }
     }
 
