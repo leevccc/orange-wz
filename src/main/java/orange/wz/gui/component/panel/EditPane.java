@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import orange.wz.gui.Clipboard;
 import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
+import orange.wz.gui.component.canvas.CanvasWall;
 import orange.wz.gui.component.dialog.*;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.form.impl.*;
@@ -75,7 +76,7 @@ public final class EditPane extends JSplitPane {
             Map.entry("lua", new LuaForm())
     );
 
-    private final SearchDialog searchDialog = new SearchDialog("搜索", this);
+    private final SearchDialog searchDialog = new SearchDialog(MainFrame.i18n.get("search"), this);
     private final List<SearchResult> searchResults = new ArrayList<>();
 
     // 按键搜索
@@ -201,7 +202,34 @@ public final class EditPane extends JSplitPane {
                         case WZ_FILE, PNG_PROPERTY -> null;
                     };
                     setIcon(icon);
-                    setText(obj.getName());
+                    String extraText = "&nbsp;&nbsp;";
+                    switch (obj) {
+                        case WzFolder wzFolder -> extraText += "[" + wzFolder.getChildren().size() + "]";
+                        case WzDirectory wzDir -> extraText += "[" + wzDir.getChildren().size() + "]";
+                        case WzImage wzImg -> extraText += "[" + wzImg.getChildren().size() + "]";
+                        case WzCanvasProperty prop -> extraText += prop.getWidth() + " x " + prop.getHeight();
+                        case WzDoubleProperty prop -> extraText += prop.getValue();
+                        case WzFloatProperty prop -> extraText += prop.getValue();
+                        case WzIntProperty prop -> extraText += prop.getValue();
+                        case WzLongProperty prop -> extraText += prop.getValue();
+                        case WzShortProperty prop -> extraText += prop.getValue();
+                        case WzSoundProperty prop -> extraText += prop.getLenMs() + "ms";
+                        case WzStringProperty prop -> extraText += prop.getValue();
+                        case WzUOLProperty prop -> extraText += prop.getValue();
+                        case WzVectorProperty prop -> extraText += "(" + prop.getX() + ", " + prop.getY() + ")";
+                        case WzImageProperty prop when prop.isListProperty() ->
+                                extraText += "[" + prop.getChildren().size() + "]";
+                        default -> {
+                        }
+                    }
+
+                    setText(
+                            "<html>" +
+                                    obj.getName() +
+                                    " <font color='#808080'>" +
+                                    extraText +
+                                    "</font></html>"
+                    );
                     if (obj.isTempChanged()) {
                         setForeground(Color.MAGENTA);
                     }
@@ -219,7 +247,7 @@ public final class EditPane extends JSplitPane {
 
         // 禁止跨区域多选
         SameLevelTreeSelectionModel selectionModel = new SameLevelTreeSelectionModel();
-        selectionModel.onReject(() -> JMessageUtil.warn("操作提示", "不允许跨区域多选"));
+        selectionModel.onReject(() -> JMessageUtil.warn(MainFrame.i18n.get("warn"), MainFrame.i18n.get("warn.cross_region_select")));
         tree.setSelectionModel(selectionModel);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
 
@@ -235,14 +263,14 @@ public final class EditPane extends JSplitPane {
         });
 
         // 右键菜单
-        wzFilePopupMenu = new WzFileMenu(this, tree);
+        wzFilePopupMenu = new WzFileMenu(this);
         wzFolderPopupMenu = new WzFolderMenu(this, tree);
-        wzImageFilePopupMenu = new WzImageFileMenu(this, tree);
-        wzXmlFilePopupMenu = new WzXmlFileMenu(this, tree);
-        wzDirectoryPopupMenu = new WzDirectoryMenu(this, tree);
-        wzImagePopupMenu = new WzImageMenu(this, tree);
-        wzListPropertyPopupMenu = new WzListPropertyMenu(this, tree);
-        wzValuePropertyPopupMenu = new WzValuePropertyMenu(this, tree);
+        wzImageFilePopupMenu = new WzImageFileMenu(this);
+        wzXmlFilePopupMenu = new WzXmlFileMenu(this);
+        wzDirectoryPopupMenu = new WzDirectoryMenu(this);
+        wzImagePopupMenu = new WzImageMenu(this);
+        wzListPropertyPopupMenu = new WzListPropertyMenu(this);
+        wzValuePropertyPopupMenu = new WzValuePropertyMenu(this);
         tree.addMouseListener(new MouseAdapter() {
             private void showPopup(MouseEvent e) {
                 if (!e.isPopupTrigger()) return;
@@ -447,7 +475,7 @@ public final class EditPane extends JSplitPane {
                 switchForm("string");
                 if (obj.getWzImage().getName().equals("Npc.img") && !obj.getName().equals("name") && !obj.getName().equals("func")) {
                     npcAction = TreeNodeUtil.getNpcActionName(node);
-                    if (npcAction == null) npcAction = "动作不存在";
+                    if (npcAction == null) npcAction = MainFrame.i18n.get("warn.action_is_not_exists");
                 }
             }
             case WzUOLProperty obj -> {
@@ -469,25 +497,31 @@ public final class EditPane extends JSplitPane {
                 switchForm("lua");
             }
             default -> {
-                MainFrame.getInstance().setStatusText("%s 未知的节点类型 %s", wzObject.getName(), wzObject.getClass().getSimpleName());
+                MainFrame.getInstance().setStatusTextWithWarnLog(MainFrame.i18n.get("warn.unknow_type", wzObject.getName(), wzObject.getClass().getSimpleName()));
                 return;
             }
         }
 
         // 更新状态栏
+        String text = getNodePathText(wzObject, npcAction);
+        MainFrame.getInstance().setStatusText(text);
+    }
+
+    private String getNodePathText(WzObject wzObject, String npcAction) {
         String text = wzObject.getPath();
-        if (wzObject instanceof WzFolder obj) {
-            text = text + "  /  " + obj.getKeyBoxName();
-        } else if (wzObject instanceof WzDirectory obj && obj.isWzFile()) {
-            text = text + "  /  " + obj.getWzFile().getKeyBoxName() + "  /  版本 " + obj.getWzFile().getHeader().getFileVersion();
-        } else if (wzObject instanceof WzImageFile obj) {
-            text = text + "  /  " + obj.getKeyBoxName();
+        switch (wzObject) {
+            case WzFolder obj -> text = text + "  /  " + obj.getKeyBoxName();
+            case WzDirectory obj when obj.isWzFile() ->
+                    text = text + "  /  " + obj.getWzFile().getKeyBoxName() + "  /  " + MainFrame.i18n.get("version") + " " + obj.getWzFile().getHeader().getFileVersion();
+            case WzImageFile obj -> text = text + "  /  " + obj.getKeyBoxName();
+            default -> {
+            }
         }
 
         if (npcAction != null) {
             text = text + " (" + npcAction + ")";
         }
-        MainFrame.getInstance().setStatusTextDirect(text);
+        return text;
     }
 
     /**
@@ -498,7 +532,7 @@ public final class EditPane extends JSplitPane {
      */
     private SwingWorker<Void, Void> handleTreeDoubleClick(DefaultMutableTreeNode node) {
         WzObject wzObject = (WzObject) node.getUserObject();
-        MainFrame.getInstance().setStatusText("加载 %s...", wzObject.getName());
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.loading", wzObject.getName()));
 
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
@@ -512,7 +546,7 @@ public final class EditPane extends JSplitPane {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("%s 加载完毕", wzObject.getName());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.loaded", wzObject.getName()));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -543,14 +577,14 @@ public final class EditPane extends JSplitPane {
             }
             case WzDirectory wzDir -> {
                 if (wzDir.isWzFile() && parseWz && !wzDir.getWzFile().parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzDir.getName(), wzDir.getWzFile().getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzDir.getName(), wzDir.getWzFile().getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 addChildrenRecursively(node, wzDir, expand);
             }
             case WzImage wzImg -> {
                 if (parseImg && !wzImg.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImg.getName(), wzImg.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 addChildrenRecursively(node, wzImg, expand);
@@ -667,22 +701,24 @@ public final class EditPane extends JSplitPane {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
                 WzObject wzObject = (WzObject) node.getUserObject();
                 if (wzObject instanceof WzFolder) {
-                    return;
+                    log.warn(MainFrame.i18n.get("warn.folder_not_supported_delete"));
                 } else if (wzObject instanceof WzDirectory directory) {
                     if (directory.isWzFile()) {
-                        return;
+                        log.warn(MainFrame.i18n.get("warn.wz_not_supported_delete"));
                     } else {
-                        wzDirectoryPopupMenu.getDeleteBtn().doClick();
+                        wzDirectoryPopupMenu.getBtnDelete().doClick();
                     }
-                } else if (wzObject instanceof WzImageFile || wzObject instanceof WzXmlFile) {
-                    return;
+                } else if (wzObject instanceof WzImageFile) {
+                    log.warn(MainFrame.i18n.get("warn.img_not_supported_delete"));
+                } else if (wzObject instanceof WzXmlFile) {
+                    log.warn(MainFrame.i18n.get("warn.xml_not_supported_delete"));
                 } else if (wzObject instanceof WzImage) {
-                    wzImagePopupMenu.getDeleteBtn().doClick();
+                    wzImagePopupMenu.getBtnDelete().doClick();
                 } else if (wzObject instanceof WzImageProperty prop) {
                     if (prop.isListProperty()) {
-                        wzListPropertyPopupMenu.getDeleteBtn().doClick();
+                        wzListPropertyPopupMenu.getBtnDelete().doClick();
                     } else {
-                        wzValuePropertyPopupMenu.getDeleteBtn().doClick();
+                        wzValuePropertyPopupMenu.getBtnDelete().doClick();
                     }
                 }
             }
@@ -699,24 +735,24 @@ public final class EditPane extends JSplitPane {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
                 WzObject wzObject = (WzObject) node.getUserObject();
                 if (wzObject instanceof WzFolder) {
-                    return;
+                    log.warn(MainFrame.i18n.get("warn.folder_not_supported_copy"));
                 } else if (wzObject instanceof WzDirectory directory) {
                     if (directory.isWzFile()) {
-                        return;
+                        log.warn(MainFrame.i18n.get("warn.wz_not_supported_copy"));
                     } else {
-                        wzDirectoryPopupMenu.getCopyBtn().doClick();
+                        wzDirectoryPopupMenu.getBtnCopy().doClick();
                     }
                 } else if (wzObject instanceof WzImageFile) {
-                    wzImageFilePopupMenu.getCopyBtn().doClick();
+                    wzImageFilePopupMenu.getBtnCopy().doClick();
                 } else if (wzObject instanceof WzXmlFile) {
-                    wzXmlFilePopupMenu.getCopyBtn().doClick();
+                    wzXmlFilePopupMenu.getBtnCopy().doClick();
                 } else if (wzObject instanceof WzImage) {
-                    wzImagePopupMenu.getCopyBtn().doClick();
+                    wzImagePopupMenu.getBtnCopy().doClick();
                 } else if (wzObject instanceof WzImageProperty prop) {
                     if (prop.isListProperty()) {
-                        wzListPropertyPopupMenu.getCopyBtn().doClick();
+                        wzListPropertyPopupMenu.getBtnCopy().doClick();
                     } else {
-                        wzValuePropertyPopupMenu.getCopyBtn().doClick();
+                        wzValuePropertyPopupMenu.getBtnCopy().doClick();
                     }
                 }
             }
@@ -730,32 +766,27 @@ public final class EditPane extends JSplitPane {
                 TreePath[] selectedPaths = tree.getSelectionPaths();
                 if (selectedPaths == null) return;
 
-                // if (selectedPaths.length != 1) {
-                //     JMessageUtil.error("不要多选");
-                //     return;
-                // }
-
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
                 WzObject wzObject = (WzObject) node.getUserObject();
                 if (wzObject instanceof WzFolder) {
-                    return;
+                    log.warn(MainFrame.i18n.get("warn.folder_not_supported_paste"));
                 } else if (wzObject instanceof WzDirectory directory) {
                     if (directory.isWzFile()) {
-                        wzFilePopupMenu.getPasteBtn().doClick();
+                        wzFilePopupMenu.getBtnPaste().doClick();
                     } else {
-                        wzDirectoryPopupMenu.getPasteBtn().doClick();
+                        wzDirectoryPopupMenu.getBtnPaste().doClick();
                     }
                 } else if (wzObject instanceof WzImageFile) {
-                    wzImageFilePopupMenu.getPasteBtn().doClick();
+                    wzImageFilePopupMenu.getBtnPaste().doClick();
                 } else if (wzObject instanceof WzXmlFile) {
-                    wzXmlFilePopupMenu.getPasteBtn().doClick();
+                    wzXmlFilePopupMenu.getBtnPaste().doClick();
                 } else if (wzObject instanceof WzImage) {
-                    wzImagePopupMenu.getPasteBtn().doClick();
+                    wzImagePopupMenu.getBtnPaste().doClick();
                 } else if (wzObject instanceof WzImageProperty prop) {
                     if (prop.isListProperty()) {
-                        wzListPropertyPopupMenu.getPasteBtn().doClick();
+                        wzListPropertyPopupMenu.getBtnPaste().doClick();
                     } else {
-                        return;
+                        log.warn(MainFrame.i18n.get("warn.prop_is_not_list"));
                     }
                 }
             }
@@ -773,7 +804,7 @@ public final class EditPane extends JSplitPane {
                     if (option == null) break;
 
                     if (!option.nameMod() && !option.valueMod()) {
-                        JMessageUtil.warn("你要搜索名称还是值？");
+                        JMessageUtil.warn(MainFrame.i18n.get("warn.search_name_or_value"));
                         continue;
                     }
 
@@ -790,7 +821,7 @@ public final class EditPane extends JSplitPane {
                     }
 
                     if (selectedPaths == null || selectedPaths.length == 0) {
-                        JMessageUtil.error("请选择要搜索的目标，或者勾选‘搜全局’");
+                        JMessageUtil.error(MainFrame.i18n.get("warn.select_search_target_or_check_global"));
                         continue;
                     }
 
@@ -810,11 +841,20 @@ public final class EditPane extends JSplitPane {
                         );
                     }
 
-                    String title = "搜索结果 '" + option.search() + "'";
+                    String title = MainFrame.i18n.get("search.result") + option.search() + "'";
                     SearchResultDialog dialog = new SearchResultDialog(null, title, searchResults, editPane);
                     dialog.setVisible(true);
                     break;
                 }
+            }
+        });
+
+        // Ctrl+S 保存
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "save");
+        am.put("save", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                save();
             }
         });
 
@@ -1363,7 +1403,7 @@ public final class EditPane extends JSplitPane {
 
                         String name = file.getName().toLowerCase();
                         if (!(name.endsWith(".xml") || name.endsWith(".wz") || name.endsWith(".img"))) {
-                            JMessageUtil.error("包含了未知的文件！");
+                            JMessageUtil.error(MainFrame.i18n.get("test.temp0001"));
                             return false;
                         }
                     }
@@ -1392,7 +1432,7 @@ public final class EditPane extends JSplitPane {
                             } else if (filename.endsWith(".xml")) {
                                 xmlFiles.add(file);
                             } else {
-                                log.warn("非 img、xml 类型的文件不能拖入到 WzDirectory");
+                                log.warn(MainFrame.i18n.get("test.temp0002"));
                             }
                         }
 
@@ -1400,17 +1440,28 @@ public final class EditPane extends JSplitPane {
                         editPane.attachImg(parent, imgFiles);
                         editPane.attachXml(parent, xmlFiles);
                     } else {
-                        log.warn("不能拖入的节点");
+                        log.warn(MainFrame.i18n.get("test.temp0003"));
                     }
                 }
 
 
                 return true;
             } catch (Exception e) {
-                log.error("拖入文件异常 {}", e.getMessage());
+                log.error(MainFrame.i18n.get("test.temp0004", e.getMessage()));
             }
             return false;
         }
+    }
+
+    /**
+     * 根据 node 定位到文件层 node
+     */
+    public DefaultMutableTreeNode findFileNode(DefaultMutableTreeNode node) {
+        DefaultMutableTreeNode p = (DefaultMutableTreeNode) node.getParent();
+        WzObject wzObject = (WzObject) p.getUserObject();
+        if (wzObject instanceof WzSavableFile) {
+            return p;
+        } else return findFileNode(p);
     }
 
     // 编辑框 -----------------------------------------------------------------------------------------------------------
@@ -1522,7 +1573,7 @@ public final class EditPane extends JSplitPane {
     public void loadFiles(List<File> files) {
         WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
         if (key == null) {
-            MainFrame.getInstance().setStatusText("没有选择密钥?");
+            MainFrame.getInstance().setStatusTextWithWarnLog(MainFrame.i18n.get("warn.not_select_key"));
             return;
         }
 
@@ -1540,8 +1591,8 @@ public final class EditPane extends JSplitPane {
             newObject = new WzFolder(oldFolder.getFilePath(), key.getName(), key.getIv(), key.getUserKey());
         } else if (oldObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
             if (wzDir.getWzFile().isNewFile()) {
-                JMessageUtil.error("新建的文件无法使用重载功能，请先另存为。");
-                return null;
+                JMessageUtil.error(MainFrame.i18n.get("error.try_reload_new_file"));
+                return;
             }
             WzFile oldWzFile = wzDir.getWzFile();
             String filePath = oldWzFile.getFilePath();
@@ -1549,8 +1600,8 @@ public final class EditPane extends JSplitPane {
             newObject = newWzFile.getWzDirectory();
         } else if (oldObject instanceof WzImageFile oldImg) {
             if (oldImg.isNewFile()) {
-                JMessageUtil.error("新建的文件无法使用重载功能，请先另存为。");
-                return null;
+                JMessageUtil.error(MainFrame.i18n.get("error.try_reload_new_file"));
+                return;
             }
             Path filePath = Path.of(oldImg.getFilePath());
             String filename = filePath.getFileName().toString();
@@ -1573,13 +1624,14 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 使用菜单栏的密钥重新载入文件节点
-     *
-     * @param treePaths tree 选中的节点
      */
-    public void reloadFile(TreePath[] treePaths) {
+    public void reloadFile() {
+        TreePath[] treePaths = tree.getSelectionPaths();
+        if (treePaths == null) return;
+
         WzKey key = (WzKey) MainFrame.getInstance().getKeyBox().getSelectedItem();
         if (key == null) {
-            MainFrame.getInstance().setStatusText("没有选择密钥?");
+            MainFrame.getInstance().setStatusTextWithWarnLog(MainFrame.i18n.get("warn.not_select_key"));
             return;
         }
 
@@ -1635,41 +1687,42 @@ public final class EditPane extends JSplitPane {
         } else if (wzObject instanceof WzImage image) {
             success = image.sortAndReindexChildren();
         } else {
-            MainFrame.getInstance().setStatusText("该功能仅支持 image 或者 list 节点");
+            MainFrame.getInstance().setStatusTextWithWarnLog(MainFrame.i18n.get("warn.only_image_or_list"));
             return;
         }
 
         if (!success) {
-            MainFrame.getInstance().setStatusText("节点已经是从0开始的序数了，已经为你按顺序排列，但是名称没有发生变化。");
+            MainFrame.getInstance().setStatusTextWithWarnLog(MainFrame.i18n.get("warn.sort.nothing"));
             return;
         }
 
         DefaultMutableTreeNode pNode = (DefaultMutableTreeNode) node.getParent();
         int index = pNode.getIndex(node);
         removeNodeFromTree(node);
-        MainFrame.getInstance().setStatusText("有名称发生了变化");
         insertNodeToTree(pNode, wzObject, true, index);
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
     }
 
     // 保存 -------------------------------------------------------------------------------------------------------------
+    public void save() {
+        TreePath[] treePaths = tree.getSelectionPaths();
+        if (treePaths == null) return;
 
-    /**
-     * 保存节点文件
-     *
-     * @param treePaths 选中的节点
-     */
-    public void saveFiles(TreePath[] treePaths) {
-        MainFrame.getInstance().setStatusText("文件保存中");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.file_saving"));
         MainFrame.getInstance().updateProgress(0, 0);
         new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
                 for (TreePath treePath : treePaths) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-                    if (node.getUserObject() instanceof WzFolder) {
+                    WzObject wzObject = (WzObject) node.getUserObject();
+                    if (wzObject instanceof WzFolder) {
                         saveWzFolder(node);
-                    } else {
+                    } else if (wzObject instanceof WzSavableFile) {
                         saveFile(node);
+                    } else {
+                        DefaultMutableTreeNode fileNode = findFileNode(node);
+                        saveFile(fileNode);
                     }
                 }
 
@@ -1679,7 +1732,7 @@ public final class EditPane extends JSplitPane {
 
             @Override
             protected void done() {
-                MainFrame.getInstance().setStatusText("文件保存完毕");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.file_saved"));
             }
         }.execute();
     }
@@ -1692,7 +1745,8 @@ public final class EditPane extends JSplitPane {
     private void saveWzFolder(DefaultMutableTreeNode node) {
         for (int i = 0; i < node.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) node.getChildAt(i);
-            if (child.getUserObject() instanceof WzFolder) {
+            WzObject wzObject = (WzObject) child.getUserObject();
+            if (wzObject instanceof WzFolder) {
                 saveWzFolder(child);
             } else {
                 saveFile(child);
@@ -1710,14 +1764,14 @@ public final class EditPane extends JSplitPane {
 
         if (wzObject instanceof WzImageFile wzImageFile) {
             if (wzImageFile.isNewFile()) {
-                JMessageUtil.error("新建的文件请使用另存为指定要保存的路径");
+                JMessageUtil.error(MainFrame.i18n.get("error.try_save_new_file"));
                 return;
             }
         }
 
         if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
             if (wzDir.getWzFile().isNewFile()) {
-                JMessageUtil.error("新建的文件请使用另存为指定要保存的路径");
+                JMessageUtil.error(MainFrame.i18n.get("error.try_save_new_file"));
                 return;
             }
             wzObject = wzDir.getWzFile();
@@ -1729,7 +1783,7 @@ public final class EditPane extends JSplitPane {
             byte[] key = wz.getKey();
 
             if (wz.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                log.info("未加载文件 {} 不需要保存, 跳过...", wz.getName());
+                log.info(MainFrame.i18n.get("status.save_file_skip", wz.getName()));
                 return;
             }
 
@@ -1747,18 +1801,24 @@ public final class EditPane extends JSplitPane {
                     FileTool.deleteFile(oldPath);
                 }
             } else {
-                JMessageUtil.error("保存失败，请查看日志文件");
+                JMessageUtil.error(MainFrame.i18n.get("error.save_read_log"));
             }
             reloadFilePreservingState(node, new WzKey(-1, keyBoxName, iv, key));
+        } else {
+            JMessageUtil.error(MainFrame.i18n.get("error.try_save_error"));
         }
     }
 
     /**
      * 文件另存为
      *
-     * @param node 要保存的文件节点
      */
-    public void saveAs(DefaultMutableTreeNode node) {
+    public void saveAs() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
         WzObject wzObject = (WzObject) node.getUserObject();
         if (wzObject instanceof WzDirectory wzDir && wzDir.isWzFile()) {
             wzObject = wzDir.getWzFile();
@@ -1770,7 +1830,7 @@ public final class EditPane extends JSplitPane {
             byte[] key = wz.getKey();
 
             if (wz.getStatus() != WzFileStatus.PARSE_SUCCESS) {
-                log.info("未加载文件 {} 不需要另存为, 跳过...", wz.getName());
+                log.info(MainFrame.i18n.get("status.save_as_file_skip", wz.getName()));
                 return;
             }
 
@@ -1784,13 +1844,13 @@ public final class EditPane extends JSplitPane {
                 default -> null;
             };
 
-            File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), "保存 " + wz.getName(), newFile, filter);
+            File saveFile = FileDialog.chooseSaveFile(MainFrame.getInstance(), MainFrame.i18n.get("save") + " " + wz.getName(), newFile, filter);
             if (saveFile == null) {
                 return;
             }
             wz.setFilePath(saveFile.getAbsolutePath());
             if (!wz.save()) {
-                JMessageUtil.error("保存失败，请查看日志文件");
+                JMessageUtil.error(MainFrame.i18n.get("error.save_read_log"));
             }
             reloadFilePreservingState(node, new WzKey(-1, keyBoxName, iv, key));
         }
@@ -1822,7 +1882,7 @@ public final class EditPane extends JSplitPane {
             WzFile wzFile = wzDir.getWzFile();
 
             if (!wzFile.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzFile.getName(), wzFile.getStatus().getMessage());
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             wzFile.exportFileToImg(folder, collector);
@@ -1840,13 +1900,14 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 导出 img
-     *
-     * @param selectedPaths 要处理的节点
      */
-    public void exportImg(TreePath[] selectedPaths) {
-        File folder = FileDialog.chooseOpenFolder("请选择输出目录");
+    public void exportImg() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        File folder = FileDialog.chooseOpenFolder(MainFrame.i18n.get("test.temp0005"));
         if (folder == null) {
-            log.info("用户取消了操作");
+            log.info(MainFrame.i18n.get("test.temp0006"));
             return;
         }
 
@@ -1854,7 +1915,7 @@ public final class EditPane extends JSplitPane {
         new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
-                MainFrame.getInstance().setStatusText("开始收集并解析要导出的文件");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0007"));
                 int total = selectedPaths.length;
                 int finish = 0;
                 List<Pair<WzImage, Path>> collector = new ArrayList<>();
@@ -1866,7 +1927,7 @@ public final class EditPane extends JSplitPane {
 
                 total = collector.size();
                 finish = 0;
-                MainFrame.getInstance().setStatusText("开始导出文件");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0008"));
                 for (Pair<WzImage, Path> pair : collector) {
                     WzImage wzImage = pair.getLeft();
                     Path path = pair.getRight();
@@ -1881,7 +1942,7 @@ public final class EditPane extends JSplitPane {
                 try {
                     get();
                     Instant end = Instant.now();
-                    MainFrame.getInstance().setStatusText("导出完成，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0009", Duration.between(now, end).toSeconds()));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -1914,7 +1975,7 @@ public final class EditPane extends JSplitPane {
             WzFile wzFile = wzDir.getWzFile();
 
             if (!wzFile.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzFile.getName(), wzFile.getStatus().getMessage());
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
                 throw new RuntimeException();
             }
 
@@ -1931,10 +1992,11 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 导出 XML
-     *
-     * @param selectedPaths 要处理的节点
      */
-    public void exportXml(TreePath[] selectedPaths) {
+    public void exportXml() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
         ExportXmlDialog dialog = new ExportXmlDialog(this);
         ExportXmlData data = dialog.getData();
         if (data == null) return;
@@ -1948,7 +2010,7 @@ public final class EditPane extends JSplitPane {
                 int finish = 0;
                 List<Pair<WzImage, Path>> collector = new ArrayList<>();
                 for (TreePath treePath : selectedPaths) {
-                    MainFrame.getInstance().setStatusText("开始收集并解析要导出的文件");
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0010"));
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
                     collectExportXml(node, Path.of(data.getExportPath()), collector);
                     MainFrame.getInstance().updateProgress(++finish, total);
@@ -1956,14 +2018,14 @@ public final class EditPane extends JSplitPane {
 
                 total = collector.size();
                 finish = 0;
-                MainFrame.getInstance().setStatusText("开始导出文件");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0008"));
                 for (Pair<WzImage, Path> pair : collector) {
                     WzImage wzImage = pair.getLeft();
                     Path path = pair.getRight();
                     if (wzImage.exportToXml(path, data.getIndent(), data.getMeType(), data.isLinux())) {
                         MainFrame.getInstance().updateProgress(++finish, total);
                     } else {
-                        MainFrame.getInstance().setStatusText("%s 导出失败，请查看日志文件", wzImage.getName());
+                        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0012", wzImage.getName()));
                     }
                 }
                 return null;
@@ -1974,7 +2036,7 @@ public final class EditPane extends JSplitPane {
                 try {
                     get();
                     Instant end = Instant.now();
-                    MainFrame.getInstance().setStatusText("导出完成，耗时 %d 秒", Duration.between(now, end).toSeconds());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0013", Duration.between(now, end).toSeconds()));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2012,10 +2074,11 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 修改密钥
-     *
-     * @param selectedPaths 要处理的节点
      */
-    public void changeKey(TreePath[] selectedPaths) {
+    public void changeKey() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
         List<WzObject> collector = new ArrayList<>();
         boolean hasWzFile = false;
         for (TreePath treePath : selectedPaths) {
@@ -2028,7 +2091,7 @@ public final class EditPane extends JSplitPane {
         if (keyData == null) return;
 
         Instant now = Instant.now();
-        MainFrame.getInstance().setStatusText("密钥修改中...");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0016"));
         int total = collector.size();
         new SwingWorker<>() {
             @Override
@@ -2053,7 +2116,7 @@ public final class EditPane extends JSplitPane {
                 try {
                     get();
                     Instant end = Instant.now();
-                    MainFrame.getInstance().setStatusText("密钥修改完成，耗时 %d 秒，请自行保存文件以应用新的密钥。", Duration.between(now, end).toSeconds());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0017", Duration.between(now, end).toSeconds()));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2065,10 +2128,12 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 导入 Img
-     *
-     * @param node 导入到该节点
      */
-    public void importImg(DefaultMutableTreeNode node) {
+    public void importImg() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
         List<File> imgFiles = FileDialog.chooseOpenFiles(new String[]{"img"});
         attachImg(node, imgFiles);
     }
@@ -2113,7 +2178,7 @@ public final class EditPane extends JSplitPane {
                     String filePathStr = imgFile.getAbsolutePath();
                     WzImageFile wzImageFile = new WzImageFile(imgName, filePathStr, keyBoxName, iv, key);
                     if (!wzImageFile.parse()) {
-                        MainFrame.getInstance().setStatusText("无法解析 Img, 停止导入。请确认 Img 的密钥和导入对象的密钥是否一致: %s", filePathStr);
+                        MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("test.temp0018", filePathStr));
                         return null;
                     }
                     WzImage wzImage = wzImageFile.deepClone(targetDirectory);
@@ -2132,7 +2197,7 @@ public final class EditPane extends JSplitPane {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0019", count[0]));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2142,10 +2207,12 @@ public final class EditPane extends JSplitPane {
 
     /**
      * 导入 XML
-     *
-     * @param node 导入到该节点
      */
-    public void importXml(DefaultMutableTreeNode node) {
+    public void importXml() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
         List<File> xmlFiles = FileDialog.chooseOpenFiles(new String[]{"xml"});
         attachXml(node, xmlFiles);
     }
@@ -2193,7 +2260,7 @@ public final class EditPane extends JSplitPane {
                     String filePathStr = xmlFile.getAbsolutePath();
                     WzXmlFile wzXmlFile = new WzXmlFile(imgName, filePathStr, keyBoxName, iv, key);
                     if (!wzXmlFile.parse()) {
-                        MainFrame.getInstance().setStatusText("无法解析 Xml, 停止导入。请查看相关日志: %s", filePathStr);
+                        MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("test.temp0020", filePathStr));
                         return null;
                     }
                     WzImage wzImage = wzXmlFile.deepClone(targetDirectory);
@@ -2212,7 +2279,7 @@ public final class EditPane extends JSplitPane {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0019", count[0]));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2248,7 +2315,7 @@ public final class EditPane extends JSplitPane {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("共导入 %d 个文件", count[0]);
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0019", count[0]));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -2313,14 +2380,14 @@ public final class EditPane extends JSplitPane {
                             if (isXml) {
                                 WzXmlFile wzXmlFile = new WzXmlFile(filename, filePathStr, keyBoxName, iv, key);
                                 if (!wzXmlFile.parse()) {
-                                    MainFrame.getInstance().setStatusText("无法解析 Xml, 停止导入。请查看相关日志: %s", filePathStr);
+                                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("test.temp0020", filePathStr));
                                     return null;
                                 }
                                 wzImage = wzXmlFile.deepClone(curDir);
                             } else {
                                 WzImageFile wzImageFile = new WzImageFile(filename, filePathStr, keyBoxName, iv, key);
                                 if (!wzImageFile.parse()) {
-                                    MainFrame.getInstance().setStatusText("无法解析 Img, 停止导入。请确认 Img 的密钥和导入对象的密钥是否一致: %s", filePathStr);
+                                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("test.temp0018", filePathStr));
                                     return null;
                                 }
                                 wzImage = wzImageFile.deepClone(curDir);
@@ -2349,12 +2416,66 @@ public final class EditPane extends JSplitPane {
             protected void done() {
                 try {
                     get();
-                    MainFrame.getInstance().setStatusText("共导入 %d 个文件夹", count[0]);
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0019", count[0]));
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
             }
         }.execute();
+    }
+
+    // 删除 -------------------------------------------------------------------------------------------------------------
+    public void delete() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject wzObject = (WzObject) node.getUserObject();
+            WzObject pWzObject = wzObject.getParent();
+
+            switch (pWzObject) {
+                case WzDirectory directory -> {
+                    boolean success = false;
+                    if (wzObject instanceof WzImage wzImg) {
+                        success = directory.removeImageChild(wzImg.getName());
+                    } else if (wzObject instanceof WzDirectory wzDir) {
+                        success = directory.removeDirectoryChild(wzDir.getName());
+                    }
+
+                    if (!success) {
+                        log.warn(MainFrame.i18n.get("test.temp0021", pWzObject.getName(), directory.getName()));
+                        continue;
+                    }
+                    removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
+                }
+                case WzImage image when image.removeChild(wzObject.getName()) ->
+                        removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
+                case WzImageProperty property when property.removeChild(wzObject.getName()) ->
+                        removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
+                default -> log.error(MainFrame.i18n.get("test.temp0022", pWzObject.getClass().getSimpleName()));
+            }
+        }
+        resetValueForm();
+    }
+
+    // 转移到右侧视图 -----------------------------------------------------------------------------------------------------
+    public void move() {
+        if (!MainFrame.getInstance().getCenterPane().isRightShowing()) {
+            MainFrame.getInstance().getCenterPane().showRightEditPane(true);
+        }
+
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        EditPane targetPane = MainFrame.getInstance().getCenterPane().getAnotherPane(this);
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject wzObject = (WzObject) node.getUserObject();
+            targetPane.insertNodeToTree(targetPane.getTreeRoot(), wzObject, true);
+            removeNodeFromTree((DefaultMutableTreeNode) treePath.getLastPathComponent());
+        }
+        resetValueForm();
     }
 
     // 剪贴板操作 --------------------------------------------------------------------------------------------------------
@@ -2390,7 +2511,7 @@ public final class EditPane extends JSplitPane {
                 setPasteWzImage(img.getChildren(), img);
             } else {
                 MainFrame.getInstance().getClipboard().unlock();
-                throw new RuntimeException("无法给类型 " + item.getClass().getSimpleName() + " 设置 WzFile");
+                throw new RuntimeException(MainFrame.i18n.get("test.temp0023", item.getClass().getSimpleName()));
             }
         }
     }
@@ -2402,7 +2523,7 @@ public final class EditPane extends JSplitPane {
                 prop.setChildrenWzImage(image);
             } else {
                 MainFrame.getInstance().getClipboard().unlock();
-                throw new RuntimeException("无法给类型 " + item.getClass().getSimpleName() + " 设置 WzImage");
+                throw new RuntimeException(MainFrame.i18n.get("test.temp0024", item.getClass().getSimpleName()));
             }
         }
     }
@@ -2423,7 +2544,7 @@ public final class EditPane extends JSplitPane {
             }
             default -> {
                 MainFrame.getInstance().getClipboard().unlock();
-                throw new RuntimeException("isExistChild 未支持的类型" + parent.getClass().getSimpleName());
+                throw new RuntimeException(MainFrame.i18n.get("test.temp0025", parent.getClass().getSimpleName()));
             }
         }
     }
@@ -2436,7 +2557,7 @@ public final class EditPane extends JSplitPane {
             case WzImageProperty property when property.isListProperty() -> property.removeChild(child.getName());
             default -> {
                 MainFrame.getInstance().getClipboard().unlock();
-                throw new RuntimeException("removeWzObjChild 未支持的类型" + parent.getClass().getSimpleName());
+                throw new RuntimeException(MainFrame.i18n.get("test.temp0026", parent.getClass().getSimpleName()));
             }
         }
     }
@@ -2450,7 +2571,7 @@ public final class EditPane extends JSplitPane {
                     pProp.addChild(cProp);
             default -> {
                 MainFrame.getInstance().getClipboard().unlock();
-                throw new RuntimeException("addWzObjChild 未支持的组合 " + parent.getClass().getSimpleName() + " 和 " + child.getClass().getSimpleName());
+                throw new RuntimeException(MainFrame.i18n.get("test.temp0027", parent.getClass().getSimpleName(), child.getClass().getSimpleName()));
             }
         }
     }
@@ -2467,7 +2588,7 @@ public final class EditPane extends JSplitPane {
             WzObject to = (WzObject) node.getUserObject();
 
             if (clipboard.isEmpty()) {
-                JMessageUtil.error("剪贴板是空的");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0028"));
                 clipboard.unlock();
                 return;
             }
@@ -2523,7 +2644,7 @@ public final class EditPane extends JSplitPane {
                     }
                 }
             } else {
-                JMessageUtil.error("复制的东西不能粘贴到 " + to.getClass().getSimpleName());
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0029", to.getClass().getSimpleName()));
                 clipboard.unlock();
                 return;
             }
@@ -2570,7 +2691,100 @@ public final class EditPane extends JSplitPane {
         insertNodeToTree(treeRoot, wzImageFile, true);
     }
 
-    // 汉化 -------------------------------------------------------------------------------------------------------------
+    // String汉化 -------------------------------------------------------------------------------------------------------
+    public void localizeString() {
+        Instant start = Instant.now();
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject to = getLocalizeTo(node);
+            WzObject from = getLocalizeFrom(to);
+            ChineseUtil.chinese(from, to);
+        }
+
+        Instant end = Instant.now();
+        Duration duration = Duration.between(start, end);
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.localize_finish", duration.toMillis()));
+    }
+
+    private WzObject getLocalizeTo(DefaultMutableTreeNode node) {
+        WzObject wzObject = (WzObject) node.getUserObject();
+        switch (wzObject) {
+            case WzDirectory wzDirectory when wzDirectory.isWzFile() -> {
+                WzFile wzFile = wzDirectory.getWzFile();
+                if (wzFile.getName().equalsIgnoreCase("List.wz")) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.list_file"));
+                    throw new RuntimeException();
+                }
+                if (!wzFile.parse()) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
+                    throw new RuntimeException();
+                }
+                return wzFile;
+            }
+            case WzImage wzImage -> {
+                if (!wzImage.parse()) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                    throw new RuntimeException();
+                }
+                return wzImage;
+            }
+            case WzImageProperty prop -> {
+                return prop;
+            }
+            default -> {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    private WzObject getLocalizeFrom(WzObject to) {
+        switch (to) {
+            case WzFile wzFile -> {
+                DefaultMutableTreeNode rightTreeRoot = MainFrame.getInstance().getCenterPane().getAnotherPane(this).getTreeRoot();
+                DefaultMutableTreeNode rightNode = MainFrame.getInstance().getCenterPane().getAnotherPane(this).findTreeNodeByName(rightTreeRoot, wzFile.getName());
+                if (rightNode == null) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.localize_find", wzFile.getName()));
+                    throw new RuntimeException();
+                }
+                WzFile from = ((WzDirectory) rightNode.getUserObject()).getWzFile();
+                if (!from.parse()) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.localize_parse", from.getName(), from.getStatus().getMessage()));
+                    throw new RuntimeException();
+                }
+                return from;
+            }
+            case WzImage wzImage -> {
+                WzImage from = (WzImage) MainFrame.getInstance().getCenterPane().getAnotherPane(this).findWzObjectInTreeByPath(wzImage.getPath());
+                if (from == null) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.localize_find", wzImage.getName()));
+                    throw new RuntimeException();
+                }
+                if (!from.parse()) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.localize_parse", from.getName(), from.getStatus().getMessage()));
+                    throw new RuntimeException();
+                }
+                return from;
+            }
+            case WzImageProperty prop -> {
+                WzImageProperty from = (WzImageProperty) MainFrame.getInstance().getCenterPane().getAnotherPane(this).findWzObjectInTreeByPath(prop.getPath());
+                if (from == null) {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.localize_find", prop.getName()));
+                    throw new RuntimeException();
+                }
+                return from;
+            }
+            default -> {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", to.getClass().getSimpleName()));
+                throw new RuntimeException();
+            }
+        }
+    }
+
+    // 图片汉化 ----------------------------------------------------------------------------------------------------------
     public void compareImg() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
@@ -2586,7 +2800,7 @@ public final class EditPane extends JSplitPane {
 
                         WzObject from = MainFrame.getInstance().getCenterPane().getAnotherPane(EditPane.this).findWzObjectInTreeByPath(to.getPath());
                         if (from == null) {
-                            log.error("找不到中文版本的 {}", to.getName());
+                            log.error(MainFrame.i18n.get("test.temp0030", to.getName()));
                             continue;
                         }
 
@@ -2623,7 +2837,7 @@ public final class EditPane extends JSplitPane {
                     properties.add(prop);
                 }
                 CanvasUtil.changeFormat(properties, format);
-                MainFrame.getInstance().setStatusText("修改完成");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
                 return null;
             }
         }.execute();
@@ -2647,14 +2861,14 @@ public final class EditPane extends JSplitPane {
             WzObject root = (WzObject) node.getUserObject();
             WzNodeUtil.changeNodeName(root, oldName, newName, degree);
         }
-        MainFrame.getInstance().setStatusText("修改完成");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
     }
 
     public void changeIntNodeValue() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
 
-        IntDialog dialog = new IntDialog("修改Int节点值", this);
+        IntDialog dialog = new IntDialog(MainFrame.i18n.get("test.temp0031"), this);
         IntFormData data = dialog.getData();
         if (data == null) return;
         String nodeName = data.getName();
@@ -2665,7 +2879,7 @@ public final class EditPane extends JSplitPane {
             WzObject root = (WzObject) node.getUserObject();
             WzNodeUtil.changeIntNodeValue(root, nodeName, value);
         }
-        MainFrame.getInstance().setStatusText("修改完成");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
     }
 
     public void rawToIcon() {
@@ -2677,14 +2891,14 @@ public final class EditPane extends JSplitPane {
             WzObject root = (WzObject) node.getUserObject();
             WzNodeUtil.rawToIcon(root);
         }
-        MainFrame.getInstance().setStatusText("修改完成");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
     }
 
     public void changeOriginValue() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
 
-        VectorDialog dialog = new VectorDialog("origin (图片节点的名称，留空匹配所有图片)", this);
+        VectorDialog dialog = new VectorDialog(MainFrame.i18n.get("test.temp0032"), this);
         VectorFormData data = dialog.getData();
         if (data == null) return;
         String nodeName = data.getName();
@@ -2696,9 +2910,48 @@ public final class EditPane extends JSplitPane {
             WzObject root = (WzObject) node.getUserObject();
             WzNodeUtil.changeOriginValue(root, nodeName, x, y);
         }
-        MainFrame.getInstance().setStatusText("修改完成");
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
     }
 
+    // 图片嗅探 ----------------------------------------------------------------------------------------------------------
+    public void imageFinder() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+        WzObject wzObject = (WzObject) node.getUserObject();
+        List<? extends WzObject> children;
+        List<CanvasUtilData> data = new ArrayList<>();
+
+        switch (wzObject) {
+            case WzDirectory wzDir -> {
+                if (wzDir.getWzFile().parse()) {
+                    children = wzDir.getChildren();
+                } else {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzDir.getName(), wzDir.getWzFile().getStatus().getMessage()));
+                    return;
+                }
+            }
+            case WzImage wzImage -> {
+                if (wzImage.parse()) {
+                    children = wzImage.getChildren();
+                } else {
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                    return;
+                }
+            }
+            case WzImageProperty prop when prop.isListProperty() -> children = prop.getChildren();
+            default -> {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+                return;
+            }
+        }
+
+        CanvasUtil.search(data, children);
+
+        CanvasWall canvasWall = new CanvasWall(data, wzObject.getPath(), node, this);
+        canvasWall.setVisible(true);
+    }
 
     // 批量缩放图片 ------------------------------------------------------------------------------------------------------
     public void scaleImage() {
@@ -2728,17 +2981,18 @@ public final class EditPane extends JSplitPane {
                     }
                 }
                 CanvasUtil.scaleImage(properties, name, scale);
-                MainFrame.getInstance().setStatusText("修改完成");
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.done"));
                 return null;
             }
         }.execute();
     }
 
+    // 批量删除节点 ------------------------------------------------------------------------------------------------------
     public void removeAllWzChildWithName() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
 
-        NodeDialog dialog = new NodeDialog("批量删除节点", "节点名称", this);
+        NodeDialog dialog = new NodeDialog(MainFrame.i18n.get("test.temp0034"), MainFrame.i18n.get("test.temp0033"), this);
         NodeFormData data = dialog.getData();
         if (data == null) return;
 
@@ -2750,7 +3004,7 @@ public final class EditPane extends JSplitPane {
             int current = 0;
             if (wzObj instanceof WzImage image) {
                 if (!image.parse()) {
-                    MainFrame.getInstance().setStatusText("由于 %s 解析失败，操作中断，已经删除了 %d 个节点", image.getName(), count);
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0035", image.getName(), count));
                     return;
                 }
                 current = image.removeAllChildWithName(name);
@@ -2767,9 +3021,10 @@ public final class EditPane extends JSplitPane {
             }
         }
 
-        MainFrame.getInstance().setStatusText("总共删除了 %d 个节点", count);
+        MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0036", count));
     }
 
+    // 批量删除非现金装备 --------------------------------------------------------------------------------------------------
     public void removeNonCashEqp() {
         TreePath[] selectedPaths = tree.getSelectionPaths();
         if (selectedPaths == null) return;
@@ -2795,12 +3050,11 @@ public final class EditPane extends JSplitPane {
                     switch (cash) {
                         case WzIntProperty c -> cashValue = c.getValue();
                         case WzStringProperty c -> cashValue = Integer.parseInt(c.getValue());
-                        case null -> log.warn("{} 找不到 cash 节点视作非现金装备已被移除", info.getPath());
-                        default ->
-                                log.warn("{} cash 节点不是 Int 也不是 String 视作非现金装备已被移除", info.getPath());
+                        case null -> log.warn(MainFrame.i18n.get("test.temp0037", info.getPath()));
+                        default -> log.warn(MainFrame.i18n.get("test.temp0038", info.getPath()));
                     }
                 } else {
-                    log.warn("{} 找不到 info 节点视作非现金装备已被移除", image.getPath());
+                    log.warn(MainFrame.i18n.get("test.temp0039", image.getPath()));
                     notfoundCount++;
                 }
 
@@ -2818,6 +3072,760 @@ public final class EditPane extends JSplitPane {
             handleTreeDoubleClick(node);
         }
 
-        log.info("处理完毕: 共 {} 个装备, 现金装备 {} , 非现金装备 {}, 找不到 info 节点 {} 个", size, cashCount, delCount, notfoundCount);
+        log.info(MainFrame.i18n.get("test.temp0040", size, cashCount, delCount, notfoundCount));
+    }
+
+    // Outlink ---------------------------------------------------------------------------------------------------------
+    public void outlink() {
+        Instant now = Instant.now();
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (selectedPaths == null) return;
+
+        List<WzObject> objects = new ArrayList<>();
+        for (TreePath treePath : selectedPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+            WzObject wzObject = (WzObject) node.getUserObject();
+            objects.add(wzObject);
+        }
+
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                Outlink.replace(objects);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    Instant end = Instant.now();
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("test.temp0041", Duration.between(now, end).toSeconds()));
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    // 创建子节点 --------------------------------------------------------------------------------------------------------
+    public void addWzDirectory() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        NodeDialog nodeDialog = new NodeDialog(MainFrame.i18n.get("test.temp0043"), this);
+        NodeFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzDirectory wzDirectory = (WzDirectory) node.getUserObject();
+        WzFile wzFile = wzDirectory.getWzFile();
+        if (!wzFile.parse()) {
+            MainFrame.getInstance().setStatusText(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
+            throw new RuntimeException();
+        }
+
+        WzDirectory newDir = new WzDirectory(name, wzDirectory, wzFile);
+        if (!wzDirectory.addChild(newDir)) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+            return;
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        newDir.setTempChanged(true);
+        insertNodeToTree(node, newDir, true, 0);
+    }
+
+    public void addWzImage() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        NodeDialog nodeDialog = new NodeDialog(MainFrame.i18n.get("test.temp0044"), this);
+        NodeFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        if (!name.endsWith(".img")) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0042"));
+            return;
+        }
+
+        WzDirectory wzDirectory = (WzDirectory) node.getUserObject();
+        WzFile wzFile = wzDirectory.getWzFile();
+        if (!wzFile.parse()) {
+            MainFrame.getInstance().setStatusText(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
+            throw new RuntimeException();
+        }
+
+        WzImage newImg = new WzImage(name, wzDirectory, wzFile.getReader());
+        if (!wzDirectory.addChild(newImg)) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+            return;
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        newImg.setTempChanged(true);
+        insertNodeToTree(node, newImg, true, 0);
+    }
+
+    public void addCanvas() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        CanvasDialog nodeDialog = new CanvasDialog(MainFrame.i18n.get("test.temp0045"), this);
+        CanvasFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzCanvasProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzCanvasProperty(name, wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzCanvasProperty(name, wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        subProp.initPngProperty(name, subProp, imageRoot);
+        subProp.setPng(data.getValue(), data.getFormat(), data.getScale());
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addConvex() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        NodeDialog nodeDialog = new NodeDialog(MainFrame.i18n.get("test.temp0046"), this);
+        NodeFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzConvexProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzConvexProperty(name, wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzConvexProperty(name, wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addDouble() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        DoubleDialog nodeDialog = new DoubleDialog(MainFrame.i18n.get("test.temp0047"), this);
+        DoubleFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzDoubleProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzDoubleProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzDoubleProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addFloat() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        FloatDialog nodeDialog = new FloatDialog(MainFrame.i18n.get("test.temp0048"), this);
+        FloatFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzFloatProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzFloatProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzFloatProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addInt() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        IntDialog nodeDialog = new IntDialog(MainFrame.i18n.get("test.temp0049"), this);
+        IntFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzIntProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzIntProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzIntProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addList() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        NodeDialog nodeDialog = new NodeDialog(MainFrame.i18n.get("test.temp0050"), this);
+        NodeFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzListProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzListProperty(name, wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzListProperty(name, wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addLong() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        LongDialog nodeDialog = new LongDialog(MainFrame.i18n.get("test.temp0051"), this);
+        LongFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzLongProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzLongProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzLongProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addNull() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        NodeDialog nodeDialog = new NodeDialog(MainFrame.i18n.get("test.temp0052"), this);
+        NodeFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzNullProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzNullProperty(name, wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzNullProperty(name, wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addShort() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        ShortDialog nodeDialog = new ShortDialog(MainFrame.i18n.get("test.temp0053"), this);
+        ShortFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzShortProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzShortProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzShortProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addSound() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        SoundDialog nodeDialog = new SoundDialog(MainFrame.i18n.get("test.temp0054"), this);
+        SoundFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzSoundProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzSoundProperty(name, wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzSoundProperty(name, wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        subProp.setSound(data.getSoundBytes());
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addString() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        StringDialog nodeDialog = new StringDialog(MainFrame.i18n.get("test.temp0055"), this);
+        StringFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzStringProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzStringProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzStringProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addUOL() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        StringDialog nodeDialog = new StringDialog(MainFrame.i18n.get("test.temp0056"), this);
+        StringFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzUOLProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzUOLProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzUOLProperty(name, data.getValue(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
+    }
+
+    public void addVector() {
+        TreePath[] selectedPaths = tree.getSelectionPaths();
+        if (TreePathUtil.isNullOrMultiple(selectedPaths)) return;
+
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectedPaths[0].getLastPathComponent();
+
+        VectorDialog nodeDialog = new VectorDialog(MainFrame.i18n.get("test.temp0057"), this);
+        VectorFormData data = nodeDialog.getData();
+
+        if (data == null) return;
+
+        String name = data.getName();
+
+        if (name.isEmpty()) {
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0014"));
+            return;
+        }
+
+        WzObject wzObject = (WzObject) node.getUserObject();
+        WzImage imageRoot;
+        WzVectorProperty subProp;
+        if (wzObject instanceof WzImage wzImage) {
+            if (!wzImage.parse()) {
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImage.getName(), wzImage.getStatus().getMessage()));
+                throw new RuntimeException();
+            }
+            imageRoot = wzImage;
+            subProp = new WzVectorProperty(name, data.getX(), data.getY(), wzObject, imageRoot);
+            if (!wzImage.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else if (wzObject instanceof WzImageProperty prop) {
+            imageRoot = prop.getWzImage();
+            subProp = new WzVectorProperty(name, data.getX(), data.getY(), wzObject, imageRoot);
+            if (!prop.addChild(subProp)) {
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0015"));
+                return;
+            }
+        } else {
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.not_supported_type", wzObject.getClass().getSimpleName()));
+            throw new RuntimeException();
+        }
+
+        if (node.isLeaf()) return; // isLeaf 说明未加载数据，就不要插入了
+        subProp.setTempChanged(true);
+        insertNodeToTree(node, subProp, true, 0);
     }
 }

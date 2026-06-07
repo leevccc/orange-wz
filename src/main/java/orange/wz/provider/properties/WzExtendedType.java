@@ -1,7 +1,10 @@
 package orange.wz.provider.properties;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Map;
 
+@Slf4j
 public enum WzExtendedType {
     LIST("Property"),
     CANVAS("Canvas"),
@@ -32,6 +35,7 @@ public enum WzExtendedType {
 
     public static WzExtendedType getByString(String name) {
         if (!types.containsKey(name)) {
+            log.error("Unknown WzPropertyType : {}", name);
             throw new IllegalArgumentException("Unknown WzPropertyType : " + name);
         }
         return types.get(name);

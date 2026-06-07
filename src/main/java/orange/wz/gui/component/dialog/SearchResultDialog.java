@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.SearchResult;
 import orange.wz.gui.component.panel.EditPane;
 
@@ -31,10 +32,10 @@ public final class SearchResultDialog extends JDialog {
 
         // 搜索框
         JTextField searchField = new JTextField();
-        searchField.setToolTipText("过滤");
+        searchField.setToolTipText(MainFrame.i18n.get("test.temp0132"));
         add(searchField, BorderLayout.NORTH);
 
-        String[] columns = {"节点", "String值", "路径"};
+        String[] columns = {MainFrame.i18n.get("test.temp0133"), MainFrame.i18n.get("test.temp0134"), MainFrame.i18n.get("test.temp0135")};
         Object[][] data = new Object[items.size()][3];
         for (int i = 0; i < items.size(); i++) {
             SearchResult r = items.get(i);
@@ -79,7 +80,7 @@ public final class SearchResultDialog extends JDialog {
                 if (!filterText.isEmpty()) {
                     String regex = "(?i)" + Pattern.quote(filterText);
                     displayText = displayText.replaceAll(regex, "<span style='background:yellow;color:" +
-                                    (isSelected ? "black" : "red") + "'>$0</span>");
+                            (isSelected ? "black" : "red") + "'>$0</span>");
                     setText("<html>" + displayText + "</html>");
                 } else {
                     setText(displayText);

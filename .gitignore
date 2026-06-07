@@ -42,3 +42,4 @@ build/
 /src/main/resources/static/
 /keys.dat
 /logs/
+config.ini

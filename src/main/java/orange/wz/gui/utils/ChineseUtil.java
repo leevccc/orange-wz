@@ -18,11 +18,11 @@ public final class ChineseUtil {
 
         if (to instanceof WzFile toFile && from instanceof WzFile fromFile) {
             if (!toFile.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toFile.getName(), toFile.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", toFile.getName(), toFile.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             if (!fromFile.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromFile.getName(), fromFile.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", fromFile.getName(), fromFile.getStatus().getMessage()));
                 throw new RuntimeException();
             }
 
@@ -33,11 +33,11 @@ public final class ChineseUtil {
             toDirectory.getImages().forEach(toImage -> chinese(fromDirectory.getImage(toImage.getName()), toImage));
         } else if (to instanceof WzImage toImage && from instanceof WzImage fromImage) {
             if (!toImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toImage.getName(), toImage.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", toImage.getName(), toImage.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             if (!fromImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromImage.getName(), fromImage.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", fromImage.getName(), fromImage.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             toImage.getChildren().forEach(img -> chinese(fromImage.getChild(img.getName()), img));
@@ -73,11 +73,11 @@ public final class ChineseUtil {
 
         if (to instanceof WzDirectory toDirectory && from instanceof WzDirectory fromDirectory) {
             if (toDirectory.isWzFile() && !toDirectory.getWzFile().parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toDirectory.getWzFile().getName(), toDirectory.getWzFile().getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", toDirectory.getWzFile().getName(), toDirectory.getWzFile().getStatus().getMessage()));
                 throw new RuntimeException();
             }
             if (fromDirectory.isWzFile() && !fromDirectory.getWzFile().parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromDirectory.getWzFile().getName(), fromDirectory.getWzFile().getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", fromDirectory.getWzFile().getName(), fromDirectory.getWzFile().getStatus().getMessage()));
                 throw new RuntimeException();
             }
 
@@ -85,11 +85,11 @@ public final class ChineseUtil {
             toDirectory.getImages().forEach(toImage -> chineseImg(fromDirectory.getImage(toImage.getName()), toImage));
         } else if (to instanceof WzImage toImage && from instanceof WzImage fromImage) {
             if (!toImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", toImage.getName(), toImage.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", toImage.getName(), toImage.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             if (!fromImage.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", fromImage.getName(), fromImage.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", fromImage.getName(), fromImage.getStatus().getMessage()));
                 throw new RuntimeException();
             }
             toImage.getChildren().forEach(img -> chineseImg(fromImage.getChild(img.getName()), img));
@@ -110,10 +110,10 @@ public final class ChineseUtil {
                 // 来源方没有图片
                 fromCav.clearImage();
                 toCav.clearImage();
-                log.info("{} 来源图片为 1x1 空白图片，已跳过", fromCav.getPath());
+                log.info(MainFrame.i18n.get("test.temp0077", fromCav.getPath()));
             } else {
                 imageCompareDialog.addCompare(toCav, fromCav);
-                log.debug("{} 差异率 {}", to.getPath(), diff);
+                log.debug(MainFrame.i18n.get("test.temp0078", to.getPath(), diff));
             }
         }
     }

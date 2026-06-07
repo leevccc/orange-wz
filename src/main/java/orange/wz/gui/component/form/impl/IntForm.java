@@ -1,5 +1,6 @@
 package orange.wz.gui.component.form.impl;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.IntFormData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.filter.IntegerFilter;
@@ -14,7 +15,7 @@ public class IntForm extends AbstractValueForm {
     public IntForm() {
         super();
         ((AbstractDocument) valueInput.getDocument()).setDocumentFilter(new IntegerFilter());
-        addRow("值:", valueInput);
+        addRow(MainFrame.i18n.get("form.value"), valueInput);
     }
 
     public void setData(String name, String type, int value, WzObject wzObject, EditPane editPane) {

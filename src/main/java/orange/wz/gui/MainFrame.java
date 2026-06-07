@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.I18nUtil;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.dialog.LogDialog;
 import orange.wz.gui.component.form.impl.CanvasForm;
@@ -44,6 +45,7 @@ import static orange.wz.gui.Icons.*;
 public class MainFrame extends JFrame {
     private static MainFrame instance;
     private static final Preferences prefs = Preferences.userNodeForPackage(MainFrame.class);
+    public static I18nUtil i18n = ServerManager.getBean(I18nUtil.class);
 
     private final WzKeyStorage wzKeyStorage = new WzKeyStorage();
 
@@ -104,28 +106,28 @@ public class MainFrame extends JFrame {
         JMenuBar menuBar = new JMenuBar();
 
         // 文件
-        JMenu fileMenu = new JMenu("文件");
+        JMenu fileMenu = new JMenu(i18n.get("menu.file"));
 
-        JMenuItem openFiles = new JMenuItem("加载文件 wz/img/xml", FcFileIcon);
-        JMenuItem openFolders = new JMenuItem("加载文件夹...", FcFolderIcon);
-        JMenuItem newWz = new JMenuItem("新建 Wz", AiOutlineFileWordIcon);
-        JMenuItem newImg = new JMenuItem("新建 Img", AiOutlineFileMarkdownIcon);
-        JMenuItem unloadAll = new JMenuItem("卸载全部", AiOutlineCloseIcon);
+        JMenuItem loadFiles = new JMenuItem(i18n.get("menu.file.loadFiles"), FcFileIcon);
+        JMenuItem loadFolder = new JMenuItem(i18n.get("menu.file.loadFolders"), FcFolderIcon);
+        JMenuItem newWz = new JMenuItem(i18n.get("menu.file.newWz"), AiOutlineFileWordIcon);
+        JMenuItem newImg = new JMenuItem(i18n.get("menu.file.newImg"), AiOutlineFileMarkdownIcon);
+        JMenuItem unloadAll = new JMenuItem(i18n.get("menu.file.unloadAll"), AiOutlineCloseIcon);
 
-        fileMenu.add(openFiles);
-        fileMenu.add(openFolders);
+        fileMenu.add(loadFiles);
+        fileMenu.add(loadFolder);
         fileMenu.add(newWz);
         fileMenu.add(newImg);
         fileMenu.add(unloadAll);
 
         // 工具
-        JMenu tools = new JMenu("工具");
+        JMenu tools = new JMenu(i18n.get("menu.tool"));
 
-        JMenuItem selectCavBGC = new JMenuItem("图像背景");
+        JMenuItem selectCavBGC = new JMenuItem(i18n.get("menu.tool.canvasBg"));
         selectCavBGC.addActionListener(e -> {
             cavFormColor = JColorChooser.showDialog(
                     this,
-                    "图像背景",
+                    i18n.get("menu.tool.canvasBg"),
                     cavFormColor
             );
             if (cavFormColor != null) {
@@ -138,15 +140,15 @@ public class MainFrame extends JFrame {
             }
         });
 
-        JMenu view = new JMenu("视图");
+        JMenu view = new JMenu(i18n.get("menu.tool.view"));
         view.setIcon(AiOutlineEye);
-        viewShow = new JMenuItem("显示");
-        JMenuItem viewSync = new JMenuItem("禁用同步");
+        viewShow = new JMenuItem(i18n.get("menu.tool.show"));
+        JMenuItem viewSync = new JMenuItem(i18n.get("menu.tool.disableSync"));
         view.add(viewShow);
         view.add(viewSync);
 
-        JMenuItem clearCB = new JMenuItem("清空剪贴板");
-        JMenuItem gc = new JMenuItem("内存回收");
+        JMenuItem clearCB = new JMenuItem(i18n.get("menu.tool.clipboardClear"));
+        JMenuItem gc = new JMenuItem(i18n.get("menu.tool.GC"));
 
         tools.add(selectCavBGC);
         tools.add(view);
@@ -154,17 +156,17 @@ public class MainFrame extends JFrame {
         tools.add(gc);
 
         // 帮助
-        JMenu help = new JMenu("帮助");
+        JMenu help = new JMenu(i18n.get("menu.help"));
 
-        JMenuItem bbs = new JMenuItem("论坛");
-        JMenuItem log = new JMenuItem("日志");
+        JMenuItem bbs = new JMenuItem(i18n.get("menu.help.bbs"));
+        JMenuItem log = new JMenuItem(i18n.get("menu.help.logs"));
 
         help.add(bbs);
         help.add(log);
 
         // 密钥
         keyBox = new KeyBox(wzKeyStorage.loadAll().toArray(new WzKey[0])); // 选择框
-        JButton keyManager = new JButton("密钥管理");
+        JButton keyManager = new JButton(i18n.get("keyManager"));
 
 
         menuBar.add(fileMenu);
@@ -176,11 +178,11 @@ public class MainFrame extends JFrame {
         menuBar.add(keyManager);
 
 
-        openFiles.addActionListener(e -> {
+        loadFiles.addActionListener(e -> {
             List<File> files = orange.wz.gui.component.FileDialog.chooseOpenFiles(new String[]{"wz", "img", "xml"});
             centerPane.getLeftEditPane().loadFiles(files);
         });
-        openFolders.addActionListener(e -> {
+        loadFolder.addActionListener(e -> {
             List<File> files = FileDialog.chooseOpenFolders();
             centerPane.getLeftEditPane().loadFiles(files);
         });
@@ -195,10 +197,10 @@ public class MainFrame extends JFrame {
         viewSync.addActionListener(e -> {
             if (centerPane.isSync()) {
                 centerPane.switchSync();
-                viewSync.setText("启用同步");
+                viewSync.setText(i18n.get("menu.tool.enableSync"));
             } else {
                 centerPane.switchSync();
-                viewSync.setText("禁用同步");
+                viewSync.setText(i18n.get("menu.tool.disableSync"));
             }
         });
         bbs.addActionListener(e -> UrlUtil.open("https://moguwuyu.com/"));
@@ -240,7 +242,7 @@ public class MainFrame extends JFrame {
         statusBar.add(progressBar, BorderLayout.WEST);
 
         // 状态文字
-        statusLabel = new JLabel("准备就绪");
+        statusLabel = new JLabel(i18n.get("status.ready"));
         statusLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         statusBar.add(statusLabel, BorderLayout.CENTER);
 
@@ -259,7 +261,7 @@ public class MainFrame extends JFrame {
                 try {
                     Desktop.getDesktop().browse(new URI(url));
                 } catch (Exception ex) {
-                    log.error("无法打开系统浏览器，请自行访问 {}", url, ex);
+                    log.error(i18n.get("error.openChrome", url), ex);
                 }
             }
         });
@@ -284,8 +286,8 @@ public class MainFrame extends JFrame {
             long used = rt.totalMemory() - rt.freeMemory();
             long max = rt.maxMemory();
 
-            memLabel.setText(String.format(
-                    "内存 %.1f MB / %.1f MB",
+            memLabel.setText(i18n.get(
+                    "status.memory",
                     used / 1024.0 / 1024.0,
                     max / 1024.0 / 1024.0
             ));
@@ -310,31 +312,39 @@ public class MainFrame extends JFrame {
     /**
      * 设置底部状态文字
      *
-     * @param format 文字格式
-     * @param args   参数
+     * @param message 文字
      */
-    public void setStatusText(String format, Object... args) {
+    public void setStatusText(String message, Object... args) {
         if (statusLabel != null) {
-            statusLabel.setText(String.format(format, args));
+            statusLabel.setText(message);
         }
+        log.info(message);
     }
 
-    public void setStatusTextDirect(String format) {
+    public void setStatusTextWithWarnLog(String message) {
         if (statusLabel != null) {
-            statusLabel.setText(format);
+            statusLabel.setText(message);
         }
+        log.warn(message);
+    }
+
+    public void setStatusTextWithErrLog(String message) {
+        if (statusLabel != null) {
+            statusLabel.setText(message);
+        }
+        log.error(message);
     }
 
     private void gc() {
         System.gc();
-        setStatusText("已向系统建议回收内存");
+        setStatusText(i18n.get("status.gc"));
     }
 
     private void clearClipboard() {
         clipboard.lock();
         clipboard.clear();
         clipboard.unlock();
-        setStatusText("剪贴板已清空");
+        setStatusText(i18n.get("status.clipboardClear"));
     }
 
     private void checkUpdate() {
@@ -369,7 +379,7 @@ public class MainFrame extends JFrame {
 
                     if (code == 201) {
                         SwingUtilities.invokeLater(() ->
-                                newVerLabel.setText("<html><a href='' style='color:red;'>有新版本 " + message + "</a></html>")
+                                newVerLabel.setText(i18n.get("status.newVersion", message))
                         );
                     }
 
@@ -417,7 +427,7 @@ public class MainFrame extends JFrame {
         // conn.setRequestProperty("User-Agent", "OrzRepacker/1.0");
 
         if (conn.getResponseCode() != 200) {
-            log.warn("检查更新失败 Code {}", conn.getResponseCode());
+            log.warn(i18n.get("error.checkUpdate", conn.getResponseCode()));
             throw new RuntimeException();
         }
 

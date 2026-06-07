@@ -1,5 +1,6 @@
 package orange.wz.gui.component.form;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.*;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.utils.JMessageUtil;
@@ -35,7 +36,7 @@ public class FormSaveHandler {
         editPane.getTree().updateUI();
 
         if (!res) {
-            JMessageUtil.warn("什么都没有保存");
+            JMessageUtil.warn(MainFrame.i18n.get("test.temp0063"));
         }
     }
 
@@ -48,11 +49,11 @@ public class FormSaveHandler {
                 directory.setNameAnyway(newName);
                 directory.getWzFile().setNameAnyway(newName);
             } else {
-                JMessageUtil.error("不是 .wz 结尾");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0064"));
                 return false;
             }
         } else if (!directory.setName(newName)) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         directory.setTempChanged(true);
@@ -64,10 +65,10 @@ public class FormSaveHandler {
         if (newName.equals(image.getName())) return false;
 
         if (!newName.endsWith(".img")) {
-            JMessageUtil.error("不是 .img 结尾");
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0065"));
             return false;
         } else if (!image.setName(newName)) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
 
@@ -79,7 +80,7 @@ public class FormSaveHandler {
         CanvasFormData data = editPane.getCanvasForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
 
@@ -95,7 +96,7 @@ public class FormSaveHandler {
         if (newName.equals(property.getName())) return false;
 
         if (!property.setName(newName)) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
 
@@ -108,7 +109,7 @@ public class FormSaveHandler {
         DoubleFormData data = editPane.getDoubleForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -122,7 +123,7 @@ public class FormSaveHandler {
         FloatFormData data = editPane.getFloatForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -136,7 +137,7 @@ public class FormSaveHandler {
         IntFormData data = editPane.getIntForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -150,7 +151,7 @@ public class FormSaveHandler {
         String newName = editPane.getNodeForm().getData().getName();
 
         if (!property.getName().equals(newName) && !property.setName(newName)) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
 
@@ -163,7 +164,7 @@ public class FormSaveHandler {
         LongFormData data = editPane.getLongForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -178,7 +179,7 @@ public class FormSaveHandler {
         if (property.getName().equals(newName)) return false;
 
         if (!property.setName(newName)) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
 
@@ -191,7 +192,7 @@ public class FormSaveHandler {
         ShortFormData data = editPane.getShortForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -205,7 +206,7 @@ public class FormSaveHandler {
         SoundFormData data = editPane.getSoundForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setSound(data.getSoundBytes());
@@ -219,7 +220,7 @@ public class FormSaveHandler {
         StringFormData data = editPane.getStringForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -242,7 +243,7 @@ public class FormSaveHandler {
         if (data == null) return false;
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setValue(data.getValue());
@@ -256,7 +257,7 @@ public class FormSaveHandler {
         VectorFormData data = editPane.getVectorForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setX(data.getX());
@@ -271,7 +272,7 @@ public class FormSaveHandler {
         StringFormData data = editPane.getLuaForm().getData();
 
         if (!property.getName().equals(data.getName()) && !property.setName(data.getName())) {
-            JMessageUtil.error("存在同名节点，保存失败");
+            JMessageUtil.error(MainFrame.i18n.get("error.same_name_node"));
             return false;
         }
         property.setString(data.getValue());

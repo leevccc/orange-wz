@@ -50,7 +50,7 @@ public final class CenterPane extends JSplitPane {
 
     public void showRightEditPane(boolean show) {
         if (show) {
-            MainFrame.getInstance().getViewShow().setText("隐藏");
+            MainFrame.getInstance().getViewShow().setText(MainFrame.i18n.get("show"));
             setDividerSize(6);
             if (lastDividerLocation > 0) {
                 setDividerLocation(lastDividerLocation);
@@ -58,7 +58,7 @@ public final class CenterPane extends JSplitPane {
                 setDividerLocation(0.5); // 第一次显示给个合理默认
             }
         } else {
-            MainFrame.getInstance().getViewShow().setText("显示");
+            MainFrame.getInstance().getViewShow().setText(MainFrame.i18n.get("hide"));
             lastDividerLocation = getDividerLocation();
             setDividerLocation(getWidth());
             setDividerSize(0);

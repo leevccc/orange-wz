@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.FileDialog;
 import orange.wz.gui.component.form.base.DisabledItemComboBox;
 import orange.wz.gui.component.form.data.CanvasFormData;
@@ -27,12 +28,12 @@ public final class CanvasDialog extends NodeDialog {
         pathField.setEditable(false);
         formatField = new DisabledItemComboBox<>(WzPngFormat.values());
         formatField.setSelectedItem(WzPngFormat.ARGB8888);
-        addRow("格式", formatField);
-        addRow("缩放", scaleField);
+        addRow(MainFrame.i18n.get("test.temp0068"), formatField);
+        addRow(MainFrame.i18n.get("test.temp0069"), scaleField);
         scaleField.setText("0");
 
-        JButton selectBtn = new JButton("选择图片");
-        addRow("路径", pathField, selectBtn);
+        JButton selectBtn = new JButton(MainFrame.i18n.get("test.temp0070"));
+        addRow(MainFrame.i18n.get("test.temp0071"), pathField, selectBtn);
 
         selectBtn.addActionListener(e -> {
             File pngFile = FileDialog.chooseOpenFile(new String[]{"png"});
@@ -41,11 +42,11 @@ public final class CanvasDialog extends NodeDialog {
             try (ByteArrayInputStream bis = new ByteArrayInputStream(Files.readAllBytes(pngFile.toPath()))) {
                 image = ImageIO.read(bis);
                 if (image == null) {
-                    JMessageUtil.error("无法解码图片数据");
+                    JMessageUtil.error(MainFrame.i18n.get("test.temp0072"));
                     return;
                 }
             } catch (IOException ex) {
-                JMessageUtil.error("无法读取文件");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0073"));
                 return;
             }
 
@@ -60,7 +61,7 @@ public final class CanvasDialog extends NodeDialog {
         }
 
         if (image == null) {
-            JMessageUtil.error("没有选择图片");
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0074"));
             return null;
         }
 

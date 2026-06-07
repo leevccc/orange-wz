@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.ChangeNodeNameFormData;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
@@ -12,12 +13,12 @@ public final class ChangeNodeNameDialog extends BaseDialog<NodeFormData> {
     private final JTextField degree = new JTextField(20);
 
     public ChangeNodeNameDialog(EditPane editPane) {
-        super("修改节点名", editPane);
+        super(MainFrame.i18n.get("test.temp0086"), editPane);
 
         degree.setText("1");
-        addRow("原节点名", oldName);
-        addRow("新节点名", newName);
-        addRow("子级", degree);
+        addRow(MainFrame.i18n.get("test.temp0087"), oldName);
+        addRow(MainFrame.i18n.get("test.temp0088"), newName);
+        addRow(MainFrame.i18n.get("test.temp0089"), degree);
     }
 
     @Override

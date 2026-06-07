@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.CreateFileData;
 import orange.wz.gui.component.panel.EditPane;
 import orange.wz.gui.filter.IntegerFilter;
@@ -15,16 +16,16 @@ public final class CreateFileDialog extends BaseDialog<CreateFileData> {
     private final JTextField nameInput = new JTextField(20);
 
     public CreateFileDialog(EditPane editPane, boolean wzFile) {
-        super("新建文件", editPane);
+        super(MainFrame.i18n.get("test.temp0083"), editPane);
 
         if (wzFile) {
             ((AbstractDocument) versionInput.getDocument()).setDocumentFilter(new IntegerFilter());
-            addRow("版本号", versionInput);
+            addRow(MainFrame.i18n.get("test.temp0084"), versionInput);
         } else {
             versionInput.setText("-1");
         }
 
-        addRow("文件名", nameInput);
+        addRow(MainFrame.i18n.get("test.temp0085"), nameInput);
 
         addWindowListener(new WindowAdapter() {
             @Override
@@ -47,7 +48,7 @@ public final class CreateFileDialog extends BaseDialog<CreateFileData> {
         try {
             version = Short.parseShort(versionInput.getText());
         } catch (NumberFormatException e) {
-            JMessageUtil.error("错误版本号 " + versionInput.getText());
+            JMessageUtil.error(MainFrame.i18n.get("test.temp0082", versionInput.getText()));
             return null;
         }
 

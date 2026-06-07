@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.panel.ImagePanel;
 import orange.wz.provider.WzImageProperty;
 import orange.wz.provider.properties.WzCanvasProperty;
@@ -39,7 +40,7 @@ public final class ImageCompareDialog extends JDialog {
     private final Set<Integer> changedList = new HashSet<>();
 
     public ImageCompareDialog(Frame owner) {
-        super(owner, "图片对比", false);
+        super(owner, MainFrame.i18n.get("test.temp0118"), false);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1000, 600);
         setLocationRelativeTo(null);
@@ -68,8 +69,8 @@ public final class ImageCompareDialog extends JDialog {
 
     private JComponent buildMainPanel() {
         JScrollPane left = buildStringListPanel();
-        JPanel center = buildImageInfoPanel("原图", true);
-        JPanel right = buildImageInfoPanel("替换", false);
+        JPanel center = buildImageInfoPanel(MainFrame.i18n.get("test.temp0119"), true);
+        JPanel right = buildImageInfoPanel(MainFrame.i18n.get("test.temp0120"), false);
 
         // 中 + 右 先合成一个面板
         JPanel rightGroup = new JPanel(new GridLayout(1, 2, 10, 10));
@@ -208,9 +209,9 @@ public final class ImageCompareDialog extends JDialog {
 
         // 按钮区
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 30, 8));
-        includeChildren = new JCheckBox("包括Origin等子节点");
+        includeChildren = new JCheckBox(MainFrame.i18n.get("test.temp0121"));
         includeChildren.setSelected(true);
-        JButton replaceBtn = new JButton("替换 (空格键)");
+        JButton replaceBtn = new JButton(MainFrame.i18n.get("test.temp0122"));
 
         replaceBtn.addActionListener(e -> replaceImage());
 
@@ -218,7 +219,7 @@ public final class ImageCompareDialog extends JDialog {
         buttons.add(replaceBtn);
 
         // 状态栏
-        statusLabel = new JLabel("扫描图片中...");
+        statusLabel = new JLabel(MainFrame.i18n.get("test.temp0123"));
         statusLabel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY),
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)
@@ -266,7 +267,7 @@ public final class ImageCompareDialog extends JDialog {
         changedList.add(index);
         stringList.setSelectedIndex(index + 1);
 
-        setStatus("已修改 " + changedList.size() + " / " + listModel.getSize() + " 条");
+        setStatus(MainFrame.i18n.get("test.temp0124", changedList.size(), listModel.getSize()));
     }
 
     /**
@@ -309,7 +310,7 @@ public final class ImageCompareDialog extends JDialog {
         collections.add(path);
         toMap.put(path, to);
         fromMap.put(path, from);
-        setStatus("已修改 " + changedList.size() + " / " + listModel.getSize() + " 条");
+        setStatus(MainFrame.i18n.get("test.temp0124", changedList.size(), listModel.getSize()));
 
         if (collections.size() > 25) {
             boolean selFirst = listModel.getSize() == 0;
@@ -328,7 +329,7 @@ public final class ImageCompareDialog extends JDialog {
     public void completeScan() {
         listModel.addAll(collections);
         collections.clear();
-        if (listModel.getSize() == 0) setStatus("扫描完毕，找不到数据。");
+        if (listModel.getSize() == 0) setStatus(MainFrame.i18n.get("test.temp0125"));
     }
 
     /**

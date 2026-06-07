@@ -1,5 +1,6 @@
 package orange.wz.gui.component.dialog;
 
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.form.data.DoubleFormData;
 import orange.wz.gui.component.form.data.NodeFormData;
 import orange.wz.gui.component.panel.EditPane;
@@ -11,9 +12,9 @@ public class ScaleDialog extends BaseDialog<NodeFormData> {
     private final JTextField valueField = new JTextField(20);
 
     public ScaleDialog(EditPane editPane) {
-        super("图片缩放", editPane);
-        addRow("匹配名称(留空=全部)", nameField);
-        addRow("缩放比例(原始=1.0)", valueField);
+        super(MainFrame.i18n.get("test.temp0161"), editPane);
+        addRow(MainFrame.i18n.get("test.temp0162"), nameField);
+        addRow(MainFrame.i18n.get("test.temp0163"), valueField);
     }
 
     @Override

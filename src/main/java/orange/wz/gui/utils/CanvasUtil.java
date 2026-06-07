@@ -25,13 +25,13 @@ public final class CanvasUtil {
                 search(result, prop.getChildren());
             } else if (wzObject instanceof WzDirectory wzDir) {
                 if (wzDir.isWzFile() && !wzDir.getWzFile().parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败", wzDir.getName());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzDir.getName(), wzDir.getWzFile().getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 search(result, wzDir.getChildren());
             } else if (wzObject instanceof WzImage wzImg) {
                 if (!wzImg.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImg.getName(), wzImg.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 search(result, wzImg.getChildren());
@@ -44,7 +44,7 @@ public final class CanvasUtil {
             if (prop instanceof WzCanvasProperty canvas) {
                 if (canvas.getFormat() == format) continue;
                 canvas.setPng(canvas.getPngImage(false), format, 0);
-                MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.success", canvas.getPath()));
             } else if (prop.isListProperty()) {
                 changeFormat(prop.getChildren(), format);
             }
@@ -56,7 +56,7 @@ public final class CanvasUtil {
             if (prop instanceof WzCanvasProperty canvas) {
                 if (nodeName.isEmpty() || prop.getName().equals(nodeName)) {
                     canvas.scale(scale);
-                    MainFrame.getInstance().setStatusText("已处理 %s", canvas.getPath());
+                    MainFrame.getInstance().setStatusText(MainFrame.i18n.get("status.success", canvas.getPath()));
                 }
             } else if (prop.isListProperty()) {
                 scaleImage(prop.getChildren(), nodeName, scale);

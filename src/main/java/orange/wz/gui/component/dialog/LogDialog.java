@@ -3,6 +3,7 @@ package orange.wz.gui.component.dialog;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.MainFrame;
 import orange.wz.log.LogAppender;
 
 import javax.swing.*;
@@ -39,10 +40,10 @@ public final class LogDialog extends JDialog {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
-    private final JLabel logCountLabel = new JLabel("数量: 0 / 0");
+    private final JLabel logCountLabel = new JLabel(MainFrame.i18n.get("test.temp0167"));
 
     public LogDialog(JFrame owner) {
-        super(owner, "日志查看", false);
+        super(owner, MainFrame.i18n.get("test.temp0168"), false);
 
         textPane.setEditable(false);
         textPane.setFont(new Font("Consolas", Font.PLAIN, 13));
@@ -50,12 +51,12 @@ public final class LogDialog extends JDialog {
 
         JScrollPane scroll = new JScrollPane(textPane);
 
-        JButton filterBtn = new JButton("过滤");
-        JButton pauseBtn = new JButton("暂停");
-        JButton clearBtn = new JButton("清空");
+        JButton filterBtn = new JButton(MainFrame.i18n.get("test.temp0169"));
+        JButton pauseBtn = new JButton(MainFrame.i18n.get("test.temp0170"));
+        JButton clearBtn = new JButton(MainFrame.i18n.get("test.temp0171"));
 
         JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.add(new JLabel("过滤（可正则）："));
+        top.add(new JLabel(MainFrame.i18n.get("test.temp0172")));
         top.add(filterField);
         top.add(filterBtn);
         top.add(pauseBtn);
@@ -81,7 +82,7 @@ public final class LogDialog extends JDialog {
         // ===== 按钮 =====
         pauseBtn.addActionListener(e -> {
             paused = !paused;
-            pauseBtn.setText(paused ? "继续" : "暂停");
+            pauseBtn.setText(paused ? MainFrame.i18n.get("test.temp0173") : MainFrame.i18n.get("test.temp0170"));
             if (!paused) flushPaused();
         });
 
@@ -206,7 +207,7 @@ public final class LogDialog extends JDialog {
             textPane.setCaretPosition(doc.getLength());
 
         } catch (BadLocationException e) {
-            log.error("日志系统 {}", e.getMessage());
+            log.error(MainFrame.i18n.get("test.temp0175", e.getMessage()));
         }
     }
 
@@ -255,7 +256,7 @@ public final class LogDialog extends JDialog {
             } else {
                 visible = total;
             }
-            logCountLabel.setText("数量: " + visible + " / " + total);
+            logCountLabel.setText(MainFrame.i18n.get("test.temp0174", visible, total));
         });
     }
 }

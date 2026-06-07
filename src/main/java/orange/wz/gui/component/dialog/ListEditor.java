@@ -1,6 +1,7 @@
 package orange.wz.gui.component.dialog;
 
 import lombok.extern.slf4j.Slf4j;
+import orange.wz.gui.MainFrame;
 import orange.wz.gui.component.key.KeyBox;
 import orange.wz.gui.utils.JMessageUtil;
 import orange.wz.provider.tools.BinaryReader;
@@ -48,13 +49,13 @@ public final class ListEditor extends JDialog {
         keyBox.setSelectedIndex(index);
 
         // 保存按钮
-        JButton saveButton = new JButton("保存");
+        JButton saveButton = new JButton(MainFrame.i18n.get("save"));
         saveButton.addActionListener((ActionEvent e) -> {
             String content = textArea.getText();
             if (saveFile(file, (WzKey) keyBox.getSelectedItem(), content)) {
-                JMessageUtil.info("文件已保存到 " + file);
+                JMessageUtil.info(MainFrame.i18n.get("test.temp0067", file));
             } else {
-                JMessageUtil.error("保存失败");
+                JMessageUtil.error(MainFrame.i18n.get("test.temp0066"));
             }
         });
 

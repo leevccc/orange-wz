@@ -57,7 +57,7 @@ public final class Outlink {
 
         // 确保version已经生成
         if (!wzFile.parse()) {
-            MainFrame.getInstance().setStatusText("文件 %s 解析失败", wzFile.getName());
+            MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzFile.getName(), wzFile.getStatus().getMessage()));
             throw new RuntimeException();
         }
 
@@ -78,14 +78,14 @@ public final class Outlink {
 
                 WzFile canvasWz = new WzFile(path.toString(), version, keyBoxName, iv, key);
                 if (!canvasWz.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败", canvasWz.getName());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", canvasWz.getName(), canvasWz.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 canvasCache.add(canvasWz.getWzDirectory());
             }
             return true;
         } catch (IOException e) {
-            log.error("收集Canvas文件时出错: {}", e.getMessage());
+            log.error(MainFrame.i18n.get("error.outlink.collect", e.getMessage()));
             return false;
         }
     }
@@ -125,7 +125,7 @@ public final class Outlink {
                 collect(collector, wzDir.getChildren());
             } else if (wzObject instanceof WzImage wzImg) {
                 if (!wzImg.parse()) {
-                    MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", wzImg.getName(), wzImg.getStatus().getMessage());
+                    MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", wzImg.getName(), wzImg.getStatus().getMessage()));
                     throw new RuntimeException();
                 }
                 collect(collector, wzImg.getChildren());
@@ -166,12 +166,12 @@ public final class Outlink {
             List<Data> dataList = entry.getValue();
             WzImage image = getCanvasImage(imageStr, canvasCache);
             if (image == null) {
-                log.error("找不到 Canvas {}", imageStr);
+                log.error(MainFrame.i18n.get("error.outlink.cant_find_image", imageStr));
                 current += dataList.size();
                 continue;
             }
             if (!image.parse()) {
-                MainFrame.getInstance().setStatusText("文件 %s 解析失败: %s", image.getName(), image.getStatus().getMessage());
+                MainFrame.getInstance().setStatusTextWithErrLog(MainFrame.i18n.get("error.parse", image.getName(), image.getStatus().getMessage()));
                 throw new RuntimeException();
             }
 
@@ -187,7 +187,7 @@ public final class Outlink {
 
                 WzCanvasProperty from = getCanvasProperty(image.getChildren(), paths, step);
                 if (from == null) {
-                    log.error("对象 {} 找不到 Canvas : {}", to.getPath(), paths);
+                    log.error(MainFrame.i18n.get("error.outlink.cant_find_from", to.getPath(), paths));
                     current++;
                     continue;
                 }
