@@ -141,7 +141,9 @@ public class WzSoundProperty extends WzExtended {
         WzMutableKey wzMutableKey = wzImage.getReader().getWzMutableKey();
         BinaryWriter writer = new BinaryWriter();
         writer.putBytes(soundHeader);
-        byte[] wavHeader = mp3StructToBytes((Mp3WaveFormat) waveFormat);
+        byte[] wavHeader = waveFormat instanceof Mp3WaveFormat mp3
+                ? mp3StructToBytes(mp3)
+                : waveStructToBytes(waveFormat);
         if (headerEncrypted) {
             for (int i = 0; i < wavHeader.length; i++) {
                 wavHeader[i] ^= wzMutableKey.get(i);
@@ -150,6 +152,18 @@ public class WzSoundProperty extends WzExtended {
         writer.putByte((byte) wavHeader.length);
         writer.putBytes(wavHeader);
         header = writer.output();
+    }
+
+    private byte[] waveStructToBytes(WaveFormat format) {
+        BinaryWriter writer = new BinaryWriter();
+        writer.putShort((short) format.getWaveFormatTag().getValue());
+        writer.putShort(format.getChannels());
+        writer.putInt(format.getSampleRate());
+        writer.putInt(format.getAverageBytesPerSecond());
+        writer.putShort(format.getBlockAlign());
+        writer.putShort(format.getBitsPerSample());
+        writer.putShort(format.getExtraSize());
+        return writer.output();
     }
 
     private WaveFormat bytesToWaveStruct(byte[] waveFormatBytes) {

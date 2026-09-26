@@ -206,6 +206,8 @@ public final class XmlExport {
                         String filename = FileTool.safeFileName(mediaFilename + prop.getName() + ".mp3");
                         Path p = mediaFolder.resolve(filename);
                         FileTool.saveFile(p, prop.getSoundBytes(false));
+                    } else {
+                        context = context + "/>";
                     }
 
                     writer.write(context);
